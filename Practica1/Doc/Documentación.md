@@ -15,3 +15,8 @@ Integrantes:
 
 1. [Introducción](#introducción)
 2. [Vista de Arquitectura: Modelo 4+1 vistas de Krutchten](/Practica1/Doc/Vistas/Vista%20de%20Arquitectura.md)
+
+
+## Introducción
+
+En esta práctica, se ha desarrollado una página web de gestión de ventas de boletos para la empresa llamada **FilmStars**. La aplicación permite a los usuarios buscar, agregar y gestionar sus compras.
