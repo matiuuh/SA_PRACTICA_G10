@@ -12,11 +12,10 @@ El sistema se despliega en varios nodos: un servidor frontend, un servidor backe
 
 ## 1. Nodo Cliente
 
-Representa a los usuarios que interactuan con la plataforma FilmStars desde un navegador web. En el diagrama se distinguen dos perfiles de acceso: cliente y administrador.
+Representa a los usuarios que interactuan con la plataforma FilmStars desde un navegador web. En el diagrama se muestra el acceso del cliente hacia la plataforma.
 
 ### Componentes
 - Cliente
-- Admin
 
 ### Comunicacion
 - HTTPS hacia el servidor frontend
@@ -31,7 +30,7 @@ Contiene la aplicacion web desarrollada con React y Vite, encargada de presentar
 - Frontend Web (React + Vite)
 
 ### Comunicacion
-- HTTPS desde cliente y admin
+- HTTPS desde cliente
 - HTTPS hacia API Gateway
 
 ---
@@ -102,13 +101,13 @@ Agrupa las integraciones externas utilizadas por la plataforma para pagos y envi
 
 # Diagrama de Vista Fisica
 
-![alt text](imagenes/image.png)
+![Diagrama de Vista Fisica](<imagenes/diagramas vistas.png>)
 
 ---
 
 # Explicacion del Diagrama
 
-El cliente y el administrador acceden a la plataforma mediante HTTPS a traves del servidor frontend, donde se encuentra desplegada la aplicacion web construida con React y Vite.
+El cliente accede a la plataforma mediante HTTPS a traves del servidor frontend, donde se encuentra desplegada la aplicacion web construida con React y Vite.
 
 El frontend se comunica por HTTPS con el API Gateway alojado en el servidor backend. Desde este punto se enrutan las solicitudes hacia los servicios de autenticacion, peliculas, funciones, reservas, pagos y notificaciones.
 
