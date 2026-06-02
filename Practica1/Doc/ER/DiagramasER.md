@@ -5,11 +5,11 @@ Para el diseño y modelado de la persistencia del sistema se decidió dividir la
 
 Los dominios definidos fueron los siguientes:
 
-Manejo de usuarios
-Manejo de funciones y cartelera
-Manejo de reservas y asientos
-Manejo de pagos
-Manejo de notificaciones
+- Manejo de usuarios
+- Manejo de funciones y cartelera
+- Manejo de reservas y asientos
+- Manejo de pagos
+- Manejo de notificaciones
 
 Para la elaboración de los diagramas entidad-relación se utilizó la herramienta dbdiagram.io, permitiendo modelar de forma visual las entidades, relaciones y restricciones definidas para cada servicio.
 
@@ -18,110 +18,55 @@ Adicionalmente, con el objetivo de mantener trazabilidad y facilitar futuras mod
 Cada uno de los siguientes apartados describe el propósito de las entidades utilizadas, las relaciones existentes entre ellas y la integración que poseen dentro de la arquitectura general del proyecto.
 
 
-### 1. Usuarios
+### 1. Manejo de Usuarios
 
-Para el manejo de usuarios se decidió implementar un servicio independiente encargado de gestionar la autenticación, administración de perfiles y control de sesiones dentro de la plataforma. Este servicio centraliza la identidad de los usuarios y permite que los demás servicios puedan consumir información relacionada mediante identificadores externos, evitando dependencias directas entre bases de datos.
+Para el manejo de usuarios se decidió implementar un servicio independiente encargado de gestionar el registro y autenticación de clientes dentro de la plataforma. Este servicio funciona como el punto central de identificación de los usuarios y permite que los demás servicios puedan relacionar información mediante identificadores externos, evitando dependencias directas entre bases de datos.
 
 Las tablas utilizadas para este módulo fueron:
 
-* Roles
 * Usuarios
-* Perfiles/Sesiones
-
-
-#### Tabla Roles
-
-La tabla **roles** almacena los tipos de usuario disponibles dentro de la plataforma. Su propósito principal es permitir la clasificación de permisos y diferenciar las acciones disponibles para cada tipo de usuario.
-
-Ejemplos de roles:
-
-* Administrador
-* Cliente
-
-Relación:
-
-```text
-Roles (1) -------- (N) Usuarios
-```
-
----
-
-#### Tabla Usuarios
-
-La tabla **usuarios** representa la entidad principal del servicio y almacena la información necesaria para identificar y autenticar a los usuarios registrados dentro de la plataforma.
-
-Responsabilidades:
-
-* Registrar usuarios dentro del sistema
-* Gestionar credenciales de acceso
-* Asociar usuarios con roles específicos
-* Proporcionar identificadores únicos utilizados por otros servicios
-
-Esta tabla actúa como punto central para la autenticación y autorización.
-
-Relación:
-
-```text
-Usuarios (N) -------- (1) Roles
-```
-
----
-
-#### Tabla Perfiles
-
-La tabla **perfiles** permite soportar la funcionalidad multiperfil dentro de una misma cuenta de usuario. Esto permite que un usuario pueda manejar múltiples configuraciones o perfiles independientes.
-
-Responsabilidades:
-
-* Manejar múltiples perfiles asociados a una cuenta
-* Personalizar experiencia de usuario
-* Asociar configuraciones independientes por perfil
-
-Relación:
-
-```text
-Usuarios (1) -------- (N) Perfiles
-```
-
----
-
-#### Tabla Sesiones
-
-La tabla **sesiones** almacena información relacionada con las sesiones activas de los usuarios.
-
-Responsabilidades:
-
-* Controlar sesiones activas
-* Gestionar expiración de tokens
-* Mantener persistencia temporal de autenticación
-
-Relación:
-
-```text
-Usuarios (1) -------- (N) Sesiones
-```
-
----
-
-#### Integración con otros servicios
-
-Este servicio se integra con el resto de la arquitectura mediante el uso de identificadores externos (`usuario_id`), evitando dependencias directas entre bases de datos.
-
-Los servicios consumidores son:
-
-* Servicio de Reservas
-* Servicio de Pagos
-* Servicio de Notificaciones
-
-Esta estrategia mantiene el desacoplamiento requerido en una arquitectura orientada a servicios.
-
-
 
 ![alt text](01-ER_USUARIOS.png)
 
-### 2. Manejo de Funciones y Cartelera
+#### Tabla Usuarios
 
-El servicio de funciones y cartelera es responsable de administrar toda la información relacionada con películas, horarios, cines y disponibilidad de funciones dentro de la plataforma. Este servicio permite que los usuarios puedan consultar películas disponibles según ubicación, cine y horario.
+La tabla **usuarios** representa la entidad principal del servicio y almacena la información necesaria para identificar a los clientes registrados dentro de la plataforma.
+
+Responsabilidades:
+
+* Registrar clientes dentro del sistema
+* Gestionar credenciales de acceso
+* Mantener información básica del usuario
+* Proporcionar identificadores únicos utilizados por otros servicios
+
+Los usuarios registrados dentro de esta tabla podrán interactuar con las funcionalidades principales del sistema, como realizar reservas, efectuar pagos y recibir notificaciones.
+
+Campos principales almacenados:
+
+* Identificador único del usuario
+* Nombre del cliente
+* Correo electrónico
+* Contraseña 
+* Fecha de registro
+
+#### Relación con otros servicios
+
+Este servicio no comparte tablas directamente con otros módulos. En su lugar, utiliza el identificador del usuario para relacionar información.
+
+Servicios consumidores:
+
+* Servicio de Reservas → utiliza `usuario_id_externo` para asociar reservas
+* Servicio de Pagos → utiliza la reserva asociada al usuario
+* Servicio de Notificaciones → utiliza información del usuario para enviar mensajes
+
+Esta separación permite mantener desacoplada la arquitectura, evitando dependencias directas entre servicios y facilitando la escalabilidad del sistema.
+
+
+### 2. Manejo de Funciones en Cartelera
+
+Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas, ubicaciones, salas y horarios disponibles dentro de la plataforma.
+
+Este servicio permite organizar la información necesaria para que los usuarios puedan consultar la cartelera, seleccionar funciones y posteriormente realizar reservas.
 
 Las tablas utilizadas para este módulo fueron:
 
@@ -129,23 +74,26 @@ Las tablas utilizadas para este módulo fueron:
 * Cines
 * Salas
 * Categorías
+* Clasificaciones
+* Tipo Cartelera
 * Películas
 * Funciones
 
+![alt text](02-ER_FUNCIONES.png)
 
 #### Tabla Ciudades
 
-La tabla **ciudades** almacena las ubicaciones geográficas soportadas por la plataforma.
+La tabla **ciudades** almacena las ubicaciones donde existen complejos de cine disponibles.
 
 Responsabilidades:
 
-* Gestionar ciudades disponibles
-* Filtrar cines por ubicación
-* Organizar cartelera regional
+* Organizar cines por ubicación
+* Facilitar búsquedas por ciudad
+* Permitir escalabilidad geográfica
 
 Relación:
 
-```text id="lffhsq"
+```text
 Ciudades (1) -------- (N) Cines
 ```
 
@@ -153,19 +101,17 @@ Ciudades (1) -------- (N) Cines
 
 #### Tabla Cines
 
-La tabla **cines** representa cada complejo cinematográfico disponible dentro del sistema.
+La tabla **cines** almacena la información de los complejos cinematográficos disponibles.
 
 Responsabilidades:
 
-* Registrar cines disponibles
+* Registrar complejos de cine
 * Asociar cines a ciudades
-* Administrar salas disponibles por sede
+* Agrupar salas disponibles
 
 Relación:
 
-```text id="jlwm0v"
-Ciudades (1) -------- (N) Cines
-
+```text
 Cines (1) -------- (N) Salas
 ```
 
@@ -178,12 +124,12 @@ La tabla **salas** almacena las salas disponibles dentro de cada cine.
 Responsabilidades:
 
 * Definir capacidad de salas
+* Clasificar tipos de sala (2D, 3D, IMAX, etc.)
 * Asociar funciones a espacios físicos
-* Gestionar disponibilidad por sala
 
 Relación:
 
-```text id="uxx65w"
+```text
 Salas (1) -------- (N) Funciones
 ```
 
@@ -191,61 +137,110 @@ Salas (1) -------- (N) Funciones
 
 #### Tabla Categorías
 
-La tabla **categorías** clasifica las películas según su estado o tipo de proyección.
+La tabla **categorias** almacena el género cinematográfico de cada película.
 
 Ejemplos:
 
+* Acción
+* Comedia
+* Drama
+* Terror
+
+Responsabilidades:
+
+* Clasificar películas por género
+* Facilitar búsquedas y filtros
+
+Relación:
+
+```text
+Categorias (1) -------- (N) Peliculas
+```
+
+---
+
+#### Tabla Clasificaciones
+
+La tabla **clasificaciones** almacena las restricciones o recomendaciones de edad para las películas.
+
+Ejemplos:
+
+* PG
+* PG-13
+* R
+* +18
+
+Responsabilidades:
+
+* Informar restricciones de contenido
+* Filtrar contenido según audiencia
+
+Relación:
+
+```text
+Clasificaciones (1) -------- (N) Peliculas
+```
+
+---
+
+#### Tabla Tipo Cartelera
+
+La tabla **tipo_cartelera** almacena el estado de exhibición de una película.
+
+Ejemplos:
+
+* Pre Estreno
 * Estreno
-* Preventa
 * Reestreno
 
 Responsabilidades:
 
-* Organizar contenido
-* Facilitar filtrado de cartelera
-* Mejorar búsquedas
+* Diferenciar disponibilidad de películas
+* Organizar estrenos y contenido disponible
 
 Relación:
 
-```text id="ye9fwv"
-Categorias (1) -------- (N) Peliculas
+```text
+TipoCartelera (1) -------- (N) Peliculas
 ```
 
 ---
 
 #### Tabla Películas
 
-La tabla **películas** almacena la información principal relacionada con el contenido cinematográfico.
+La tabla **peliculas** representa el catálogo principal de contenido disponible dentro de la plataforma.
 
 Responsabilidades:
 
-* Gestionar catálogo de películas
-* Asociar categorías
-* Mantener información descriptiva
+* Registrar información cinematográfica
+* Asociar géneros y clasificaciones
+* Mantener información utilizada por cartelera
 
-Relación:
+Relaciones:
 
-```text id="a7fgwy"
-Peliculas (1) -------- (N) Funciones
+```text
+Categorias (1) -------- (N) Peliculas
+
+Clasificaciones (1) -------- (N) Peliculas
+
+TipoCartelera (1) -------- (N) Peliculas
 ```
 
 ---
 
 #### Tabla Funciones
 
-La tabla **funciones** representa cada horario disponible para una película específica.
+La tabla **funciones** almacena las proyecciones disponibles para reservar.
 
 Responsabilidades:
 
-* Gestionar horarios
+* Definir horarios disponibles
 * Asociar películas con salas
-* Proporcionar disponibilidad para reservas
+* Proporcionar información para reservas
 
-Esta tabla funciona como punto de integración con otros servicios.
+Relaciones:
 
-Relación:
-
-```text id="wd8o9r"
+```text
 Peliculas (1) -------- (N) Funciones
 
 Salas (1) -------- (N) Funciones
@@ -253,119 +248,98 @@ Salas (1) -------- (N) Funciones
 
 ---
 
-#### Integración con otros servicios
+#### Relación con otros servicios
 
-Este servicio comparte información mediante identificadores externos.
+Este servicio comparte información con otros módulos mediante identificadores externos.
 
-Expone:
+Servicios consumidores:
 
-```text id="gqj9n2"
-id_funcion
-id_pelicula
-id_sala
-```
+* Servicio de Reservas → utiliza `id_funcion_externa` para reservar asientos
+* Servicio de Notificaciones → utiliza información de funciones para mensajes
+* Servicio de Pagos → utiliza información proveniente de reservas asociadas a funciones
 
-Consumido por:
+Esta separación permite que la información de cartelera pueda administrarse independientemente del resto del sistema.
 
-* Servicio de Reservas
-* Servicio de Notificaciones
-
-Flujo principal:
-
-```text id="y2wg5u"
-Usuario
-↓
-Selecciona ciudad
-↓
-Selecciona cine
-↓
-Selecciona película
-↓
-Selecciona función
-↓
-Servicio de Reservas consume id_funcion
-```
-
-La separación de este módulo permite mantener independencia entre la lógica de cartelera y los procesos críticos de reserva y pago.
-
-![alt text](02-ER_FUNCIONES.png)
 
 
 ### 3. Manejo de Reservas y Asientos
 
-El servicio de reservas y asientos es responsable de administrar la disponibilidad de asientos, gestionar reservas temporales y confirmar compras realizadas por los usuarios. Este módulo representa uno de los componentes críticos del sistema debido a que debe soportar escenarios concurrentes donde múltiples usuarios intentan seleccionar los mismos asientos simultáneamente.
+Para la gestión de reservas se implementó un servicio independiente encargado de administrar la disponibilidad de asientos, controlar reservas temporales y gestionar la compra de boletos asociados a funciones específicas.
+
+Este servicio representa uno de los componentes más importantes del sistema debido a que debe controlar escenarios donde múltiples usuarios intentan reservar los mismos asientos simultáneamente.
 
 Las tablas utilizadas para este módulo fueron:
 
+* Estado Asiento
 * Asientos
-* Estado Reserva
 * Reservas
 * Reserva Detalle
 * Boletos
 
 ![alt text](03-ER_RESERVAS.png)
 
-#### Tabla Asientos
+#### Tabla Estado Asiento
 
-La tabla **asientos** almacena los asientos disponibles asociados a una función específica.
+La tabla **estado_asiento** almacena los estados posibles que puede tener un asiento dentro de una función.
+
+Estados utilizados:
+
+* Libre
+* Pendiente de Pago
+* Ocupado
 
 Responsabilidades:
 
-* Representar asientos disponibles
-* Asociar asientos a funciones
-* Controlar disponibilidad por función
-
-Cada asiento se encuentra vinculado mediante un identificador externo correspondiente a la función.
+* Controlar disponibilidad de asientos
+* Gestionar reservas temporales
+* Evitar conflictos entre múltiples usuarios
 
 Relación:
 
-```text id="ycjlyc"
-Asientos (1) -------- (N) ReservaDetalle
+```text id="d9kjx3"
+EstadoAsiento (1) -------- (N) Asientos
 ```
 
 ---
 
-#### Tabla Estado Reserva
+#### Tabla Asientos
 
-La tabla **estado_reserva** administra el ciclo de vida de las reservas.
+La tabla **asientos** almacena los asientos disponibles para cada función.
 
-Estados implementados:
-
-* Temporal
-* Confirmada
-* Expirada
-* Cancelada
+Cada asiento se encuentra asociado a una función específica mediante un identificador externo, permitiendo manejar disponibilidad independiente entre funciones.
 
 Responsabilidades:
 
-* Controlar estados de reserva
-* Gestionar expiraciones automáticas
-* Facilitar validaciones de negocio
+* Mantener disponibilidad por función
+* Asociar estados de ocupación
+* Evitar duplicidad de reservas
 
 Relación:
 
-```text id="9fj9z8"
-EstadoReserva (1) -------- (N) Reservas
+```text id="4ik92w"
+EstadoAsiento (1) -------- (N) Asientos
+
+Asientos (1) -------- (N) ReservaDetalle
 ```
 
 ---
 
 #### Tabla Reservas
 
-La tabla **reservas** representa la entidad principal del servicio y almacena la información general de una reserva realizada por un usuario.
+La tabla **reservas** almacena la información principal relacionada con una reserva realizada por un usuario.
 
 Responsabilidades:
 
-* Registrar reservas realizadas
-* Asociar usuarios externos
-* Controlar tiempos de expiración
-* Gestionar estados
+* Asociar reservas a usuarios
+* Registrar tiempos de expiración
+* Mantener información general de compra
+* Controlar montos asociados
 
-La reserva utiliza un identificador externo del usuario para mantener independencia entre servicios.
+Cada reserva utiliza un identificador externo del usuario para mantener independencia entre servicios.
 
 Relación:
 
-```text id="7t8qri"
+```text id="82s7xy"
 Reservas (1) -------- (N) ReservaDetalle
 
 Reservas (1) -------- (1) Boletos
@@ -375,17 +349,17 @@ Reservas (1) -------- (1) Boletos
 
 #### Tabla Reserva Detalle
 
-La tabla **reserva_detalle** funciona como una tabla intermedia que permite asociar múltiples asientos a una reserva.
+La tabla **reserva_detalle** funciona como intermediario entre reservas y asientos, permitiendo asociar múltiples asientos a una misma compra.
 
 Responsabilidades:
 
-* Relacionar asientos reservados
-* Soportar múltiples boletos por compra
+* Relacionar reservas con asientos
+* Permitir múltiples asientos por compra
 * Mantener trazabilidad de selección
 
 Relación:
 
-```text id="l4g9km"
+```text id="5iy7lv"
 Reservas (1) -------- (N) ReservaDetalle
 
 Asientos (1) -------- (N) ReservaDetalle
@@ -395,141 +369,86 @@ Asientos (1) -------- (N) ReservaDetalle
 
 #### Tabla Boletos
 
-La tabla **boletos** almacena la evidencia final generada después de completar exitosamente el proceso de compra.
+La tabla **boletos** almacena la evidencia generada después de completar exitosamente una compra.
 
 Responsabilidades:
 
-* Generar comprobantes de compra
-* Asociar códigos QR
-* Mantener evidencia de acceso
+* Generar comprobantes de acceso
+* Asociar boletos a reservas
+* Mantener información de emisión
 
 Relación:
 
-```text id="7h6m1q"
+```text id="l6zcsm"
 Reservas (1) -------- (1) Boletos
 ```
 
 ---
 
-#### Integración con otros servicios
+#### Relación con otros servicios
 
-Este servicio interactúa directamente con múltiples módulos del sistema.
+Este servicio interactúa constantemente con otros módulos del sistema.
 
-Consume información desde:
+Servicios relacionados:
 
-```text id="f2k4cg"
-Movie Service:
-- id_funcion
-
-User Service:
-- usuario_id
-```
-
-Comparte información hacia:
-
-```text id="0pqjql"
-Payment Service:
-- reserva_id
-
-Notification Service:
-- estado_reserva
-- boleto_generado
-```
+* Servicio de Usuarios → utiliza `usuario_id_externo` para asociar clientes
+* Servicio de Cartelera → utiliza `id_funcion_externa` para identificar funciones
+* Servicio de Pagos → procesa montos asociados a reservas
+* Servicio de Notificaciones → informa cambios de estado y emisión de boletos
 
 ---
 
-#### Comunicación Asíncrona
+#### Manejo de concurrencia
 
-Debido a los problemas de concurrencia, este servicio utiliza mensajería asíncrona para procesar operaciones críticas.
+Debido a que múltiples usuarios pueden intentar reservar el mismo asiento simultáneamente, se implementa un control mediante estados.
 
-Eventos generados:
+Flujo general:
 
-```text id="yyzvww"
-seat_reserved
+```text id="zrm9jp"
+LIBRE
 
-reservation_confirmed
+↓
 
-reservation_expired
+PENDIENTE_PAGO
+
+↓
+
+Pago aprobado ?
+
+↓           ↓
+
+Sí          No
+
+↓           ↓
+
+OCUPADO    LIBRE
 ```
 
-Eventos consumidos:
-
-```text id="2xzzv4"
-payment_completed
-
-payment_failed
-```
-
----
-
-#### Flujo principal del servicio
-
-```text id="1zj6ju"
-Usuario selecciona función
-↓
-Usuario selecciona asientos
-↓
-Reserva temporal creada
-↓
-Evento enviado a cola
-↓
-Pago procesado
-↓
-Reserva confirmada
-↓
-Boleto generado
-```
-
-La separación de este servicio permite manejar procesos concurrentes de forma independiente, reduciendo conflictos y manteniendo desacoplada la lógica crítica de negocio.
-
-![alt text](03-ER_RESERVAS.png)
+Esto permite bloquear temporalmente los asientos mientras un usuario completa el proceso de pago, evitando conflictos entre reservas concurrentes.
 
 ### 4. Manejo de Pagos
 
-El servicio de pagos es responsable de procesar las transacciones financieras asociadas a las reservas realizadas por los usuarios. Su principal objetivo es validar pagos, registrar transacciones y comunicar el resultado del proceso hacia otros servicios del ecosistema.
+Para la gestión financiera del sistema se implementó un servicio independiente encargado de procesar pagos realizados mediante tarjeta y registrar la información relacionada con las transacciones generadas.
+
+Este servicio recibe información proveniente del módulo de reservas y devuelve el resultado del procesamiento para confirmar o rechazar compras realizadas por los usuarios.
 
 Las tablas utilizadas para este módulo fueron:
 
-* Métodos de Pago
 * Pagos
 * Transacciones
 
 ![alt text](04-ER_PAGOS.png)
 
-#### Tabla Métodos de Pago
-
-La tabla **metodos_pago** almacena los tipos de pago disponibles dentro de la plataforma.
-
-Ejemplos:
-
-* Tarjeta de crédito
-* Tarjeta de débito
-* Transferencia
-
-Responsabilidades:
-
-* Definir métodos disponibles
-* Facilitar validaciones de pago
-* Asociar pagos con un método específico
-
-Relación:
-
-```text id="n61n0z"
-MetodosPago (1) -------- (N) Pagos
-```
-
----
-
 #### Tabla Pagos
 
-La tabla **pagos** representa la entidad principal del servicio y almacena la información relacionada con el proceso financiero asociado a una reserva.
+La tabla **pagos** representa la entidad principal del servicio y almacena la información relacionada con el proceso de pago realizado por el usuario.
 
 Responsabilidades:
 
-* Registrar pagos realizados
-* Asociar pagos a reservas externas
-* Gestionar estados de pago
-* Mantener historial financiero
+* Registrar pagos asociados a reservas
+* Almacenar montos procesados
+* Mantener información básica de la tarjeta utilizada
+* Controlar estados del pago realizado
 
 Estados posibles:
 
@@ -537,11 +456,19 @@ Estados posibles:
 * Aprobado
 * Rechazado
 
-La tabla utiliza identificadores externos provenientes del servicio de reservas.
+Cada pago utiliza identificadores externos provenientes del servicio de reservas para mantener independencia entre servicios.
+
+Información almacenada:
+
+* Reserva asociada
+* Monto pagado
+* Estado del pago
+* Información parcial de tarjeta
+* Fecha del pago
 
 Relación:
 
-```text id="ddg4av"
+```text id="7um7cx"
 Pagos (1) -------- (1) Transacciones
 ```
 
@@ -549,92 +476,73 @@ Pagos (1) -------- (1) Transacciones
 
 #### Tabla Transacciones
 
-La tabla **transacciones** almacena la evidencia técnica del proceso financiero.
+La tabla **transacciones** almacena la evidencia técnica generada durante el procesamiento financiero.
 
 Responsabilidades:
 
-* Guardar referencias de transacción
-* Mantener auditoría financiera
-* Registrar autorizaciones generadas
+* Registrar referencias de pago
+* Mantener historial financiero
+* Almacenar autorizaciones generadas
+* Facilitar auditoría de operaciones
+
+Información almacenada:
+
+* Identificador de transacción
+* Código de autorización
+* Referencia financiera
+* Fecha de procesamiento
 
 Relación:
 
-```text id="c11jcm"
+```text id="3f8v8y"
 Pagos (1) -------- (1) Transacciones
 ```
 
 ---
 
-#### Integración con otros servicios
+#### Relación con otros servicios
 
-Este servicio consume y genera información hacia otros módulos del sistema.
+Este servicio se comunica con otros módulos mediante identificadores externos.
 
-Consume:
+Servicios relacionados:
 
-```text id="ok1q1x"
-Reservation Service:
+* Servicio de Reservas → utiliza `reserva_id_externa` para procesar compras
+* Servicio de Notificaciones → informa pagos aprobados o rechazados
 
-- reserva_id
-- monto_total
-```
-
-Comparte:
-
-```text id="jz1p5q"
-Reservation Service:
-
-- estado_pago
-
-Notification Service:
-
-- pago_confirmado
-```
+El servicio no accede directamente a otras bases de datos, manteniendo el desacoplamiento requerido dentro de la arquitectura.
 
 ---
 
-#### Comunicación Asíncrona
+#### Flujo general del pago
 
-Las operaciones financieras se procesan mediante colas de mensajería para evitar bloqueos en el flujo principal.
+```text id="z5m6wi"
+Reserva creada
+↓
+Ingresar información de tarjeta
+↓
+Procesar pago
+↓
+¿Pago aprobado?
 
-Eventos consumidos:
+↓            ↓
 
-```text id="lzjlwm"
-reservation_confirmed
-payment_requested
+Sí           No
+
+↓            ↓
+
+Registrar    Rechazar
+transacción  pago
+↓
+Confirmar compra
 ```
 
-Eventos generados:
-
-```text id="azjexm"
-payment_completed
-payment_failed
-```
-
----
-
-#### Flujo principal del servicio
-
-```text id="ifc0fq"
-Reserva confirmada
-↓
-Solicitud enviada a cola
-↓
-Pago procesado
-↓
-Transacción registrada
-↓
-Resultado enviado
-↓
-Actualización de reserva
-```
-
-La separación de este servicio permite mantener independencia entre la lógica financiera y los demás componentes, facilitando la escalabilidad y reduciendo el acoplamiento entre dominios.
-
-![alt text](04-ER_PAGOS.png)
+La separación de este servicio permite mantener aislada la lógica financiera, facilitando futuras modificaciones o integraciones sin afectar el resto de componentes del sistema.
 
 ### 5. Manejo de Notificaciones
 
-El servicio de notificaciones es responsable de administrar y enviar comunicaciones automáticas relacionadas con eventos importantes dentro de la plataforma. Este módulo opera de manera desacoplada consumiendo eventos generados por otros servicios y generando mensajes dirigidos hacia los usuarios.
+Para la comunicación con los usuarios se implementó un servicio independiente encargado de generar y enviar notificaciones relacionadas con eventos importantes dentro de la plataforma.
+
+Este servicio funciona de manera desacoplada, consumiendo información generada por otros módulos y notificando cambios relevantes a los usuarios registrados.
 
 Las tablas utilizadas para este módulo fueron:
 
@@ -645,24 +553,24 @@ Las tablas utilizadas para este módulo fueron:
 
 #### Tabla Plantillas
 
-La tabla **plantillas** almacena estructuras reutilizables para la generación de mensajes enviados a los usuarios.
+La tabla **plantillas** almacena estructuras reutilizables para los mensajes generados dentro del sistema.
 
 Responsabilidades:
 
 * Estandarizar mensajes enviados
-* Facilitar reutilización de contenido
-* Reducir duplicación de información
+* Reutilizar contenido frecuente
+* Facilitar generación automática de mensajes
 
 Ejemplos de plantillas:
 
-* Compra Exitosa
-* Reserva Expirada
-* Pago Confirmado
+* Pago Aprobado
+* Reserva Confirmada
+* Compra Rechazada
 * Boleto Generado
 
 Relación:
 
-```text id="f1t0ij"
+```text id="m2x8gh"
 Plantillas (1) -------- (N) Notificaciones
 ```
 
@@ -670,14 +578,14 @@ Plantillas (1) -------- (N) Notificaciones
 
 #### Tabla Notificaciones
 
-La tabla **notificaciones** representa cada mensaje generado y enviado por el sistema.
+La tabla **notificaciones** representa cada mensaje generado y enviado hacia los usuarios.
 
 Responsabilidades:
 
 * Registrar envíos realizados
 * Mantener historial de notificaciones
+* Asociar mensajes con usuarios
 * Controlar estado de envío
-* Asociar mensajes con usuarios externos
 
 Estados posibles:
 
@@ -685,86 +593,67 @@ Estados posibles:
 * Enviada
 * Error
 
-Cada registro utiliza identificadores externos para mantener independencia respecto a otros servicios.
+Información almacenada:
+
+* Usuario asociado
+* Plantilla utilizada
+* Estado del envío
+* Fecha de creación
 
 Relación:
 
-```text id="xyrj4t"
+```text id="d4j7ts"
 Plantillas (1) -------- (N) Notificaciones
 ```
 
 ---
 
-#### Integración con otros servicios
+#### Relación con otros servicios
 
-Este servicio consume información generada por otros módulos del sistema.
+Este servicio recibe información generada por otros módulos utilizando identificadores externos.
 
-Consume eventos provenientes de:
+Servicios relacionados:
 
-```text id="wukv90"
-Reservation Service
+* Servicio de Usuarios → obtiene información del cliente
+* Servicio de Reservas → recibe confirmaciones o expiraciones
+* Servicio de Pagos → recibe estados de pago
+* Servicio de Cartelera → utiliza información relacionada con funciones y boletos
 
-- reserva_confirmada
-- reserva_expirada
-- boleto_generado
-
-Payment Service
-
-- pago_aprobado
-- pago_rechazado
-
-User Service
-
-- usuario_id
-- correo_usuario
-```
-
-No expone relaciones directas hacia otras bases de datos y únicamente utiliza identificadores externos.
+Este desacoplamiento permite que las notificaciones funcionen independientemente del resto del sistema.
 
 ---
 
-#### Comunicación Asíncrona
+#### Eventos que generan notificaciones
 
-Este servicio trabaja completamente mediante eventos asíncronos, evitando bloquear procesos críticos del sistema.
+Algunos eventos importantes procesados por este servicio son:
 
-Eventos consumidos:
+```text id="u4h5zv"
+Reserva confirmada
 
-```text id="c19i9t"
-payment_completed
+Reserva expirada
 
-payment_failed
+Pago aprobado
 
-reservation_confirmed
+Pago rechazado
 
-reservation_expired
-
-ticket_generated
-```
-
-Eventos generados:
-
-```text id="wg6k3m"
-notification_sent
-
-notification_failed
+Boleto generado
 ```
 
 ---
 
-#### Flujo principal del servicio
+#### Flujo general de notificaciones
 
-```text id="pry6mz"
+```text id="w9j1kr"
 Evento recibido
 ↓
-Validación de plantilla
+Seleccionar plantilla
 ↓
-Construcción del mensaje
+Construir mensaje
 ↓
-Envío de correo/notificación
+Enviar notificación
 ↓
-Registro del resultado
+Guardar resultado
 ```
 
-La separación de este servicio permite centralizar toda la lógica relacionada con comunicación hacia usuarios, reduciendo acoplamiento y permitiendo escalar el sistema de notificaciones independientemente del resto de módulos.
+La separación de este servicio permite centralizar toda la lógica relacionada con comunicación hacia usuarios, facilitando futuras ampliaciones o cambios en los mecanismos de envío.
 
-![alt text](05-ER_NOTIFICACIONES.png)
