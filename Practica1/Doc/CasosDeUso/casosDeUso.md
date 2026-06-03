@@ -7,25 +7,25 @@
 ![Caso de Uso de Alto Nivel](./img/CasoDeUsoAltoNivel.png)
 
 ## Primera descomposición
-**CDU001**: **Registro e inicio de sesión**: Es el punto de partido para que cualquier usuario pueda interactuar con el sistema. Permite a los usuarios crear una cuenta y autenticarse para acceder a las funcionalidades del sistema.
+**CDU01**: **Registro e inicio de sesión**: Es el punto de partido para que cualquier usuario pueda interactuar con el sistema. Permite a los usuarios crear una cuenta y autenticarse para acceder a las funcionalidades del sistema.
 
-**CDU002**: **Gestión de información personal**: Permite a los usuarios actualizar su información personal, como nombre, correo electrónico y contraseña. De la misma manera, permite a los usuarios gestionar su perfil.
+**CDU02**: **Gestión de información personal**: Permite a los usuarios actualizar su información personal, como nombre, correo electrónico y contraseña. De la misma manera, permite a los usuarios gestionar su perfil.
 
-**CDU003**: **Gestión de películas y cartelera**: Permite al administrador gestionar las películas del sistema y mostrarlas en cartelera según su tipo de proyección.
+**CDU03**: **Gestión de películas y cartelera**: Permite al administrador gestionar las películas del sistema y mostrarlas en cartelera según su tipo de proyección.
 
-**CDU004**: **Gestión de funciones**: Permite al administrador gestionar las funciones de las películas, incluyendo la asignación de horarios y salas.
+**CDU04**: **Gestión de funciones**: Permite al administrador gestionar las funciones de las películas, incluyendo la asignación de horarios y salas.s
 
-**CDU005**: **Reserva y Compra de Boletos**: Permite a los usuarios seleccionar su ubicación, explorar funciones disponibles, reservar asientos en tiempo real y completar la compra de sus boletos.
+**CDU05**: **Reserva y Compra de Boletos**: Permite a los usuarios seleccionar su ubicación, explorar funciones disponibles, reservar asientos en tiempo real y completar la compra de sus boletos.
 
 ![Primera Descomposicion](./img/primeraDescomposicion.png)
 
 # Casos de uso expandidos
 ## Registro e inicio de sesión
-### CU-01: Registrar Cliente
+### CDU-001.1: Registrar Cliente
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-01 |
+| **ID** | CDU-001.1 |
 | **Nombre** | Registrar Cliente |
 | **Actor** | Usuario |
 | **Descripción** | Permite a un nuevo usuario crear una cuenta en la plataforma proporcionando sus datos personales para acceder a las funcionalidades del sistema. |
@@ -47,7 +47,7 @@
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El usuario ya tiene una cuenta | En el paso 5, el sistema notifica que el correo ya está en uso y sugiere iniciar sesión. |
-| FA-02 | El usuario cancela el registro | En cualquier paso, el usuario puede cancelar y el sistema descarta los datos ingresados. |
+| FA-02 | El usuario cancela el registro | El usuario puede cancelar y el sistema descarta los datos ingresados. |
 
 **Flujos de excepción:**
 | ID | Condición | Acción |
@@ -58,11 +58,11 @@
 
 ---
 
-### CU-02: Iniciar Sesión
+### CDU-001.2: Iniciar Sesión
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-03 |
+| **ID** | CDU-001.2 |
 | **Nombre** | Iniciar Sesión |
 | **Actor** | Usuario |
 | **Descripción** | Permite a un usuario registrado autenticarse en la plataforma mediante su correo electrónico y contraseña para acceder a las funcionalidades del sistema. |
@@ -102,11 +102,11 @@
 
 ## Gestión de información personal
 
-### CU-03: Actualizar Datos Personales
+### CDU-002.1: Actualizar Datos Personales
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-03 |
+| **ID** | CDU-002.1 |
 | **Nombre** | Actualizar Datos Personales |
 | **Actor** | Cliente, Administrador |
 | **Descripción** | Permite al usuario modificar su nombre y correo electrónico registrados en la plataforma. |
@@ -141,11 +141,11 @@
 
 ---
 
-### CU-04: Cambiar Contraseña
+### CDU-002.2: Cambiar Contraseña
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-04 |
+| **ID** | CDU-002.2 |
 | **Nombre** | Cambiar Contraseña |
 | **Actor** | Cliente, Administrador |
 | **Descripción** | Permite al usuario actualizar su contraseña actual por una nueva, previa verificación de la contraseña vigente. |
@@ -181,11 +181,11 @@
 
 ---
 
-### CU-05: Cerrar Sesión
+### CDU-002.3: Cerrar Sesión
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-05 |
+| **ID** | CDU-002.3 |
 | **Nombre** | Cerrar Sesión |
 | **Actor** | Cliente, Administrador |
 | **Descripción** | Permite al usuario finalizar su sesión activa en la plataforma, invalidando el token de autenticación. |
@@ -216,31 +216,31 @@
 
 ## Gestión de películas y cartelera
 
-### CU-06: Visualizar Cartelera por Categoría
+### CDU-003.1: Visualizar Cartelera por Categoría
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-06 |
+| **ID** | CDU-003.1 |
 | **Nombre** | Visualizar Cartelera por Categoría |
-| **Actor** | Cliente |
-| **Descripción** | Permite al cliente explorar las películas disponibles en cartelera, segmentadas por su tipo de proyección: Estrenos, Pre-ventas y Re-Estrenos. |
+| **Actor** | Cliente, Administrador |
+| **Descripción** | Permite al usuario explorar las películas disponibles en cartelera, segmentadas por su tipo de proyección: Estrenos, Pre-ventas y Re-Estrenos. |
 | **Precondiciones** | Existe al menos una película registrada en el catálogo. |
-| **Postcondiciones** | El cliente visualiza las películas disponibles según la categoría seleccionada. |
+| **Postcondiciones** | El usuario visualiza las películas disponibles según la categoría seleccionada. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Accede a la sección de cartelera desde la página principal. |
-| 2 | Cliente | Selecciona una categoría de proyección: Estrenos, Pre-ventas o Re-Estrenos. |
+| 1 | Cliente, Administrador | Accede a la sección de cartelera desde la página principal. |
+| 2 | Cliente, Administrador | Selecciona una categoría de proyección: Estrenos, Pre-ventas o Re-Estrenos. |
 | 3 | Sistema | Recupera y muestra las películas activas correspondientes a la categoría seleccionada. |
-| 4 | Cliente | Navega por el listado de películas disponibles. |
+| 4 | Cliente, Administrador | Navega por el listado de películas disponibles. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente no selecciona categoría | En el paso 2, el sistema muestra todas las películas disponibles sin filtro de categoría. |
+| FA-01 | El usuario no selecciona categoría | En el paso 2, el sistema muestra todas las películas disponibles sin filtro de categoría. |
 
 **Flujos de excepción:**
 
@@ -250,31 +250,31 @@
 
 ---
 
-### CU-07: Ver Detalle de Película
+### CDU-003.2: Ver Detalle de Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-07 |
+| **ID** | CDU-003.2 |
 | **Nombre** | Ver Detalle de Película |
-| **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar la información completa de una película seleccionada desde la cartelera, incluyendo sinopsis, duración, género y funciones disponibles. |
+| **Actor** | Cliente, Administrador |
+| **Descripción** | Permite al usuario consultar la información completa de una película seleccionada desde la cartelera, incluyendo sinopsis, duración, género y funciones disponibles. |
 | **Precondiciones** | La película existe en el catálogo y tiene al menos una función programada. |
-| **Postcondiciones** | El cliente visualiza los detalles de la película y puede proceder a seleccionar una función. |
+| **Postcondiciones** | El usuario visualiza los detalles de la película y puede proceder a seleccionar una función. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Selecciona una película desde la cartelera. |
+| 1 | Cliente, Administrador | Selecciona una película desde la cartelera. |
 | 2 | Sistema | Recupera y muestra los detalles de la película. |
 | 3 | Sistema | Muestra las funciones disponibles para la película (cine, sala, fecha y horario). |
-| 4 | Cliente | Revisa la información y selecciona una función para continuar con la compra. |
+| 4 | Cliente, Administrador | Revisa la información y selecciona una función para continuar con la compra. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente no selecciona ninguna función | En el paso 4, el cliente puede regresar a la cartelera sin continuar con la compra. |
+| FA-01 | El usuario no selecciona ninguna función | En el paso 4, el usuario puede regresar a la cartelera sin continuar con la compra. |
 
 **Flujos de excepción:**
 
@@ -284,11 +284,11 @@
 
 ---
 
-### CU-15: Registrar Película
+### CDU-003.3: Registrar Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-15 |
+| **ID** | CDU-003.3 |
 | **Nombre** | Registrar Película |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador registrar una nueva película en el catálogo del sistema, asignándole su categoría de proyección. |
@@ -323,11 +323,11 @@
 
 ---
 
-### CU-16: Modificar Película
+### CDU-003.4: Modificar Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-16 |
+| **ID** | CDU-003.4 |
 | **Nombre** | Modificar Película |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador editar los datos de una película existente en el catálogo, incluyendo su categoría de proyección. |
@@ -359,11 +359,11 @@
 
 ---
 
-### CU-17: Eliminar Película
+### CDU-003.5: Eliminar Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-17 |
+| **ID** | CDU-003.5 |
 | **Nombre** | Eliminar Película |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador eliminar una película del catálogo del sistema. |
@@ -396,11 +396,11 @@
 
 ## Gestión de funciones
 
-### CU-08: Registrar Función
+### CDU-004.1: Registrar Función
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-08 |
+| **ID** | CDU-004.1 |
 | **Nombre** | Registrar Función |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador programar una nueva función asignando una película a una sala, fecha y horario específicos. |
@@ -434,11 +434,11 @@
 
 ---
 
-### CU-09: Actualizar Función
+### CDU-004.2: Actualizar Función
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-09 |
+| **ID** | CDU-004.2 |
 | **Nombre** | Actualizar Función |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador modificar los datos de una función existente, como su fecha, horario o sala asignada. |
@@ -470,50 +470,15 @@
 | FE-01 | La función tiene boletos vendidos | En el paso 3, el sistema impide la modificación e informa que existen compras registradas para esta función. |
 | FE-02 | Conflicto de sala y horario | En el paso 4, el sistema notifica que la sala ya tiene una función en el nuevo horario solicitado. |
 
----
-
-### CU-10: Cancelar Función
-
-| Campo | Descripción |
-|-------|-------------|
-| **ID** | CU-10 |
-| **Nombre** | Cancelar Función |
-| **Actor** | Administrador |
-| **Descripción** | Permite al administrador cancelar una función programada, eliminándola del sistema y liberando los asientos asociados. |
-| **Precondiciones** | El administrador tiene una sesión activa y la función existe en el sistema. |
-| **Postcondiciones** | La función queda cancelada y los asientos previamente bloqueados o vendidos son liberados. |
-
-**Flujo principal:**
-
-| Paso | Actor | Acción |
-|------|-------|--------|
-| 1 | Administrador | Accede al listado de funciones y selecciona la función a cancelar. |
-| 2 | Administrador | Confirma la cancelación en el cuadro de diálogo de confirmación. |
-| 3 | Sistema | Verifica el estado de la función y los boletos asociados. |
-| 4 | Sistema | Cancela la función y libera todos los asientos bloqueados o reservados. |
-| 5 | Sistema | Muestra un mensaje de confirmación de cancelación exitosa. |
-
-**Flujos alternativos:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FA-01 | El administrador cancela la acción | En el paso 2, el sistema cierra el diálogo y mantiene la función activa. |
-
-**Flujos de excepción:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FE-01 | Error de conexión con la base de datos | En el paso 4, el sistema muestra un mensaje de error genérico y solicita reintentar. |
-
 ![CDU004](./img/CDU004.png)
 
 ## Reserva y Compra de Boletos
 
-### CU-11: Seleccionar Ubicación
+### CDU-005.1: Seleccionar Ubicación
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-11 |
+| **ID** | CDU-005.1 |
 | **Nombre** | Seleccionar Ubicación |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente seleccionar su ciudad para visualizar dinámicamente los cines disponibles y sus funciones en dicha localidad. |
@@ -543,11 +508,11 @@
 
 ---
 
-### CU-12: Visualizar Funciones Disponibles
+### CDU-005.2: Visualizar Funciones Disponibles
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-12 |
+| **ID** | CDU-005.2 |
 | **Nombre** | Visualizar Funciones Disponibles |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente consultar las funciones disponibles en el cine seleccionado, con sus horarios, sala y disponibilidad de asientos. |
@@ -579,11 +544,11 @@
 
 ---
 
-### CU-13: Seleccionar Asientos
+### CDU-005.3: Seleccionar Asientos
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-13 |
+| **ID** | CDU-005.3 |
 | **Nombre** | Seleccionar Asientos |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente elegir sus asientos mediante un mapa interactivo de la sala, bloqueándolos temporalmente para evitar condiciones de carrera con otros usuarios concurrentes. |
@@ -618,11 +583,11 @@
 
 ---
 
-### CU-14: Procesar Compra y Emitir Boleto
+### CDU-005.4: Procesar Compra y Emitir Boleto
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CU-14 |
+| **ID** | CDU-005.4 |
 | **Nombre** | Procesar Compra y Emitir Boleto |
 | **Actor** | Cliente, Sistema de Pagos |
 | **Descripción** | Permite al cliente confirmar su selección de asientos, procesar el pago a través del sistema externo y recibir su boleto digital como resultado de una transacción exitosa. |
