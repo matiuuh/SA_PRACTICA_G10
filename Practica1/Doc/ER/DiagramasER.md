@@ -20,23 +20,44 @@ Cada uno de los siguientes apartados describe el propósito de las entidades uti
 
 ### 1. Manejo de Usuarios
 
-Para el manejo de usuarios se decidió implementar un servicio independiente encargado de gestionar el registro y autenticación de clientes dentro de la plataforma. Este servicio funciona como el punto central de identificación de los usuarios y permite que los demás servicios puedan relacionar información mediante identificadores externos, evitando dependencias directas entre bases de datos.
+Para el manejo de usuarios se decidió implementar un servicio independiente encargado de gestionar el registro y autenticación de usuarios dentro de la plataforma. Este servicio funciona como el punto central de identificación de los usuarios y permite que los demás servicios puedan relacionar información mediante identificadores externos, evitando dependencias directas entre bases de datos.
 
 Las tablas utilizadas para este módulo fueron:
 
+* Roles
 * Usuarios
 
-![alt text](01-ER_USUARIOS.png)
+#### Tabla Roles
 
-#### Tabla Usuarios
+La tabla **roles** almacena los diferentes tipos de usuario disponibles dentro del sistema. Su propósito es permitir clasificar usuarios según las funcionalidades o privilegios que posean dentro de la plataforma.
 
-La tabla **usuarios** representa la entidad principal del servicio y almacena la información necesaria para identificar a los clientes registrados dentro de la plataforma.
+Ejemplos:
+
+* Cliente
+* Administrador
 
 Responsabilidades:
 
-* Registrar clientes dentro del sistema
+* Clasificar usuarios dentro del sistema
+* Permitir diferenciación de funcionalidades
+* Facilitar escalabilidad para futuros tipos de usuarios
+
+Relación:
+
+```text
+Roles (1) -------- (N) Usuarios
+```
+
+#### Tabla Usuarios
+
+La tabla **usuarios** representa la entidad principal del servicio y almacena la información necesaria para identificar a los usuarios registrados dentro de la plataforma.
+
+Responsabilidades:
+
+* Registrar usuarios dentro del sistema
 * Gestionar credenciales de acceso
 * Mantener información básica del usuario
+* Asociar usuarios a un rol específico
 * Proporcionar identificadores únicos utilizados por otros servicios
 
 Los usuarios registrados dentro de esta tabla podrán interactuar con las funcionalidades principales del sistema, como realizar reservas, efectuar pagos y recibir notificaciones.
@@ -44,34 +65,38 @@ Los usuarios registrados dentro de esta tabla podrán interactuar con las funcio
 Campos principales almacenados:
 
 * Identificador único del usuario
-* Nombre del cliente
+* Nombre del usuario
 * Correo electrónico
-* Contraseña 
+* Contraseña cifrada
 * Fecha de registro
+* Rol asociado
+
+Relación:
+
+```text
+Usuarios (N) -------- (1) Roles
+```
 
 #### Relación con otros servicios
 
-Este servicio no comparte tablas directamente con otros módulos. En su lugar, utiliza el identificador del usuario para relacionar información.
+Este servicio no comparte tablas directamente con otros módulos. En su lugar, utiliza identificadores externos para relacionar información.
 
 Servicios consumidores:
 
 * Servicio de Reservas → utiliza `usuario_id_externo` para asociar reservas
-* Servicio de Pagos → utiliza la reserva asociada al usuario
-* Servicio de Notificaciones → utiliza información del usuario para enviar mensajes
+* Servicio de Pagos → utiliza información relacionada con reservas del usuario
+* Servicio de Notificaciones → utiliza información del usuario para generar mensajes
 
 Esta separación permite mantener desacoplada la arquitectura, evitando dependencias directas entre servicios y facilitando la escalabilidad del sistema.
 
-
 ### 2. Manejo de Funciones en Cartelera
 
-Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas, ubicaciones, salas y horarios disponibles dentro de la plataforma.
+Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas, salas y horarios disponibles dentro de la plataforma.
 
 Este servicio permite organizar la información necesaria para que los usuarios puedan consultar la cartelera, seleccionar funciones y posteriormente realizar reservas.
 
 Las tablas utilizadas para este módulo fueron:
 
-* Ciudades
-* Cines
 * Salas
 * Categorías
 * Clasificaciones
@@ -81,55 +106,24 @@ Las tablas utilizadas para este módulo fueron:
 
 ![alt text](02-ER_FUNCIONES.png)
 
-#### Tabla Ciudades
-
-La tabla **ciudades** almacena las ubicaciones donde existen complejos de cine disponibles.
-
-Responsabilidades:
-
-* Organizar cines por ubicación
-* Facilitar búsquedas por ciudad
-* Permitir escalabilidad geográfica
-
-Relación:
-
-```text
-Ciudades (1) -------- (N) Cines
-```
-
----
-
-#### Tabla Cines
-
-La tabla **cines** almacena la información de los complejos cinematográficos disponibles.
-
-Responsabilidades:
-
-* Registrar complejos de cine
-* Asociar cines a ciudades
-* Agrupar salas disponibles
-
-Relación:
-
-```text
-Cines (1) -------- (N) Salas
-```
-
----
-
 #### Tabla Salas
 
-La tabla **salas** almacena las salas disponibles dentro de cada cine.
+La tabla **salas** almacena las salas disponibles donde se realizarán las funciones dentro de la plataforma.
+
+Cada sala mantiene una referencia externa hacia el servicio de locaciones mediante `id_cine_externo`, permitiendo asociar salas a complejos cinematográficos sin generar dependencias directas entre bases de datos.
 
 Responsabilidades:
 
 * Definir capacidad de salas
-* Clasificar tipos de sala (2D, 3D, IMAX, etc.)
+* Clasificar tipos de sala (2D, 3D, IMAX, VIP, etc.)
 * Asociar funciones a espacios físicos
+* Mantener relación lógica con complejos cinematográficos
 
 Relación:
 
 ```text
+Cines (externo) -------- (N) Salas
+
 Salas (1) -------- (N) Funciones
 ```
 
@@ -192,6 +186,7 @@ Ejemplos:
 * Pre Estreno
 * Estreno
 * Reestreno
+* Cartelera Regular
 
 Responsabilidades:
 
@@ -252,15 +247,14 @@ Salas (1) -------- (N) Funciones
 
 Este servicio comparte información con otros módulos mediante identificadores externos.
 
-Servicios consumidores:
+Servicios relacionados:
 
+* Servicio de Locaciones → utiliza `id_cine_externo` para asociar salas con complejos cinematográficos
 * Servicio de Reservas → utiliza `id_funcion_externa` para reservar asientos
 * Servicio de Notificaciones → utiliza información de funciones para mensajes
 * Servicio de Pagos → utiliza información proveniente de reservas asociadas a funciones
 
 Esta separación permite que la información de cartelera pueda administrarse independientemente del resto del sistema.
-
-
 
 ### 3. Manejo de Reservas y Asientos
 
@@ -657,3 +651,88 @@ Guardar resultado
 
 La separación de este servicio permite centralizar toda la lógica relacionada con comunicación hacia usuarios, facilitando futuras ampliaciones o cambios en los mecanismos de envío.
 
+
+### 6. Manejo de Locaciones
+
+Para la administración de ubicaciones físicas se implementó un servicio independiente encargado de gestionar la información relacionada con ciudades y complejos cinematográficos disponibles dentro de la plataforma.
+
+Este servicio permite centralizar la información geográfica utilizada por otros módulos, evitando duplicidad de información y facilitando la administración de ubicaciones disponibles.
+
+Las tablas utilizadas para este módulo fueron:
+
+* Ciudades
+* Cines
+
+![alt text](06-ER_LOCALIDADES.png)
+
+#### Tabla Ciudades
+
+La tabla **ciudades** almacena las ubicaciones geográficas donde existen complejos cinematográficos disponibles.
+
+Responsabilidades:
+
+* Organizar información geográfica
+* Agrupar cines por ubicación
+* Facilitar búsquedas por ciudad
+* Permitir escalabilidad hacia nuevas ubicaciones
+
+Relación:
+
+```text id="ivq4zx"
+Ciudades (1) -------- (N) Cines
+```
+
+---
+
+#### Tabla Cines
+
+La tabla **cines** almacena la información relacionada con los complejos cinematográficos disponibles dentro de la plataforma.
+
+Responsabilidades:
+
+* Registrar complejos de cine
+* Asociar cines a ciudades
+* Mantener información de ubicación
+* Proporcionar identificadores utilizados por otros servicios
+
+Información almacenada:
+
+* Nombre del cine
+* Dirección
+* Ciudad asociada
+
+Relación:
+
+```text id="w6z3yo"
+Ciudades (1) -------- (N) Cines
+```
+
+---
+
+#### Relación con otros servicios
+
+Este servicio comparte información con otros módulos mediante identificadores externos.
+
+Servicios relacionados:
+
+* Servicio de Cartelera → utiliza `id_cine_externo` para asociar salas a complejos cinematográficos
+* Servicio de Reservas → consume información indirectamente mediante funciones y salas
+* Servicio de Notificaciones → puede utilizar información de ubicación para mensajes informativos
+
+Esta separación permite mantener desacoplada la infraestructura física del sistema respecto a la lógica de negocio asociada a películas y funciones.
+
+---
+
+#### Flujo general de locaciones
+
+```text id="u2d7nv"
+Registrar ciudad
+↓
+Registrar cine
+↓
+Generar identificador
+↓
+Consumir desde otros servicios
+```
+
+El objetivo principal de este servicio es centralizar la información relacionada con ubicaciones físicas, facilitando futuras expansiones geográficas y manteniendo independencia entre dominios.
