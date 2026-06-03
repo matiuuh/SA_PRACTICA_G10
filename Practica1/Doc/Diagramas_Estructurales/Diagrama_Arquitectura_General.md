@@ -27,17 +27,21 @@ Los microservicios mostrados en esta vista son:
 
 - Servicio Auth / Usuarios
 - Servicio de Funciones
-- Servicio Reservas y Asientos
-- Servicio Pagos
+- Servicio de Reservas
+- Servicio de Pagos
+- Servicio de Localidades
 
 Cada servicio se comunica mediante `REST + JWT`, lo que permite mantener autenticacion y autorizacion centralizadas. El API Gateway valida el token JWT y los servicios verifican permisos antes de procesar cada solicitud.
+
+En esta vista, el `Servicio de Localidades` centraliza la informacion de ciudades y cines disponible dentro de la plataforma, por lo que forma parte del flujo sincronico de consulta junto con funciones, reservas y pagos.
 
 La persistencia se encuentra separada por dominio en `PostgreSQL - Cloud SQL`:
 
 - PostgreSQL Auth / Usuarios
 - PostgreSQL Funciones
-- PostgreSQL Reservas / Asientos
+- PostgreSQL Reservas
 - PostgreSQL Pagos
+- PostgreSQL Localidades
 
 El acceso desde los microservicios hacia sus bases de datos se realiza mediante `SQL`, manteniendo aislamiento entre dominios y favoreciendo mantenibilidad, seguridad y escalabilidad.
 
@@ -56,7 +60,7 @@ El acceso desde los microservicios hacia sus bases de datos se realiza mediante 
 
 ### Descripcion
 
-La vista asincronica representa los procesos que no requieren una respuesta inmediata al usuario y que se ejecutan mediante mensajeria. En esta arquitectura, el `Servicio Reserva` publica eventos en `RabbitMQ`, que actua como broker de mensajeria y administra `exchanges`, `queues` y `DLQ`.
+La vista asincronica representa los procesos que no requieren una respuesta inmediata al usuario y que se ejecutan mediante mensajeria. En esta arquitectura, el `Servicio de Reservas` publica eventos en `RabbitMQ`, que actua como broker de mensajeria y administra `exchanges`, `queues` y `DLQ`.
 
 Los eventos generados por las reservas se distribuyen hacia colas especializadas:
 
@@ -77,9 +81,11 @@ Los workers interactuan con `PostgreSQL - Cloud SQL` para actualizar el estado d
 
 Adicionalmente, el `Worker Pagos` realiza una solicitud al `Servicio de Pagos`, y este consume externamente el servicio de `Pago Simulado` mediante `HTTPS`. Una vez completado el proceso, el pago queda registrado en la base de datos correspondiente.
 
+El `Servicio de Localidades` no aparece en esta vista asincronica porque no participa directamente en el procesamiento de eventos de reservas, tickets o pagos.
+
 ### Flujo principal
 
-1. El Servicio Reserva publica el evento `ReservaCreada` en RabbitMQ.
+1. El Servicio de Reservas publica el evento `ReservaCreada` en RabbitMQ.
 2. RabbitMQ distribuye mensajes hacia `cola_tickets`, `cola_reservas` y `cola_pagos`.
 3. Cada worker consume su cola y ejecuta su tarea especifica.
 4. Los workers actualizan la informacion en PostgreSQL segun el dominio afectado.
