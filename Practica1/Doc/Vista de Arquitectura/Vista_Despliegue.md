@@ -1,120 +1,134 @@
+
+
 # 8. Vista Fisica / Vista de Despliegue
 
 ## Introduccion
 
-La vista fisica describe la distribucion de los componentes de software de la plataforma FilmStars sobre la infraestructura donde seran ejecutados. Esta vista permite observar los nodos fisicos o virtuales, contenedores, servicios externos y conexiones de red utilizadas por el sistema.
+La vista fisica describe como se distribuyen los componentes de software de FilmStars sobre la infraestructura de ejecucion. Esta vista permite identificar los nodos principales del sistema, los contenedores desplegados en cada uno, los servicios externos integrados y los protocolos de comunicacion utilizados entre ellos.
 
-El sistema se despliega en varios nodos: un servidor frontend, un servidor backend que actua como host de contenedores Docker, un broker de mensajeria RabbitMQ, un servicio de bases de datos PostgreSQL y un conjunto de servicios externos. La comunicacion entre cliente, frontend y backend se realiza mediante HTTPS, mientras que los procesos asincronos utilizan AMQP a traves de RabbitMQ.
+El diagrama muestra una arquitectura desplegada en varios nodos separados: clientes, servidor frontend, servidor backend con microservicios en contenedores, broker de mensajeria, servicio de bases de datos PostgreSQL y servicios externos. La solucion combina interacciones sincrona mediante HTTPS con integracion asincrona mediante AMQP.
 
 ---
 
-# Nodos del Sistema
+## Nodos del Sistema
 
 ## 1. Nodo Cliente
 
-Representa a los usuarios que interactuan con la plataforma FilmStars desde un navegador web. En el diagrama se muestra el acceso del cliente hacia la plataforma.
+Representa a los actores que interactuan con la plataforma desde un navegador web.
 
 ### Componentes
+
 - Cliente
+- Admin
 
 ### Comunicacion
-- HTTPS hacia el servidor frontend
+
+- HTTPS hacia el servidor frontend por el puerto 443
 
 ---
 
 ## 2. Servidor Frontend
 
-Contiene la aplicacion web desarrollada con React y Vite, encargada de presentar la interfaz del sistema y canalizar las solicitudes hacia el backend.
+Contiene la aplicacion web encargada de presentar la interfaz del sistema y redirigir las solicitudes del usuario hacia el backend.
 
 ### Componentes
+
 - Frontend Web (React + Vite)
 
 ### Comunicacion
-- HTTPS desde cliente
-- HTTPS hacia API Gateway
+
+- HTTPS desde Cliente y Admin por el puerto 443
+- HTTPS hacia el servidor backend por el puerto 443
 
 ---
 
 ## 3. Servidor Backend (Docker Host)
 
-Contiene los servicios principales del sistema desplegados como contenedores dentro de un mismo host backend.
+Agrupa los servicios principales del sistema desplegados como contenedores dentro de un host de Docker.
 
 ### Componentes
-- API Gateway (Express / NestJS)
+
+- API Gateway (Express / NestJS) - Puerto 3000
 - Servicio de Autenticacion
-- Servicio de Peliculas
 - Servicio de Funciones
-- Servicio de Reservas y Asientos
+- Servicio de Reservas y asientos
 - Servicio de Pagos
-- Servicio de Notificaciones
 
 ### Comunicacion
-- REST interno entre API Gateway y servicios
-- HTTPS / REST API hacia servicios externos
-- Async / AMQP hacia RabbitMQ
-- TCP/IP hacia PostgreSQL
+
+- HTTPS desde el servidor frontend
+- REST interno entre API Gateway y microservicios
+- HTTPS hacia servicios externos
+- AMQP hacia RabbitMQ por el puerto 5672
+- TCP/IP hacia PostgreSQL por el puerto 5432
 
 ---
 
 ## 4. Broker de Mensajeria
 
-Contiene el broker RabbitMQ encargado de soportar la comunicacion asincrona entre los servicios internos.
+Representa el nodo dedicado a la comunicacion asincrona entre componentes internos.
 
 ### Componentes
+
 - RabbitMQ
 
 ### Comunicacion
-- Async / AMQP con Servicio de Reservas y Asientos
-- Async / AMQP con Servicio de Pagos
+
+- AMQP con el servidor backend por el puerto 5672
 
 ---
 
 ## 5. Servicio de Bases de Datos (PostgreSQL)
 
-Contiene la persistencia del sistema en PostgreSQL. Segun el diagrama, este nodo agrupa varias bases o contenedores de datos organizados por dominio funcional.
+Concentra la persistencia del sistema en bases de datos separadas por dominio funcional.
 
 ### Componentes
+
 - Usuarios
 - Funciones
 - Reservas
 - Pagos
-- Notificaciones
 
 ### Comunicacion
-- TCP/IP desde los servicios del backend
+
+- TCP/IP desde los servicios del backend por el puerto 5432
 
 ---
 
 ## 6. Servicios Externos
 
-Agrupa las integraciones externas utilizadas por la plataforma para pagos y envio de correos.
+Agrupa las integraciones externas consumidas por la plataforma.
 
 ### Componentes
+
 - Pago Simulado
 - Proveedor Email
 
 ### Comunicacion
-- HTTPS (REST API) con Servicio de Pagos
-- SMTP / API con Servicio de Notificaciones
+
+- HTTPS con el backend por el puerto 443
+- SMTP con el backend por el puerto 587
 
 ---
 
-# Diagrama de Vista Fisica
+## Diagrama de Vista Fisica
 
-![Diagrama de Vista Fisica](<imagenes/diagramas vistas.png>)
+![Diagrama de Vista Fisica](imagenes/VISTADESPLIEGUE.png)
 
 ---
 
-# Explicacion del Diagrama
+## Explicacion del Diagrama
 
-El cliente accede a la plataforma mediante HTTPS a traves del servidor frontend, donde se encuentra desplegada la aplicacion web construida con React y Vite.
+El acceso al sistema inicia desde los actores Cliente y Admin, quienes se conectan por HTTPS al servidor frontend usando el puerto 443. En este nodo se encuentra desplegada la aplicacion Frontend Web desarrollada con React + Vite.
 
-El frontend se comunica por HTTPS con el API Gateway alojado en el servidor backend. Desde este punto se enrutan las solicitudes hacia los servicios de autenticacion, peliculas, funciones, reservas, pagos y notificaciones.
+El frontend se comunica por HTTPS con el servidor backend, donde reside el API Gateway. Este componente funciona como punto central de entrada y distribuye las solicitudes hacia los microservicios internos de autenticacion, funciones, reservas y asientos, y pagos.
 
-El backend se encuentra desplegado sobre un Docker Host, donde cada servicio corre en su propio contenedor. Esto permite aislar responsabilidades y mantener una organizacion clara de los componentes de aplicacion.
+Dentro del servidor backend, los microservicios se encuentran organizados bajo un esquema SOA y desplegados en contenedores. Esta separacion permite aislar responsabilidades, facilitar el mantenimiento y favorecer la escalabilidad de la solucion.
 
-Los procesos asincronos se apoyan en RabbitMQ mediante AMQP. En el diagrama se observa el intercambio asincrono principalmente entre el Servicio de Reservas y Asientos, el broker y el Servicio de Pagos.
+El Servicio de Reservas y asientos interactua con RabbitMQ para soportar procesos asincronos mediante AMQP en el puerto 5672. Este mecanismo desacopla operaciones internas y permite manejar mejor tareas que no requieren respuesta inmediata.
 
-Las integraciones externas se realizan desde el backend hacia un servicio de pago simulado mediante HTTPS y hacia un proveedor de correo mediante SMTP o API.
+La persistencia se aloja en un servicio PostgreSQL, donde existen contenedores o bases de datos independientes para usuarios, funciones, reservas y pagos. El acceso se realiza mediante TCP/IP en el puerto 5432.
 
-La persistencia se concentra en PostgreSQL, donde se representan contenedores o bases de datos organizadas por dominio: usuarios, funciones, reservas, pagos y notificaciones.
+Finalmente, el backend mantiene integraciones con servicios externos. La pasarela de pago simulada se consume mediante HTTPS por el puerto 443, mientras que el proveedor de correo se integra mediante SMTP por el puerto 587.
+
+[Volver a Documentacion](../Documentación.md)

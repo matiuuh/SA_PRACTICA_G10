@@ -1,18 +1,101 @@
-![Diagrama de Arquitectura General — FilmStars](imagenes/DiagramaArquitectura.png)
 
-Descripción
-------------
 
-Este diagrama muestra la arquitectura general propuesta para la aplicación "FilmStars" desplegada en Google Cloud Platform (GCP). Incluye los siguientes componentes principales:
+# Diagrama de Arquitectura General
 
-- Frontend: Aplicación React + Vite que sirve contenido estático (CDN / Cloud Storage) y consume la API a través de HTTPS/REST.
-- Load Balancer / API Gateway: Punto de entrada HTTPS/REST que valida JWT y enruta solicitudes a los microservicios.
-- Autenticación JWT: Servicio de autenticación que valida credenciales y emite tokens JWT.
-- Microservicios (NestJS): Servicios separados para Auth/Usuarios, Funciones, Reservas/Asientos, Pagos y Notificaciones, comunicándose con bases de datos PostgreSQL (Cloud SQL) mediante SQL.
-- PostgreSQL / Cloud SQL: Instancias de bases de datos dedicadas para cada servicio (Auth/Usuarios, Funciones, Reservas/Asientos, Pagos, Notificaciones).
-- RabbitMQ: Broker de mensajería para procesos asíncronos con colas `cola_tickets`, `cola_pagos` y `cola_reservas`.
-- Consumidores / Workers: Procesos asíncronos que procesan tickets, pagos y confirmación/expiración de reservas.
-- Servicio de Email (SMTP / SendGrid): Usado por el servicio de notificaciones para enviar correos electrónicos.
-- Servicios de soporte en GCP: Cloud Logging, Cloud Monitoring, Secret Manager y Cloud Storage.
+## Introduccion
 
-El diagrama ilustra tanto comunicaciones síncronas (REST/HTTPS) como asincrónicas (mensajería) y dónde se publican eventos (por ejemplo, hacia RabbitMQ). También muestra la separación de datos por servicio en instancias de Cloud SQL para mejorar la escalabilidad y la seguridad.
+La arquitectura general de FilmStars se presenta en dos vistas complementarias:
+
+- Una arquitectura sincronica, enfocada en el flujo principal de solicitudes entre usuario, frontend, API Gateway, microservicios y bases de datos.
+- Una arquitectura asincronica, enfocada en el procesamiento desacoplado de reservas, tickets y pagos mediante RabbitMQ y workers especializados.
+
+Ambos diagramas representan la solucion desplegada sobre Google Cloud Platform y muestran la separacion de responsabilidades por servicio y por dominio de datos.
+
+---
+
+## Arquitectura Sincronica
+
+![Diagrama de Arquitectura General - Sincrona](<imagenes/DIAGRAMA ARQUITECTURA SINCRONA.png>)
+
+### Descripcion
+
+La vista sincronica representa el flujo principal de atencion de solicitudes en tiempo real. Los actores `Usuario` y `Admin` acceden al sistema mediante HTTPS y utilizan el frontend desarrollado con `React + Vite`.
+
+El frontend se comunica con el `API Gateway` construido con `NestJS` a traves de `HTTPS / REST`. Este gateway centraliza el acceso a los servicios internos y enruta las peticiones hacia los microservicios correspondientes.
+
+Los microservicios mostrados en esta vista son:
+
+- Servicio Auth / Usuarios
+- Servicio de Funciones
+- Servicio Reservas y Asientos
+- Servicio Pagos
+
+Cada servicio se comunica mediante `REST + JWT`, lo que permite mantener autenticacion y autorizacion centralizadas. El API Gateway valida el token JWT y los servicios verifican permisos antes de procesar cada solicitud.
+
+La persistencia se encuentra separada por dominio en `PostgreSQL - Cloud SQL`:
+
+- PostgreSQL Auth / Usuarios
+- PostgreSQL Funciones
+- PostgreSQL Reservas / Asientos
+- PostgreSQL Pagos
+
+El acceso desde los microservicios hacia sus bases de datos se realiza mediante `SQL`, manteniendo aislamiento entre dominios y favoreciendo mantenibilidad, seguridad y escalabilidad.
+
+### Flujo principal
+
+1. Usuario o Admin accede al frontend por HTTPS.
+2. El frontend envia solicitudes al API Gateway por HTTPS / REST.
+3. El API Gateway valida JWT y enruta la solicitud al microservicio correspondiente.
+4. Cada microservicio consulta o actualiza su base de datos PostgreSQL asociada.
+
+---
+
+## Arquitectura Asincronica
+
+![Diagrama de Arquitectura General - Asincrona](<imagenes/DIAGRAMA ARQUITECTURA ASINCRONA.png>)
+
+### Descripcion
+
+La vista asincronica representa los procesos que no requieren una respuesta inmediata al usuario y que se ejecutan mediante mensajeria. En esta arquitectura, el `Servicio Reserva` publica eventos en `RabbitMQ`, que actua como broker de mensajeria y administra `exchanges`, `queues` y `DLQ`.
+
+Los eventos generados por las reservas se distribuyen hacia colas especializadas:
+
+- `cola_tickets`
+- `cola_reservas`
+- `cola_pagos`
+
+Estas colas son consumidas por un conjunto de procesos asincronos o workers:
+
+- Worker Tickets: genera el boleto final
+- Worker Reservas: confirma o expira asientos
+- Worker Pagos: procesa pagos
+
+Los workers interactuan con `PostgreSQL - Cloud SQL` para actualizar el estado de reservas, asientos, tickets y pagos. En el diagrama se muestran especificamente las bases:
+
+- PostgreSQL Reservas / Asientos
+- PostgreSQL Pagos
+
+Adicionalmente, el `Worker Pagos` realiza una solicitud al `Servicio de Pagos`, y este consume externamente el servicio de `Pago Simulado` mediante `HTTPS`. Una vez completado el proceso, el pago queda registrado en la base de datos correspondiente.
+
+### Flujo principal
+
+1. El Servicio Reserva publica el evento `ReservaCreada` en RabbitMQ.
+2. RabbitMQ distribuye mensajes hacia `cola_tickets`, `cola_reservas` y `cola_pagos`.
+3. Cada worker consume su cola y ejecuta su tarea especifica.
+4. Los workers actualizan la informacion en PostgreSQL segun el dominio afectado.
+5. El Worker Pagos solicita el procesamiento al Servicio de Pagos.
+6. El Servicio de Pagos consume el servicio externo de Pago Simulado y registra el resultado en PostgreSQL Pagos.
+
+---
+
+## Relacion entre ambas vistas
+
+La arquitectura sincronica y la asincronica no se contradicen, sino que se complementan:
+
+- La vista sincronica describe la atencion inmediata de solicitudes del sistema.
+- La vista asincronica describe los procesos internos desacoplados que continúan despues de ciertos eventos del dominio.
+
+En conjunto, ambas muestran una arquitectura orientada a servicios, con separacion por dominios, autenticacion basada en JWT, persistencia distribuida en PostgreSQL y soporte de mensajeria mediante RabbitMQ para operaciones de mayor desacoplamiento.
+
+
+[Volver a Documentacion](../Documentación.md)

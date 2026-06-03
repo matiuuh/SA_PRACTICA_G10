@@ -657,3 +657,4 @@
 | FE-03 | Error de conexión con el Sistema de Pagos | En el paso 5, el sistema encola el reintento de cobro y notifica al cliente que la transacción está en proceso. |
 
 ![CDU005](./img/CDU005.png)
+[Volver a Documentacion](../Documentación.md)

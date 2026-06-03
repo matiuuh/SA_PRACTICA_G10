@@ -17,3 +17,4 @@
 | RF-13 | Alta | Emisión de Boleto | Tras la confirmación del pago, el sistema debe generar y entregar al usuario un boleto digital con los detalles de la función, asientos y número de confirmación. |
 | RF-14 | Media | Historial de Compras | El sistema debe permitir al usuario consultar el historial de boletos adquiridos con sus detalles. |
 
+[Volver a Documentacion](../Documentación.md)

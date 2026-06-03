@@ -738,3 +738,4 @@ Consumir desde otros servicios
 ```
 
 El objetivo principal de este servicio es centralizar la información relacionada con ubicaciones físicas, facilitando futuras expansiones geográficas y manteniendo independencia entre dominios.
+[Volver a Documentacion](../Documentación.md)
