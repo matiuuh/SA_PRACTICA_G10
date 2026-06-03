@@ -551,35 +551,34 @@
 | **ID** | CDU-005.3 |
 | **Nombre** | Seleccionar Asientos |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente elegir sus asientos mediante un mapa interactivo de la sala, bloqueándolos temporalmente para evitar condiciones de carrera con otros usuarios concurrentes. |
+| **Descripción** | Permite al cliente elegir sus asientos mediante un mapa interactivo de la sala. La disponibilidad se actualiza en tiempo real a través de WebSocket. |
 | **Precondiciones** | El cliente tiene una sesión activa y ha seleccionado una función. |
-| **Postcondiciones** | Los asientos seleccionados quedan bloqueados temporalmente a nombre del cliente y se inicia el contador de expiración de reserva. |
+| **Postcondiciones** | Los asientos seleccionados quedan marcados como no disponibles en tiempo real para el resto de usuarios. El cliente avanza al siguiente paso del flujo de compra. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Cliente | Accede al mapa interactivo de la sala para la función seleccionada. |
-| 2 | Sistema | Muestra el estado actualizado de cada asiento: Disponible, Ocupado o Bloqueado temporalmente. |
-| 3 | Cliente | Selecciona uno o más asientos disponibles. |
-| 4 | Sistema | Envía la solicitud de bloqueo a la cola de mensajería para su validación. |
-| 5 | Sistema | Bloquea temporalmente los asientos seleccionados e inicia el contador de expiración. |
-| 6 | Sistema | Confirma visualmente al cliente los asientos bloqueados y muestra el tiempo restante de reserva. |
-| 7 | Cliente | Procede a confirmar la compra. |
+| 2 | Sistema | Establece una conexión WebSocket con el cliente para la sala correspondiente. |
+| 3 | Sistema | Muestra el estado actualizado de cada asiento: Disponible, Seleccionado u Ocupado. |
+| 4 | Cliente | Selecciona uno o más asientos disponibles. |
+| 5 | Sistema | Marca los asientos como Seleccionados y transmite el cambio de estado vía WebSocket a todos los clientes conectados a esa función. |
+| 6 | Sistema | Refleja visualmente en el mapa de todos los usuarios que los asientos ya no están disponibles. |
+| 7 | Cliente | Confirma su selección y avanza al siguiente paso. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente deselecciona un asiento | En el paso 3, el sistema libera el bloqueo del asiento y lo vuelve a estado disponible. |
-| FA-02 | El cliente decide no continuar | El cliente puede abandonar y el sistema libera los asientos bloqueados. |
+| FA-01 | El cliente deselecciona un asiento | En el paso 4, el sistema vuelve el asiento a estado Disponible y lo transmite vía WebSocket a todos los usuarios conectados. |
+| FA-02 | El cliente decide no continuar | El sistema libera los asientos seleccionados y notifica el cambio a todos los usuarios conectados vía WebSocket. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | El asiento fue tomado por otro usuario al momento de bloquearlo | En el paso 5, el sistema notifica que el asiento ya no está disponible y actualiza el mapa. |
-| FE-02 | Expiración del tiempo de reserva | El sistema libera automáticamente los asientos bloqueados y notifica al cliente que el tiempo ha vencido. |
+| FE-01 | Se pierde la conexión WebSocket | El sistema intenta reconectar automáticamente y, al restablecer la conexión, sincroniza el estado actual del mapa de asientos. |
 
 ---
 
@@ -591,7 +590,7 @@
 | **Nombre** | Procesar Compra y Emitir Boleto |
 | **Actor** | Cliente, Sistema de Pagos |
 | **Descripción** | Permite al cliente confirmar su selección de asientos, procesar el pago a través del sistema externo y recibir su boleto digital como resultado de una transacción exitosa. |
-| **Precondiciones** | El cliente tiene una sesión activa y tiene asientos bloqueados temporalmente dentro del tiempo de reserva vigente. |
+| **Precondiciones** | El cliente tiene una sesión activa y tiene asientos seleccionados en el mapa interactivo. |
 | **Postcondiciones** | El pago queda registrado, los asientos pasan a estado Ocupado y el cliente recibe su boleto digital. |
 
 **Flujo principal:**
@@ -617,7 +616,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Los asientos expiraron antes de confirmar el pago | En el paso 3, el consumidor detecta que el bloqueo venció, rechaza la operación y notifica al cliente para reiniciar la selección. |
+| FE-01 | Un asiento seleccionado fue tomado por otro usuario antes de confirmar el pago | En el paso 3, el sistema detecta el conflicto, notifica al cliente y lo redirige al mapa de asientos para actualizar su selección. |
 | FE-02 | El pago es rechazado por el Sistema de Pagos | En el paso 6, el sistema notifica el rechazo al cliente, mantiene el bloqueo temporal activo y permite reintentar. |
 | FE-03 | Error de conexión con el Sistema de Pagos | En el paso 5, el sistema encola el reintento de cobro y notifica al cliente que la transacción está en proceso. |
 
