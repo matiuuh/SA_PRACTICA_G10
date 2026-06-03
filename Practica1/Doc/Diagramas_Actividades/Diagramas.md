@@ -1,11 +1,7 @@
 
-# DOCUMENTO GENERAL DE DIAGRAMAS EXPLICADOS
+# DIAGRAMA DE ACTIVIDADES
 
-## 1. Diagrama de arq general
 
-## 2. Diagrama de componentes
-
-## 3. Diagrama de Actividades
 
 El diagrama de actividades fue utilizado para representar el flujo principal de interacción dentro de la plataforma, modelando las acciones realizadas por los usuarios desde la selección de una película hasta la confirmación final de la compra.
 
@@ -26,5 +22,5 @@ El objetivo principal del diagrama es proporcionar una representación visual de
 
 ![alt text](DiagramaActividades.png)
 
-## 4. Diagrama de secuencia
+
 
