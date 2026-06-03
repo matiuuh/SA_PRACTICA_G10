@@ -16,6 +16,10 @@ Integrantes:
 1. [Introducción](#introducción)
 2. [Vista de Arquitectura: Modelo 4+1 vistas de Krutchten](/Practica1/Doc/Vistas/Vista%20de%20Arquitectura.md)
 
+3. [Diagrama de Actividades](/Practica1/Doc/Diagramas_Actividades/Diagramas.md)
+
+4. [Diagramas Entidad Relacion](/Practica1/Doc/ER/DiagramasER.md)
+
 
 ## Introducción
 

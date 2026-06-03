@@ -27,6 +27,8 @@ Las tablas utilizadas para este módulo fueron:
 * Roles
 * Usuarios
 
+![alt text](01-ER_USUARIOS.png)
+
 #### Tabla Roles
 
 La tabla **roles** almacena los diferentes tipos de usuario disponibles dentro del sistema. Su propósito es permitir clasificar usuarios según las funcionalidades o privilegios que posean dentro de la plataforma.
