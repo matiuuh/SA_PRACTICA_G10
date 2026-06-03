@@ -547,7 +547,7 @@ Las tablas utilizadas para este módulo fueron:
 * Ciudades
 * Cines
 
-![alt text](06-ER_LOCALIDADES.png)
+![alt text](05-ER_LOCALIDADES.png)
 
 #### Tabla Ciudades
 
