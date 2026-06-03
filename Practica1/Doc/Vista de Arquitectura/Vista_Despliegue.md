@@ -51,7 +51,8 @@ Agrupa los servicios principales del sistema desplegados como contenedores dentr
 - API Gateway (Express / NestJS) - Puerto 3000
 - Servicio de Autenticacion
 - Servicio de Funciones
-- Servicio de Reservas y asientos
+- Servicio de Localidades
+- Servicio de Reservas
 - Servicio de Pagos
 
 ### Comunicacion
@@ -86,6 +87,7 @@ Concentra la persistencia del sistema en bases de datos separadas por dominio fu
 
 - Usuarios
 - Funciones
+- Localidades
 - Reservas
 - Pagos
 
@@ -113,7 +115,7 @@ Agrupa las integraciones externas consumidas por la plataforma.
 
 ## Diagrama de Vista Fisica
 
-![Diagrama de Vista Fisica](imagenes/VISTADESPLIEGUE.png)
+![!\[Diagrama de Vista Fisica\](imagenes/VISTADESPLIEGUE.png)](imagenes/VISTADESPLIEGUE.png)
 
 ---
 
@@ -121,13 +123,13 @@ Agrupa las integraciones externas consumidas por la plataforma.
 
 El acceso al sistema inicia desde los actores Cliente y Admin, quienes se conectan por HTTPS al servidor frontend usando el puerto 443. En este nodo se encuentra desplegada la aplicacion Frontend Web desarrollada con React + Vite.
 
-El frontend se comunica por HTTPS con el servidor backend, donde reside el API Gateway. Este componente funciona como punto central de entrada y distribuye las solicitudes hacia los microservicios internos de autenticacion, funciones, reservas y asientos, y pagos.
+El frontend se comunica por HTTPS con el servidor backend, donde reside el API Gateway. Este componente funciona como punto central de entrada y distribuye las solicitudes hacia los microservicios internos de autenticacion, funciones, localidades, reservas y pagos.
 
 Dentro del servidor backend, los microservicios se encuentran organizados bajo un esquema SOA y desplegados en contenedores. Esta separacion permite aislar responsabilidades, facilitar el mantenimiento y favorecer la escalabilidad de la solucion.
 
-El Servicio de Reservas y asientos interactua con RabbitMQ para soportar procesos asincronos mediante AMQP en el puerto 5672. Este mecanismo desacopla operaciones internas y permite manejar mejor tareas que no requieren respuesta inmediata.
+El Servicio de Localidades centraliza la informacion geografica del sistema, particularmente ciudades y cines. El Servicio de Reservas y el Servicio de Pagos interactuan con RabbitMQ para soportar procesos asincronos mediante AMQP en el puerto 5672. Este mecanismo desacopla operaciones internas y permite manejar mejor tareas que no requieren respuesta inmediata.
 
-La persistencia se aloja en un servicio PostgreSQL, donde existen contenedores o bases de datos independientes para usuarios, funciones, reservas y pagos. El acceso se realiza mediante TCP/IP en el puerto 5432.
+La persistencia se aloja en un servicio PostgreSQL, donde existen contenedores o bases de datos independientes para usuarios, funciones, localidades, reservas y pagos. El acceso se realiza mediante TCP/IP en el puerto 5432, manteniendo aislamiento por dominio.
 
 Finalmente, el backend mantiene integraciones con servicios externos. La pasarela de pago simulada se consume mediante HTTPS por el puerto 443, mientras que el proveedor de correo se integra mediante SMTP por el puerto 587.
 
