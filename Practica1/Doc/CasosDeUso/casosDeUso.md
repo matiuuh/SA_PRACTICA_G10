@@ -9,9 +9,9 @@
 ## Primera descomposición
 **CDU001**: **Registro e inicio de sesión**: Es el punto de partido para que cualquier usuario pueda interactuar con el sistema. Permite a los usuarios crear una cuenta y autenticarse para acceder a las funcionalidades del sistema.
 
-**CDU002**: **Gestión de información personal**: Permite a los usuarios actualizar su información personal, como nombre, correo electrónico y contraseña. De la misma manera, permite a los usuarios gestionar su perfil y preferencias.
+**CDU002**: **Gestión de información personal**: Permite a los usuarios actualizar su información personal, como nombre, correo electrónico y contraseña. De la misma manera, permite a los usuarios gestionar su perfil.
 
-**CDU003**: **Gestión de películas y cartelera**: Permite al administrador gestionar las películas disponibles en el sistema y mostrarlas en cartelerasegún su tipo de proyección.
+**CDU003**: **Gestión de películas y cartelera**: Permite al administrador gestionar las películas del sistema y mostrarlas en cartelera según su tipo de proyección.
 
 **CDU004**: **Gestión de funciones**: Permite al administrador gestionar las funciones de las películas, incluyendo la asignación de horarios y salas.
 
