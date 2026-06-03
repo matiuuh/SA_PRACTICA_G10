@@ -31,6 +31,7 @@ Contiene los servicios que implementan las reglas principales del sistema:
 
 - Servicio de autenticacion
 - Servicio de funciones
+- Servicio de localidades
 - Servicio de reservaciones
 - Servicio de pagos
 
@@ -55,12 +56,13 @@ El diagrama de componentes detalla los siguientes elementos principales:
 1. Frontend Web (React + Vite)
 2. API Gateway
 3. Servicio de Autenticacion
-4. Servicio de Funciones Salas / Horarios
-5. Servicio de Reservas
-6. Servicio de Pagos
-7. RabbitMQ Broker
-8. Pasarela de Pago Simulado
-9. Bases de datos PostgreSQL por dominio
+4. Servicio de Funciones, Salas / Horarios
+5. Servicio de Localidades
+6. Servicio de Reservas
+7. Servicio de Pagos
+8. RabbitMQ Broker
+9. Pasarela de Pago Simulado
+10. Bases de datos PostgreSQL por dominio
 
 ---
 
@@ -72,9 +74,12 @@ La arquitectura combina comunicacion sincrona mediante REST/HTTPS y comunicacion
 
 - Frontend Web -> API Gateway mediante REST/HTTPS
 - API Gateway -> Servicio de Autenticacion
-- API Gateway -> Servicio de Funciones Salas / Horarios
+- API Gateway -> Servicio de Funciones, Salas / Horarios
+- API Gateway -> Servicio de Localidades
 - API Gateway -> Servicio de Reservas
 - API Gateway -> Servicio de Pagos
+- Servicio de Funciones, Salas / Horarios -> Servicio de Localidades para consultar ciudad/cine
+- Servicio de Reservas -> Servicio de Funciones, Salas / Horarios para consultar funciones disponibles
 - Servicio de Pagos -> Pasarela de Pago Simulado mediante REST API
 
 ### Comunicacion asincrona
@@ -89,7 +94,8 @@ Este flujo asincrono permite desacoplar el proceso de reserva del procesamiento 
 Cada servicio mantiene su propia base de datos PostgreSQL segun su dominio:
 
 - Servicio de Autenticacion -> Base de Datos de usuarios
-- Servicio de Funciones Salas / Horarios -> Base de Datos de funciones
+- Servicio de Funciones, Salas / Horarios -> Base de Datos de funciones
+- Servicio de Localidades -> Base de Datos de localidades
 - Servicio de Reservas -> Base de Datos de reservaciones
 - Servicio de Pagos -> Base de Datos de pagos
 
@@ -111,7 +117,7 @@ Cada servicio mantiene su propia base de datos PostgreSQL segun su dominio:
 
 ## Diagrama de Componentes
 
-![Diagrama de Componentes](imagenes/Vista_Componentes.png)
+![!\[Diagrama de Componentes\](imagenes/Vista_Componentes.png)](imagenes/Vista_Componentes.png)
 
 ---
 
@@ -119,7 +125,9 @@ Cada servicio mantiene su propia base de datos PostgreSQL segun su dominio:
 
 El frontend web actua como punto de entrada para los usuarios del sistema y canaliza las solicitudes hacia el API Gateway. Este gateway expone las APIs REST y centraliza la comunicacion con los servicios internos.
 
-El Servicio de Autenticacion administra el acceso al sistema y el manejo de tokens JWT. El Servicio de Funciones Salas / Horarios se encarga de la informacion relacionada con funciones y disponibilidad operativa. El Servicio de Reservas gestiona el registro de reservaciones y se comunica con RabbitMQ cuando una operacion requiere procesamiento asincrono. El Servicio de Pagos procesa los pagos y consume una pasarela de pago simulada por medio de una API externa.
+El Servicio de Autenticacion administra el acceso al sistema y el manejo de tokens JWT. El Servicio de Funciones, Salas / Horarios se encarga de la informacion relacionada con cartelera, salas y horarios disponibles. El Servicio de Localidades centraliza la informacion geografica del sistema, especificamente ciudades y cines. El Servicio de Reservas gestiona el registro de reservaciones y consulta las funciones disponibles antes de confirmar una operacion. El Servicio de Pagos procesa los pagos y consume una pasarela de pago simulada por medio de una API externa.
+
+Ademas, el Servicio de Funciones, Salas / Horarios consulta al Servicio de Localidades para obtener la relacion entre ciudades y cines disponible dentro de la plataforma. Esta separacion mantiene desacoplada la informacion geografica respecto de la logica de cartelera.
 
 El broker RabbitMQ sirve como mecanismo de integracion asincrona entre reservas y pagos. Este desacoplamiento evita dependencias temporales estrictas entre ambos servicios y facilita la escalabilidad del sistema.
 
