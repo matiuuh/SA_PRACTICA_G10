@@ -30,9 +30,10 @@ Integrantes:
 ### Arquitectura
 
 - [Vistas 4+1](./Vistas/Vistas_4+1.md)
+- [Vista de componentes](./Vistas/Vista_de_Componentes.md)
+- [Vista de despliegue](./Vistas/Vista_Despliegue.md)
+
 - [Diagrama de arquitectura general](./Diagramas_Estructurales/Diagrama_Arquitectura_General.md)
-- [Vista de componentes](./Vista%20de%20Arquitectura/Vista_de_Componentes.md)
-- [Vista de despliegue](./Vista%20de%20Arquitectura/Vista_Despliegue.md)
 
 ## Introduccion
 

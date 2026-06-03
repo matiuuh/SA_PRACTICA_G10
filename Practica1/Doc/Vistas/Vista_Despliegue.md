@@ -115,8 +115,8 @@ Agrupa las integraciones externas consumidas por la plataforma.
 
 ## Diagrama de Vista Fisica
 
-![!\[Diagrama de Vista Fisica\](imagenes/VISTADESPLIEGUE.png)](imagenes/VISTADESPLIEGUE.png)
-
+![!\[!\\[Diagrama de Vista Fisica\\](imagenes/VISTADESPLIEGUE.png)\](imagenes/VISTADESPLIEGUE.png)
+](img/VISTADESPLIEGUE.png)
 ---
 
 ## Explicacion del Diagrama
