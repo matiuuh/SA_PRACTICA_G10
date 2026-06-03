@@ -1,6 +1,6 @@
 
 
-# 7. Vista de Componentes (Vista de Desarrollo)
+# 4. Vista de Componentes (Vista de Desarrollo)
 
 ## Introduccion
 
@@ -117,7 +117,7 @@ Cada servicio mantiene su propia base de datos PostgreSQL segun su dominio:
 
 ## Diagrama de Componentes
 
-![!\[Diagrama de Componentes\](imagenes/Vista_Componentes.png)](imagenes/Vista_Componentes.png)
+![!\[!\\[Diagrama de Componentes\\](imagenes/Vista_Componentes.png)\](imagenes/Vista_Componentes.png)](img/Vista_Componentes.png)
 
 ---
 
