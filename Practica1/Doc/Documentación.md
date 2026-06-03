@@ -43,7 +43,7 @@ El proyecto esta construido sobre una arquitectura orientada a servicios (SOA) c
 
 El frontend estará desarrollado con **React + Vite**, el backend con **Node.js y NestJS**, y toda la infraestructura esta contenedorizada con **Docker**, lo que permite despliegue tanto local como en la nube. Un **API Gateway centralizado** actua como unico punto de entrada, gestionando el enrutamiento, la autenticacion con JWT y el control de acceso.
 
-Los actores principales del sistema son el **Cliente**, que realiza reservas y compras, y el **Administrador**, que gestiona la cartelera, funciones y salas.
+Los actores principales del sistema son el **Cliente**, que realiza reservas y compras, el **Sistema de pagos**, que procesa las transacciones financieras, y el **Administrador**, que gestiona la cartelera, funciones y salas.
 
 Este archivo funciona como indice principal de la documentacion. Desde aqui se puede acceder a cada uno de los documentos del proyecto.
 
