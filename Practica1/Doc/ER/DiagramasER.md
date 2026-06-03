@@ -9,7 +9,7 @@ Los dominios definidos fueron los siguientes:
 - Manejo de funciones y cartelera
 - Manejo de reservas y asientos
 - Manejo de pagos
-- Manejo de notificaciones
+- Manejo de ubicaciones
 
 Para la elaboración de los diagramas entidad-relación se utilizó la herramienta dbdiagram.io, permitiendo modelar de forma visual las entidades, relaciones y restricciones definidas para cada servicio.
 
@@ -61,6 +61,7 @@ Responsabilidades:
 * Mantener información básica del usuario
 * Asociar usuarios a un rol específico
 * Proporcionar identificadores únicos utilizados por otros servicios
+* Mantener tokens de autenticación activos
 
 Los usuarios registrados dentro de esta tabla podrán interactuar con las funcionalidades principales del sistema, como realizar reservas, efectuar pagos y recibir notificaciones.
 
@@ -71,6 +72,7 @@ Campos principales almacenados:
 * Correo electrónico
 * Contraseña cifrada
 * Fecha de registro
+* Token JWT
 * Rol asociado
 
 Relación:
@@ -534,127 +536,7 @@ Confirmar compra
 
 La separación de este servicio permite mantener aislada la lógica financiera, facilitando futuras modificaciones o integraciones sin afectar el resto de componentes del sistema.
 
-### 5. Manejo de Notificaciones
-
-Para la comunicación con los usuarios se implementó un servicio independiente encargado de generar y enviar notificaciones relacionadas con eventos importantes dentro de la plataforma.
-
-Este servicio funciona de manera desacoplada, consumiendo información generada por otros módulos y notificando cambios relevantes a los usuarios registrados.
-
-Las tablas utilizadas para este módulo fueron:
-
-* Plantillas
-* Notificaciones
-
-![alt text](05-ER_NOTIFICACIONES.png)
-
-#### Tabla Plantillas
-
-La tabla **plantillas** almacena estructuras reutilizables para los mensajes generados dentro del sistema.
-
-Responsabilidades:
-
-* Estandarizar mensajes enviados
-* Reutilizar contenido frecuente
-* Facilitar generación automática de mensajes
-
-Ejemplos de plantillas:
-
-* Pago Aprobado
-* Reserva Confirmada
-* Compra Rechazada
-* Boleto Generado
-
-Relación:
-
-```text id="m2x8gh"
-Plantillas (1) -------- (N) Notificaciones
-```
-
----
-
-#### Tabla Notificaciones
-
-La tabla **notificaciones** representa cada mensaje generado y enviado hacia los usuarios.
-
-Responsabilidades:
-
-* Registrar envíos realizados
-* Mantener historial de notificaciones
-* Asociar mensajes con usuarios
-* Controlar estado de envío
-
-Estados posibles:
-
-* Pendiente
-* Enviada
-* Error
-
-Información almacenada:
-
-* Usuario asociado
-* Plantilla utilizada
-* Estado del envío
-* Fecha de creación
-
-Relación:
-
-```text id="d4j7ts"
-Plantillas (1) -------- (N) Notificaciones
-```
-
----
-
-#### Relación con otros servicios
-
-Este servicio recibe información generada por otros módulos utilizando identificadores externos.
-
-Servicios relacionados:
-
-* Servicio de Usuarios → obtiene información del cliente
-* Servicio de Reservas → recibe confirmaciones o expiraciones
-* Servicio de Pagos → recibe estados de pago
-* Servicio de Cartelera → utiliza información relacionada con funciones y boletos
-
-Este desacoplamiento permite que las notificaciones funcionen independientemente del resto del sistema.
-
----
-
-#### Eventos que generan notificaciones
-
-Algunos eventos importantes procesados por este servicio son:
-
-```text id="u4h5zv"
-Reserva confirmada
-
-Reserva expirada
-
-Pago aprobado
-
-Pago rechazado
-
-Boleto generado
-```
-
----
-
-#### Flujo general de notificaciones
-
-```text id="w9j1kr"
-Evento recibido
-↓
-Seleccionar plantilla
-↓
-Construir mensaje
-↓
-Enviar notificación
-↓
-Guardar resultado
-```
-
-La separación de este servicio permite centralizar toda la lógica relacionada con comunicación hacia usuarios, facilitando futuras ampliaciones o cambios en los mecanismos de envío.
-
-
-### 6. Manejo de Locaciones
+### 5. Manejo de Locaciones
 
 Para la administración de ubicaciones físicas se implementó un servicio independiente encargado de gestionar la información relacionada con ciudades y complejos cinematográficos disponibles dentro de la plataforma.
 
@@ -665,7 +547,7 @@ Las tablas utilizadas para este módulo fueron:
 * Ciudades
 * Cines
 
-![alt text](06-ER_LOCALIDADES.png)
+![alt text](05-ER_LOCALIDADES.png)
 
 #### Tabla Ciudades
 
@@ -738,4 +620,6 @@ Consumir desde otros servicios
 ```
 
 El objetivo principal de este servicio es centralizar la información relacionada con ubicaciones físicas, facilitando futuras expansiones geográficas y manteniendo independencia entre dominios.
+
+
 [Volver a Documentacion](../Documentación.md)
