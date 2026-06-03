@@ -1,6 +1,6 @@
 
 
-# 7. Vista de Componentes (Vista de Desarrollo)
+# 4. Vista de Componentes (Vista de Desarrollo)
 
 ## Introduccion
 
