@@ -1,4 +1,4 @@
-# Documentación de la Práctica 1: FilmStars
+# Documentacion de la Practica 1: FilmStars
 
 Integrantes:
 
@@ -10,17 +10,32 @@ Integrantes:
 | Lopez Leveron Estiben Yair     | 202204578 |
 | Pablo Sosof Jens Jeremy        | 202102771 |
 
+## Indice
 
-## Índice
+### Documento principal
 
-1. [Introducción](#introducción)
-2. [Vista de Arquitectura: Modelo 4+1 vistas de Krutchten](/Practica1/Doc/Vistas/Vista%20de%20Arquitectura.md)
+- [Documentacion general](./Documentación.md)
 
-3. [Diagrama de Actividades](/Practica1/Doc/Diagramas_Actividades/Diagramas.md)
+### Requerimientos
 
-4. [Diagramas Entidad Relacion](/Practica1/Doc/ER/DiagramasER.md)
+- [Requerimientos funcionales](./RF/RF.md)
+- [Requerimientos no funcionales](./RNF/RNF.md)
 
+### Analisis
 
-## Introducción
+- [Casos de uso](./CasosDeUso/casosDeUso.md)
+- [Diagrama de actividades](./Diagramas_Actividades/Diagramas.md)
+- [Diagramas entidad relacion](./ER/DiagramasER.md)
 
-En esta práctica, se ha desarrollado una página web de gestión de ventas de boletos para la empresa llamada **FilmStars**. La aplicación permite a los usuarios buscar, agregar y gestionar sus compras.
+### Arquitectura
+
+- [Vistas 4+1](./Vistas/Vistas_4+1.md)
+- [Diagrama de arquitectura general](./Diagramas_Estructurales/Diagrama_Arquitectura_General.md)
+- [Vista de componentes](./Vista%20de%20Arquitectura/Vista_de_Componentes.md)
+- [Vista de despliegue](./Vista%20de%20Arquitectura/Vista_Despliegue.md)
+
+## Introduccion
+
+En esta practica se desarrollo una pagina web para la gestion de venta de boletos de la empresa **FilmStars**. La aplicacion permite a los usuarios consultar funciones, realizar reservas y gestionar pagos a traves de una arquitectura orientada a servicios.
+
+Este archivo funciona como indice principal de la documentacion. Desde aqui se puede acceder a cada uno de los documentos del proyecto.

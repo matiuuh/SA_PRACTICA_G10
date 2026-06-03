@@ -1,46 +1,97 @@
+
+
 # 7. Vista de Componentes (Vista de Desarrollo)
 
 ## Introduccion
 
-La vista de componentes ilustra el sistema desde la perspectiva del desarrollador y se enfoca en la organizacion de los modulos de software, interfaces de comunicacion y dependencias entre servicios.
+La vista de componentes presenta el sistema FilmStars desde la perspectiva del desarrollo. Su objetivo es mostrar como se organizan los modulos de software, como se separan las responsabilidades por capas y de que forma se comunican los componentes principales de la solucion.
 
-La plataforma **FilmStars** fue disenada bajo una arquitectura orientada a servicios (**SOA**), utilizando componentes independientes desacoplados mediante comunicacion sincrona REST y mensajeria asincrona con RabbitMQ. Algunos servicios gestionan su propia persistencia en PostgreSQL segun su dominio funcional.
+En esta vista se incluyen dos representaciones complementarias:
+
+- Un diagrama de paquetes, que organiza el sistema en capas de UI, logica de negocio e infraestructura.
+- Un diagrama de componentes, que muestra los servicios concretos, sus dependencias y la relacion con bases de datos y sistemas externos.
+
+---
+
+## Diagrama de Paquetes
+
+El diagrama de paquetes organiza la solucion en tres niveles principales:
+
+### 1. Capa UI
+
+Contiene la interfaz de usuario del sistema:
+
+- Frontend Web (React + Vite)
+
+Esta capa utiliza interfaces de control para invocar la logica de negocio y representar la informacion al usuario final.
+
+### 2. Logica de negocio
+
+Contiene los servicios que implementan las reglas principales del sistema:
+
+- Servicio de autenticacion
+- Servicio de funciones
+- Servicio de reservaciones
+- Servicio de pagos
+
+Esta capa concentra los procesos del dominio y solicita servicios tecnicos a la capa de infraestructura cuando requiere mensajeria, seguridad o acceso a datos.
+
+### 3. Infraestructura
+
+Contiene componentes de soporte tecnico reutilizados por la logica de negocio:
+
+- `rabbitmq-client`
+- `postgresql-driver`
+- `jwt-library`
+
+Esta capa abstrae detalles de comunicacion, persistencia y seguridad para mantener desacoplados los servicios de negocio.
 
 ---
 
 ## Componentes Principales del Sistema
 
-El sistema contiene los siguientes componentes principales:
+El diagrama de componentes detalla los siguientes elementos principales:
 
-1. Frontend Web  
-2. API Gateway  
-3. Servicio de Autenticacion  
-4. Servicio de Funciones  
-5. Servicio de Reservas y Asientos  
-6. Servicio de Pagos  
-7. Servicio de Notificaciones  
-8. RabbitMQ Broker  
-9. Bases de datos PostgreSQL por dominio  
+1. Frontend Web (React + Vite)
+2. API Gateway
+3. Servicio de Autenticacion
+4. Servicio de Funciones Salas / Horarios
+5. Servicio de Reservas
+6. Servicio de Pagos
+7. RabbitMQ Broker
+8. Pasarela de Pago Simulado
+9. Bases de datos PostgreSQL por dominio
 
 ---
 
 ## Comunicacion entre Componentes
 
-Los componentes se comunican mediante APIs REST para operaciones sincronas y mediante RabbitMQ para procesos asincronos relacionados con reservas y pagos. La persistencia se distribuye en bases de datos PostgreSQL asociadas a dominios especificos del sistema.
+La arquitectura combina comunicacion sincrona mediante REST/HTTPS y comunicacion asincrona mediante RabbitMQ.
 
 ### Comunicacion sincrona
-- Frontend -> API Gateway
-- API Gateway -> Microservicios
+
+- Frontend Web -> API Gateway mediante REST/HTTPS
+- API Gateway -> Servicio de Autenticacion
+- API Gateway -> Servicio de Funciones Salas / Horarios
+- API Gateway -> Servicio de Reservas
+- API Gateway -> Servicio de Pagos
+- Servicio de Pagos -> Pasarela de Pago Simulado mediante REST API
 
 ### Comunicacion asincrona
-- Reservation Service -> RabbitMQ -> Payment Service
+
+- Servicio de Reservas -> RabbitMQ Broker
+- RabbitMQ Broker -> Servicio de Pagos
+
+Este flujo asincrono permite desacoplar el proceso de reserva del procesamiento del pago, mejorando la tolerancia a fallos y el manejo de operaciones concurrentes.
 
 ### Persistencia
-- Servicio de Autenticacion -> Base de Datos Usuarios
-- Servicio de Funciones -> Base de Datos Funciones
-- Servicio de Reservas -> Base de Datos Reservaciones
-- Servicio de Pagos -> Base de Datos Pagos
-- Servicio de Notificaciones -> Base de Datos Notificaciones
+
+Cada servicio mantiene su propia base de datos PostgreSQL segun su dominio:
+
+- Servicio de Autenticacion -> Base de Datos de usuarios
+- Servicio de Funciones Salas / Horarios -> Base de Datos de funciones
+- Servicio de Reservas -> Base de Datos de reservaciones
+- Servicio de Pagos -> Base de Datos de pagos
 
 ---
 
@@ -48,33 +99,30 @@ Los componentes se comunican mediante APIs REST para operaciones sincronas y med
 
 | Categoria | Tecnologia |
 |---|---|
-| Frontend | React / Vite |
-| Backend | Express / NestJS |
-| Comunicacion | REST API |
-| Mensajeria | RabbitMQ |
-| Base de Datos | PostgreSQL |
+| Frontend | React + Vite |
+| Backend | Microservicios / API REST |
+| Integracion | API Gateway |
+| Comunicacion sincrona | REST / HTTPS |
+| Comunicacion asincrona | RabbitMQ |
+| Base de datos | PostgreSQL |
 | Seguridad | JWT |
 
 ---
 
 ## Diagrama de Componentes
 
-![Diagrama de Componentes](<imagenes/Vista de Componentes.png>)
+![Diagrama de Componentes](imagenes/Vista_Componentes.png)
+
 ---
 
 ## Explicacion del Diagrama
 
-El frontend web funciona como punto de interaccion principal para los usuarios del sistema FilmStars. Todas las solicitudes son enviadas hacia el API Gateway mediante REST API.
+El frontend web actua como punto de entrada para los usuarios del sistema y canaliza las solicitudes hacia el API Gateway. Este gateway expone las APIs REST y centraliza la comunicacion con los servicios internos.
 
-El API Gateway centraliza el acceso hacia los distintos microservicios, permitiendo desacoplamiento y separacion de responsabilidades.
+El Servicio de Autenticacion administra el acceso al sistema y el manejo de tokens JWT. El Servicio de Funciones Salas / Horarios se encarga de la informacion relacionada con funciones y disponibilidad operativa. El Servicio de Reservas gestiona el registro de reservaciones y se comunica con RabbitMQ cuando una operacion requiere procesamiento asincrono. El Servicio de Pagos procesa los pagos y consume una pasarela de pago simulada por medio de una API externa.
 
-Cada servicio implementa un dominio especifico:
-- Auth Service administra autenticacion y sesiones.
-- Function Service administra salas y horarios.
-- Reservation Service administra reservas y seleccion de asientos.
-- Payment Service procesa pagos simulados.
-- Notification Service envia correos electronicos y notificaciones.
+El broker RabbitMQ sirve como mecanismo de integracion asincrona entre reservas y pagos. Este desacoplamiento evita dependencias temporales estrictas entre ambos servicios y facilita la escalabilidad del sistema.
 
-Los procesos criticos relacionados con reservas y pagos utilizan RabbitMQ como broker de mensajeria para garantizar procesamiento asincrono, tolerancia a fallos y manejo adecuado de concurrencia. En el diagrama, el flujo asincrono principal conecta el Servicio de Reservas y Asientos con el Servicio de Pagos a traves del broker.
+Finalmente, el diagrama muestra una estrategia de persistencia separada por dominio, donde cada servicio conserva autonomia sobre sus datos en PostgreSQL. Esta separacion favorece el aislamiento, la mantenibilidad y la evolucion independiente de los componentes.
 
-El diagrama muestra persistencia separada para usuarios, funciones, reservaciones, pagos y notificaciones mediante bases de datos PostgreSQL dedicadas segun el dominio de cada servicio. Ademas, el Servicio de Pagos consume una pasarela de pago simulada mediante REST API y el Servicio de Notificaciones se integra con un proveedor de email mediante SMTP o API.
+[Volver a Documentacion](../Documentación.md)

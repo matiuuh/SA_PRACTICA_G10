@@ -16,3 +16,4 @@ La vista de procesos se enfoca en la dinámica del sistema, es decir, cómo los 
 La vista de escenarios se centra en los casos de uso y las interacciones entre los usuarios y el sistema. En esta vista, se describen los escenarios de uso, las tareas que los usuarios pueden realizar y cómo el sistema responde a esas tareas.
 
 ![Vista de Escenarios](./img/Practica1-Vista-Escenarios.drawio%20(1).svg)
+[Volver a Documentacion](../Documentación.md)

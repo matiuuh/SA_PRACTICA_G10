@@ -13,3 +13,4 @@
 | RNF-09 | Contenedores e infraestructura | Cada servicio debe contener su propio `Dockerfile`. El sistema debe poder desplegarse localmente y en la nube mediante dos archivos `docker-compose` diferenciados, sin modificaciones al código fuente. |
 | RNF-10 | Advertencia de tiempo de reserva | El sistema debe informar visualmente al usuario el tiempo restante del bloqueo temporal de sus asientos, actualizándose en intervalos no mayores a 5 segundos. |
 | RNF-11 | Punto de entrada único | Todos los servicios deben exponerse al cliente a través de un único API Gateway, que centralice el enrutamiento, la autenticación y el control de acceso. |
+[Volver a Documentacion](../Documentación.md)
