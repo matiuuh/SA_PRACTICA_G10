@@ -12,28 +12,27 @@ Integrantes:
 
 ## Indice
 
-### Documento principal
 
-- [Documentacion general](./Documentación.md)
-
-### Requerimientos
+### Requerimientos del sistema
 
 - [Requerimientos funcionales](./RF/RF.md)
 - [Requerimientos no funcionales](./RNF/RNF.md)
 
-### Analisis
+### Modelo de Casos de Uso
 
 - [Casos de uso](./CasosDeUso/casosDeUso.md)
-- [Diagrama de actividades](./Diagramas_Actividades/Diagramas.md)
-- [Diagramas entidad relacion](./ER/DiagramasER.md)
 
-### Arquitectura
+### Vista de Arquitectura 4+1
 
-- [Vistas 4+1](./Vistas/Vistas_4+1.md)
-- [Vista de componentes](./Vistas/Vista_de_Componentes.md)
-- [Vista de despliegue](./Vistas/Vista_Despliegue.md)
+- [Vistas 4+1](./Vistas4+1/Vistas_4+1.md)
+
+### Diagramas Estructurales, Comportamentales y Persistencia
 
 - [Diagrama de arquitectura general](./Diagramas_Estructurales/Diagrama_Arquitectura_General.md)
+- [Diagrama de componentes](./Diagramas_Estructurales/Diagrama_Componentes.md)
+- [Diagrama de secuencia](./Diagramas_Estructurales/Diagrama_Secuencia.md)
+- [Diagrama de actividades](./Diagramas_Actividades/Diagramas.md)
+- [Diagramas entidad relacion](./ER/DiagramasER.md)
 
 ## Introduccion
 
