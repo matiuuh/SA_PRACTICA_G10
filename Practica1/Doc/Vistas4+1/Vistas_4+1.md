@@ -87,5 +87,8 @@ La vista de escenarios también conocida como vista de casos de uso interactúa 
 
 ![Vista de Escenarios](./img/Practica1-Vista-Escenarios.drawio.svg)
 
+
+
+[\[archivo crudo de vistas 4+1\](https://app.diagrams.net/#G17zqvzKtzFauwvckD7d33XzBFcmADsWsG#%7B%22pageId%22%3A%228e4zzOSsQAcUt3Mhw_pj%22%7D)](https://drive.google.com/file/d/17zqvzKtzFauwvckD7d33XzBFcmADsWsG/view?usp=sharing)
 ---
 [Volver a Documentacion](../Documentación.md)

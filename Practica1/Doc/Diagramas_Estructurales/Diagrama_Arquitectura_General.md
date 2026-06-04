@@ -103,5 +103,9 @@ La arquitectura sincronica y la asincronica no se contradicen, sino que se compl
 
 En conjunto, ambas muestran una arquitectura orientada a servicios, con separacion por dominios, autenticacion basada en JWT, persistencia distribuida en PostgreSQL y soporte de mensajeria mediante RabbitMQ para operaciones de mayor desacoplamiento.
 
+link de archivo crudo de diagrama de arquitectura en draw.io
+
+[Diagrama de Arquitectura](https://app.diagrams.net/#G1MppILJLtfuZoiN-tyD_ywHO-iltpBi4f)
+
 
 [Volver a Documentacion](../Documentación.md)
