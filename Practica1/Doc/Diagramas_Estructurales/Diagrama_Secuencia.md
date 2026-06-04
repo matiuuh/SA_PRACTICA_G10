@@ -106,3 +106,5 @@ El archivo fuente `json` contiene varios typos en etiquetas como `API GATEWEY`, 
 ![Diagrama de Secuencia](./imagenes/Diagrama_de_Secuencia.png)
 
 [Volver a Documentacion](../Documentación.md)
+
+[Ver archivo fuente del diagrama](https://drive.google.com/file/d/1_PBisgWrJtfhAdRYSYOYsS-1NL86mI3J/view)
