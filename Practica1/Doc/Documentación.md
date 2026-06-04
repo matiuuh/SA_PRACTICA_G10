@@ -30,8 +30,8 @@ Integrantes:
 
 - [Diagrama de arquitectura general](./Diagramas_Estructurales/Diagrama_Arquitectura_General.md)
 - [Diagrama de componentes](./Diagramas_Estructurales/Diagrama_Componentes.md)
-- [Diagrama de secuencia](./Diagramas_Estructurales/Diagrama_Secuencia.md)
 - [Diagrama de actividades](./Diagramas_Actividades/Diagramas.md)
+- [Diagrama de secuencia](./Diagramas_Estructurales/Diagrama_Secuencia.md)
 - [Diagramas entidad relacion](./ER/DiagramasER.md)
 
 ## Introduccion
