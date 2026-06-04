@@ -621,4 +621,7 @@
 | FE-03 | Error de conexión con el Sistema de Pagos | En el paso 5, el sistema encola el reintento de cobro y notifica al cliente que la transacción está en proceso. |
 
 ![CDU005](./img/CDU005.png)
+
+[Link de diagramas](https://lucid.app/lucidchart/8bfc13c1-a39a-4b25-85ad-273c552af5e2/edit?viewport_loc=-516%2C215%2C2029%2C1024%2CPtr3jjK7RCOS&invitationId=inv_0974d951-34be-4425-892c-707ef4fb5b97)
+
 [Volver a Documentacion](../Documentación.md)
