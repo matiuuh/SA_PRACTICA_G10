@@ -74,3 +74,5 @@ Adicionalmente, cada servicio se conecta con una interfaz de repositorio para pr
 ![Diagrama de Componentes](./imagenes/Diagrama_de_Componentes.png)
 
 [Volver a Documentacion](../Documentación.md)
+
+[Ver archivo fuente del diagrama](https://drive.google.com/file/d/1alBOvHarK1cIwI4lkC1yuDCeJe3t4x2m/view)
