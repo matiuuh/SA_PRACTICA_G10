@@ -8,6 +8,15 @@ import { LocalidadesService } from './localidades.service';
 export class LocalidadesController {
   constructor(private readonly localidadesService: LocalidadesService) {}
 
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      service: 'localidades-service',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get('ciudades')
   // Lista las ciudades disponibles para el selector inicial del frontend.
   findCiudades() {

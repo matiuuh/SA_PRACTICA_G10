@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { PeliculasService } from '../services/peliculas.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { CreatePeliculaDto } from '../dto/create-pelicula.dto';
 import { UpdatePeliculaDto } from '../dto/update-pelicula.dto';
+import { PeliculasService } from '../services/peliculas.service';
 
 @Controller('peliculas')
 export class PeliculasController {
@@ -9,12 +19,15 @@ export class PeliculasController {
 
   @Get()
   findAll(@Query('tipo_cartelera') tipoCartelera?: string) {
-    if (tipoCartelera) return this.peliculasService.findByTipoCartelera(+tipoCartelera);
+    if (tipoCartelera) {
+      return this.peliculasService.findByTipoCartelera(tipoCartelera);
+    }
+
     return this.peliculasService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.peliculasService.findOne(id);
   }
 
@@ -24,13 +37,13 @@ export class PeliculasController {
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePeliculaDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdatePeliculaDto) {
     return this.peliculasService.update(id, dto);
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.peliculasService.remove(id);
-    return { message: `Pelicula #${id} eliminada correctamente` };
+    return { message: `Pelicula ${id} eliminada correctamente` };
   }
 }

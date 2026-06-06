@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Funcion } from '../entities/funcion.entity';
+import { DeepPartial, Repository } from 'typeorm';
 import { CreateFuncionDto } from '../dto/create-funcion.dto';
 import { UpdateFuncionDto } from '../dto/update-funcion.dto';
+import { Funcion } from '../entities/funcion.entity';
 import { PeliculasService } from './peliculas.service';
 import { SalasService } from './salas.service';
 
@@ -20,15 +20,15 @@ export class FuncionesService {
     return this.repo.find();
   }
 
-  findBySala(idSala: number): Promise<Funcion[]> {
+  findBySala(idSala: string): Promise<Funcion[]> {
     return this.repo.find({ where: { sala: { id: idSala }, activa: true } });
   }
 
-  findByPelicula(idPelicula: number): Promise<Funcion[]> {
+  findByPelicula(idPelicula: string): Promise<Funcion[]> {
     return this.repo.find({ where: { pelicula: { id: idPelicula }, activa: true } });
   }
 
-  findByCine(idCineExterno: number): Promise<Funcion[]> {
+  findByCine(idCineExterno: string): Promise<Funcion[]> {
     return this.repo
       .createQueryBuilder('f')
       .innerJoinAndSelect('f.sala', 's')
@@ -39,9 +39,13 @@ export class FuncionesService {
       .getMany();
   }
 
-  async findOne(id: number): Promise<Funcion> {
+  async findOne(id: string): Promise<Funcion> {
     const funcion = await this.repo.findOne({ where: { id } });
-    if (!funcion) throw new NotFoundException(`Funcion #${id} no encontrada`);
+
+    if (!funcion) {
+      throw new NotFoundException(`Funcion ${id} no encontrada`);
+    }
+
     return funcion;
   }
 
@@ -52,16 +56,32 @@ export class FuncionesService {
     const conflicto = await this.repo.findOne({
       where: { sala: { id: dto.id_sala }, fecha: dto.fecha, hora: dto.hora, activa: true },
     });
-    if (conflicto) throw new ConflictException('Ya existe una función en esa sala, fecha y hora');
 
-    return this.repo.save(this.repo.create({ ...dto, pelicula, sala }));
+    if (conflicto) {
+      throw new ConflictException('Ya existe una funcion en esa sala, fecha y hora');
+    }
+    const funcionData: DeepPartial<Funcion> = {
+      fecha: dto.fecha,
+      hora: dto.hora,
+      precio: dto.precio,
+      activa: dto.activa ?? true,
+      pelicula,
+      sala,
+    };
+
+    return this.repo.save(this.repo.create(funcionData));
   }
 
-  async update(id: number, dto: UpdateFuncionDto): Promise<Funcion> {
+  async update(id: string, dto: UpdateFuncionDto): Promise<Funcion> {
     const funcion = await this.findOne(id);
 
-    if (dto.id_pelicula) funcion.pelicula = await this.peliculasService.findOne(dto.id_pelicula);
-    if (dto.id_sala) funcion.sala = await this.salasService.findOne(dto.id_sala);
+    if (dto.id_pelicula) {
+      funcion.pelicula = await this.peliculasService.findOne(dto.id_pelicula);
+    }
+
+    if (dto.id_sala) {
+      funcion.sala = await this.salasService.findOne(dto.id_sala);
+    }
 
     const fechaFinal = dto.fecha ?? funcion.fecha;
     const horaFinal = dto.hora ?? funcion.hora;
@@ -71,11 +91,14 @@ export class FuncionesService {
       const conflicto = await this.repo
         .createQueryBuilder('f')
         .where(
-          'f.id_sala = :salaId AND f.fecha = :fecha AND f.hora = :hora AND f.activa = true AND f.id != :id',
+          'f.id_sala = :salaId AND f.fecha = :fecha AND f.hora = :hora AND f.activa = true AND f.id_funcion != :id',
           { salaId, fecha: fechaFinal, hora: horaFinal, id },
         )
         .getOne();
-      if (conflicto) throw new ConflictException('Conflicto de horario en esa sala, fecha y hora');
+
+      if (conflicto) {
+        throw new ConflictException('Conflicto de horario en esa sala, fecha y hora');
+      }
     }
 
     Object.assign(funcion, {

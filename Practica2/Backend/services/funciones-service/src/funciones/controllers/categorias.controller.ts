@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
-import { CategoriasService } from '../services/categorias.service';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { CreateCategoriaDto } from '../dto/create-categoria.dto';
+import { CategoriasService } from '../services/categorias.service';
 
 @Controller('categorias')
 export class CategoriasController {
@@ -12,7 +12,7 @@ export class CategoriasController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.categoriasService.findOne(id);
   }
 

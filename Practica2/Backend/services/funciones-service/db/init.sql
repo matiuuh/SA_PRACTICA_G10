@@ -1,73 +1,62 @@
-CREATE TABLE "ciudades" (
-  "id_ciudad" uuid PRIMARY KEY,
-  "nombre" varchar NOT NULL
-);
-
-COMMENT ON TABLE "ciudades" IS 'Ciudades disponibles';
-
-CREATE TABLE "cines" (
-  "id_cine" uuid PRIMARY KEY,
-  "nombre" varchar NOT NULL,
-  "direccion" varchar NOT NULL,
-  "id_ciudad" uuid NOT NULL
-);
-
-COMMENT ON TABLE "cines" IS 'Cines por ciudad';
-
-CREATE TABLE "salas" (
-  "id_sala" uuid PRIMARY KEY,
-  "nombre" varchar NOT NULL,
-  "capacidad" integer NOT NULL,
-  "tipo_sala" varchar,
-  "id_cine" uuid NOT NULL
-);
-
-COMMENT ON TABLE "salas" IS 'Salas de cada cine';
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE "categorias" (
-  "id_categoria" uuid PRIMARY KEY,
-  "nombre" varchar UNIQUE NOT NULL
+  "id_categoria" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nombre" varchar(100) UNIQUE NOT NULL
 );
 
-COMMENT ON TABLE "categorias" IS 'Estreno, Preventa, Reestreno';
+COMMENT ON TABLE "categorias" IS 'Categorias de clasificacion de peliculas';
+
+CREATE TABLE "tipo_cartelera" (
+  "id_tipo_cartelera" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nombre" varchar(100) UNIQUE NOT NULL
+);
+
+COMMENT ON TABLE "tipo_cartelera" IS 'Tipos de cartelera como estreno, preventa o reestreno';
+
+CREATE TABLE "salas" (
+  "id_sala" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nombre" varchar(100) NOT NULL,
+  "capacidad" integer NOT NULL,
+  "tipo" varchar(50) NOT NULL DEFAULT '2D',
+  "id_cine_externo" uuid NOT NULL
+);
+
+COMMENT ON TABLE "salas" IS 'Salas sincronizadas desde el servicio de localidades';
 
 CREATE TABLE "peliculas" (
-  "id_pelicula" uuid PRIMARY KEY,
-  "titulo" varchar NOT NULL,
-  "descripcion" text,
-  "duracion" integer NOT NULL,
-  "clasificacion" varchar,
-  "id_categoria" uuid NOT NULL
+  "id_pelicula" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "titulo" varchar(255) NOT NULL,
+  "sinopsis" text,
+  "duracion_minutos" integer,
+  "poster_url" varchar(500),
+  "activa" boolean NOT NULL DEFAULT true,
+  "id_categoria" uuid NOT NULL,
+  "id_tipo_cartelera" uuid NOT NULL
 );
 
-COMMENT ON TABLE "peliculas" IS 'Peliculas disponibles';
+COMMENT ON TABLE "peliculas" IS 'Peliculas disponibles en cartelera';
 
 CREATE TABLE "funciones" (
-  "id_funcion" uuid PRIMARY KEY,
+  "id_funcion" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "fecha" date NOT NULL,
   "hora" time NOT NULL,
-  "precio" decimal NOT NULL,
-  "idioma" varchar,
-  "formato" varchar,
+  "precio" decimal(10,2) NOT NULL,
+  "activa" boolean NOT NULL DEFAULT true,
   "id_pelicula" uuid NOT NULL,
   "id_sala" uuid NOT NULL
 );
 
-COMMENT ON TABLE "funciones" IS 'Funciones disponibles';
-
-ALTER TABLE "cines"
-  ADD CONSTRAINT "cines_ciudades"
-  FOREIGN KEY ("id_ciudad") REFERENCES "ciudades" ("id_ciudad")
-  DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "salas"
-  ADD CONSTRAINT "salas_cines"
-  FOREIGN KEY ("id_cine") REFERENCES "cines" ("id_cine")
-  DEFERRABLE INITIALLY IMMEDIATE;
+COMMENT ON TABLE "funciones" IS 'Funciones programadas por sala';
 
 ALTER TABLE "peliculas"
   ADD CONSTRAINT "peliculas_categorias"
   FOREIGN KEY ("id_categoria") REFERENCES "categorias" ("id_categoria")
+  DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "peliculas"
+  ADD CONSTRAINT "peliculas_tipo_cartelera"
+  FOREIGN KEY ("id_tipo_cartelera") REFERENCES "tipo_cartelera" ("id_tipo_cartelera")
   DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "funciones"
@@ -79,3 +68,7 @@ ALTER TABLE "funciones"
   ADD CONSTRAINT "funciones_salas"
   FOREIGN KEY ("id_sala") REFERENCES "salas" ("id_sala")
   DEFERRABLE INITIALLY IMMEDIATE;
+
+CREATE UNIQUE INDEX "ux_funciones_sala_fecha_hora_activa"
+  ON "funciones" ("id_sala", "fecha", "hora")
+  WHERE "activa" = true;

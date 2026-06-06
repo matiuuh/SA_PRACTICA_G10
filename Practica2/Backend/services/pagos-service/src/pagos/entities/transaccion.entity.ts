@@ -15,7 +15,7 @@ export class Transaccion {
   @Column({ unique: true })
   referencia!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   autorizacion?: string | null;
 
   @Column({ name: 'fecha_transaccion', type: 'timestamp' })
