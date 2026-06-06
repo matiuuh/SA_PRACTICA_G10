@@ -1,0 +1,48 @@
+services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service-remote
+    env_file:
+      - ./services/auth-service/.env
+    ports:
+      - "3001:3001"
+    networks:
+      - filmstars-network
+
+  localidades-service:
+    build:
+      context: ./services/localidades-service
+    container_name: localidades-service-remote
+    env_file:
+      - ./services/localidades-service/.env
+    ports:
+      - "3002:3002"
+    networks:
+      - filmstars-network
+
+  reservas-service:
+    build:
+      context: ./services/reservas-service
+    container_name: reservas-service-remote
+    env_file:
+      - ./services/reservas-service/.env
+    ports:
+      - "3004:3004"
+    networks:
+      - filmstars-network
+
+  pagos-service:
+    build:
+      context: ./services/pagos-service
+    container_name: pagos-service-remote
+    env_file:
+      - ./services/pagos-service/.env
+    ports:
+      - "3005:3005"
+    networks:
+      - filmstars-network
+
+networks:
+  filmstars-network:
+    driver: bridge
