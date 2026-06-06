@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cinema-dark-900 text-white font-cinema;
+  }
+}
+
+@layer components {
+  .cinema-card {
+    @apply bg-cinema-dark-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-cinema-gold-500/20;
+  }
+  
+  .cinema-button-primary {
+    @apply bg-cinema-red-500 hover:bg-cinema-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .cinema-button-secondary {
+    @apply bg-transparent border-2 border-cinema-gold-500 text-cinema-gold-500 hover:bg-cinema-gold-500 hover:text-cinema-dark-900 font-semibold py-2 px-6 rounded-lg transition-all duration-300;
+  }
+}
