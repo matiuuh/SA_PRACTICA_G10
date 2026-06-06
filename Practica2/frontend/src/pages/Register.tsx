@@ -3,22 +3,25 @@ import { Link, useNavigate } from 'react-router-dom'
 import { FaUser, FaEnvelope, FaLock, FaPhone, FaArrowLeft, FaTicketAlt } from 'react-icons/fa'
 import Button from '../components/atoms/Button/Button'
 import MainLayout from '../components/templates/MainLayout/MainLayout'
+import { authService } from '../services/auth.service'
 
 const Register = () => {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    nombreCompleto: '',
-    email: '',
+    nombre: '',
+    correo: '',
     telefono: '',
     password: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
     if (error) setError(null)
+    if (successMessage) setSuccessMessage(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,20 +32,31 @@ const Register = () => {
       return
     }
 
-    if (formData.telefono.length < 8) {
-      setError('El número de teléfono debe tener al menos 8 dígitos')
-      return
-    }
-
     setIsLoading(true)
     setError(null)
+    setSuccessMessage(null)
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      console.log('Registro exitoso:', formData)
-      navigate('/login')
+      const registerData = {
+        nombre: formData.nombre,
+        correo: formData.correo,
+        password: formData.password,
+        rol: 'CLIENTE'
+      }
+      
+      await authService.register(registerData)
+      
+      // Mostrar mensaje de éxito
+      setSuccessMessage('¡Cuenta creada exitosamente! Redirigiendo al login...')
+      
+      // Redirigir al login después de 2 segundos
+      setTimeout(() => {
+        navigate('/login')
+      }, 2000)
+      
     } catch (err: any) {
-      setError(err.message || 'Error al registrar')
+      console.error('Error en registro:', err)
+      setError(err.message || 'Error al registrar. Por favor, intenta de nuevo.')
     } finally {
       setIsLoading(false)
     }
@@ -63,6 +77,14 @@ const Register = () => {
             </Link>
           </div>
 
+          {/* Mensaje de éxito */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-lg">
+              <p className="text-sm text-green-400">{successMessage}</p>
+            </div>
+          )}
+
+          {/* Mensaje de error */}
           {error && (
             <div className="mb-6 p-4 bg-cinema-red-500/10 border border-cinema-red-500/30 rounded-lg">
               <p className="text-sm text-cinema-red-500">{error}</p>
@@ -110,10 +132,10 @@ const Register = () => {
                   <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
                     type="text"
-                    name="nombreCompleto"
+                    name="nombre"
                     required
                     placeholder="Nombre completo"
-                    value={formData.nombreCompleto}
+                    value={formData.nombre}
                     onChange={handleChange}
                     disabled={isLoading}
                     className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"
@@ -124,10 +146,10 @@ const Register = () => {
                   <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
                     type="email"
-                    name="email"
+                    name="correo"
                     required
                     placeholder="Correo electrónico"
-                    value={formData.email}
+                    value={formData.correo}
                     onChange={handleChange}
                     disabled={isLoading}
                     className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"
@@ -139,8 +161,7 @@ const Register = () => {
                   <input
                     type="tel"
                     name="telefono"
-                    required
-                    placeholder="Número de teléfono"
+                    placeholder="Número de teléfono (opcional)"
                     value={formData.telefono}
                     onChange={handleChange}
                     disabled={isLoading}
@@ -154,7 +175,7 @@ const Register = () => {
                     type="password"
                     name="password"
                     required
-                    placeholder="Contraseña "
+                    placeholder="Contraseña (mínimo 6 caracteres)"
                     value={formData.password}
                     onChange={handleChange}
                     disabled={isLoading}

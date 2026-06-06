@@ -1,10 +1,26 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { FaFilm, FaUser, FaUserPlus, FaBars, FaTimes, FaStar } from 'react-icons/fa'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { FaFilm, FaUser, FaUserPlus, FaBars, FaTimes, FaStar, FaSignOutAlt, FaUserCircle } from 'react-icons/fa'
 import Button from '../../atoms/Button/Button'
+import { authService } from '../../../services/auth.service'
 
 const Header = () => {
+  const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated())
+    setUser(authService.getUser())
+  }, [location.pathname])
+
+  const handleLogout = () => {
+    authService.logout()
+    setIsAuthenticated(false)
+    setUser(null)
+    navigate('/login')
+  }
 
   return (
     <header className="bg-cinema-dark-900/95 backdrop-blur-sm border-b border-cinema-gold-500/20 sticky top-0 z-50">
@@ -21,18 +37,35 @@ const Header = () => {
           </Link>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login">
-              <Button variant="outline" size="sm">
-                <FaUser className="inline mr-2" />
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="primary" size="sm">
-                <FaUserPlus className="inline mr-2" />
-                Registrarse
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <div className="flex items-center space-x-3">
+                  <FaUserCircle className="text-cinema-gold-500 text-2xl" />
+                  <span className="text-white text-sm">
+                    Hola, {user?.nombre?.split(' ')[0] || 'Usuario'}
+                  </span>
+                </div>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  <FaSignOutAlt className="inline mr-2" />
+                  Cerrar Sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm">
+                    <FaUser className="inline mr-2" />
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="primary" size="sm">
+                    <FaUserPlus className="inline mr-2" />
+                    Registrarse
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -45,18 +78,33 @@ const Header = () => {
 
         {isMobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-2">
-            <Link to="/login" className="block">
-              <Button variant="outline" size="sm" className="w-full">
-                <FaUser className="inline mr-2" />
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <Link to="/register" className="block">
-              <Button variant="primary" size="sm" className="w-full">
-                <FaUserPlus className="inline mr-2" />
-                Registrarse
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <div className="flex items-center space-x-3 py-2">
+                  <FaUserCircle className="text-cinema-gold-500 text-2xl" />
+                  <span className="text-white">Hola, {user?.nombre || 'Usuario'}</span>
+                </div>
+                <Button onClick={handleLogout} variant="outline" size="sm" className="w-full">
+                  <FaSignOutAlt className="inline mr-2" />
+                  Cerrar Sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="block">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <FaUser className="inline mr-2" />
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <Link to="/register" className="block">
+                  <Button variant="primary" size="sm" className="w-full">
+                    <FaUserPlus className="inline mr-2" />
+                    Registrarse
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         )}
       </nav>
