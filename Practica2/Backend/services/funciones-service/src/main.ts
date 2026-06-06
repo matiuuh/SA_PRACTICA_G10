@@ -7,7 +7,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.enableCors();
-  await app.listen(process.env.PORT ?? 3001);
-  console.log(`Servicio de Funciones corriendo en puerto ${process.env.PORT ?? 3001}`);
+  await app.listen(process.env.PORT ?? 3002);
+  console.log(`Servicio de Funciones corriendo en puerto ${process.env.PORT ?? 3002}`);
 }
 bootstrap();
