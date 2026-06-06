@@ -1,11 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Pelicula } from './pelicula.entity';
 import { Sala } from './sala.entity';
 
 @Entity('funciones')
 export class Funcion {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid', { name: 'id_funcion' })
+  id: string;
 
   @Column({ type: 'date' })
   fecha: string;

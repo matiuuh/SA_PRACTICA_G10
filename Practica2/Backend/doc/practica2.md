@@ -27,7 +27,7 @@ Práctica 2 -  Vacaciones de Junio 2026
 
 ## Índice
 
-Descripción del problema 3
+Descripción del problema 
 Alcance del sistema 4
 - Módulo de Autenticación y Sesión (Nuevo) 4
 - Selección de Ubicación y Funciones 4

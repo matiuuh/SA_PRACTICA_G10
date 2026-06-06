@@ -15,6 +15,15 @@ import { ReservasService } from './reservas.service';
 export class ReservasController {
   constructor(private readonly reservasService: ReservasService) {}
 
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      service: 'reservas-service',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get('funciones/:id/asientos')
   // Lista los asientos asociados a una funcion externa.
   findAsientosByFuncion(@Param('id', ParseUUIDPipe) id: string) {

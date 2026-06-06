@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateSalaDto {
   @IsString()
@@ -6,7 +14,8 @@ export class CreateSalaDto {
   @MaxLength(100)
   nombre: string;
 
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsNotEmpty()
   capacidad: number;
 
@@ -15,7 +24,7 @@ export class CreateSalaDto {
   @MaxLength(50)
   tipo?: string;
 
-  @IsNumber()
+  @IsUUID()
   @IsNotEmpty()
-  id_cine_externo: number;
+  id_cine_externo: string;
 }

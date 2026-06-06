@@ -17,6 +17,7 @@ export class GatewayService {
   private servicesHealth: Map<string, ServiceHealth> = new Map();
 
   constructor(private readonly httpService: HttpService) {
+    void this.runHealthChecks();
     this.startHealthChecks();
   }
 
@@ -54,19 +55,23 @@ export class GatewayService {
     }
   }
 
+  private async runHealthChecks() {
+    for (const service of services) {
+      const health = await this.checkServiceHealth(service);
+      this.servicesHealth.set(service.name, health);
+
+      if (health.status === 'unhealthy') {
+        this.logger.warn(`Service ${service.name} is unhealthy`);
+      } else {
+        this.logger.log(`Service ${service.name} is healthy (${health.responseTime}ms)`);
+      }
+    }
+  }
+
   async startHealthChecks() {
     // Verificar salud cada 30 segundos
-    setInterval(async () => {
-      for (const service of services) {
-        const health = await this.checkServiceHealth(service);
-        this.servicesHealth.set(service.name, health);
-        
-        if (health.status === 'unhealthy') {
-          this.logger.warn(`⚠️ Service ${service.name} is unhealthy!`);
-        } else {
-          this.logger.log(`✅ Service ${service.name} is healthy (${health.responseTime}ms)`);
-        }
-      }
+    setInterval(() => {
+      void this.runHealthChecks();
     }, 30000);
   }
 

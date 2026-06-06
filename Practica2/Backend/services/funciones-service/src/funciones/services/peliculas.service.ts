@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Pelicula } from '../entities/pelicula.entity';
+import { DeepPartial, Repository } from 'typeorm';
 import { CreatePeliculaDto } from '../dto/create-pelicula.dto';
 import { UpdatePeliculaDto } from '../dto/update-pelicula.dto';
+import { Pelicula } from '../entities/pelicula.entity';
 import { CategoriasService } from './categorias.service';
 import { TipoCarteleraService } from './tipo-cartelera.service';
 
@@ -20,48 +25,68 @@ export class PeliculasService {
     return this.repo.find();
   }
 
-  findByTipoCartelera(idTipo: number): Promise<Pelicula[]> {
+  findByTipoCartelera(idTipo: string): Promise<Pelicula[]> {
     return this.repo.find({ where: { tipoCartelera: { id: idTipo }, activa: true } });
   }
 
-  async findOne(id: number): Promise<Pelicula> {
+  async findOne(id: string): Promise<Pelicula> {
     const pelicula = await this.repo.findOne({ where: { id } });
-    if (!pelicula) throw new NotFoundException(`Pelicula #${id} no encontrada`);
+
+    if (!pelicula) {
+      throw new NotFoundException(`Pelicula ${id} no encontrada`);
+    }
+
     return pelicula;
   }
 
   async create(dto: CreatePeliculaDto): Promise<Pelicula> {
-    const existe = await this.repo.findOne({ where: { titulo: dto.titulo } });
-    if (existe) throw new ConflictException(`Ya existe una película con el título "${dto.titulo}"`);
+    const titulo = dto.titulo.trim();
+    const existe = await this.repo.findOne({ where: { titulo } });
+
+    if (existe) {
+      throw new ConflictException(`Ya existe una pelicula con el titulo "${titulo}"`);
+    }
 
     const categoria = await this.categoriasService.findOne(dto.id_categoria);
     const tipoCartelera = await this.tipoCarteleraService.findOne(dto.id_tipo_cartelera);
+    const peliculaData: DeepPartial<Pelicula> = {
+      titulo,
+      sinopsis: dto.sinopsis?.trim() || null,
+      duracion_minutos: dto.duracion_minutos ?? null,
+      poster_url: dto.poster_url?.trim() || null,
+      activa: dto.activa ?? true,
+      categoria,
+      tipoCartelera,
+    };
 
-    return this.repo.save(this.repo.create({ ...dto, categoria, tipoCartelera }));
+    return this.repo.save(this.repo.create(peliculaData));
   }
 
-  async update(id: number, dto: UpdatePeliculaDto): Promise<Pelicula> {
+  async update(id: string, dto: UpdatePeliculaDto): Promise<Pelicula> {
     const pelicula = await this.findOne(id);
 
     if (dto.id_categoria) {
       pelicula.categoria = await this.categoriasService.findOne(dto.id_categoria);
     }
+
     if (dto.id_tipo_cartelera) {
-      pelicula.tipoCartelera = await this.tipoCarteleraService.findOne(dto.id_tipo_cartelera);
+      pelicula.tipoCartelera = await this.tipoCarteleraService.findOne(
+        dto.id_tipo_cartelera,
+      );
     }
 
     Object.assign(pelicula, {
-      titulo: dto.titulo ?? pelicula.titulo,
-      sinopsis: dto.sinopsis ?? pelicula.sinopsis,
+      titulo: dto.titulo?.trim() ?? pelicula.titulo,
+      sinopsis: dto.sinopsis?.trim() ?? pelicula.sinopsis,
       duracion_minutos: dto.duracion_minutos ?? pelicula.duracion_minutos,
-      poster_url: dto.poster_url ?? pelicula.poster_url,
+      poster_url: dto.poster_url?.trim() ?? pelicula.poster_url,
       activa: dto.activa ?? pelicula.activa,
     });
 
     return this.repo.save(pelicula);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const pelicula = await this.findOne(id);
     const tieneFunciones = await this.repo
       .createQueryBuilder('p')
@@ -70,7 +95,7 @@ export class PeliculasService {
       .getCount();
 
     if (tieneFunciones > 0) {
-      throw new BadRequestException('No se puede eliminar una película con funciones activas');
+      throw new BadRequestException('No se puede eliminar una pelicula con funciones activas');
     }
 
     await this.repo.remove(pelicula);

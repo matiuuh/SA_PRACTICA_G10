@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
-import { SalasService } from '../services/salas.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { CreateSalaDto } from '../dto/create-sala.dto';
 import { UpdateSalaDto } from '../dto/update-sala.dto';
+import { SalasService } from '../services/salas.service';
 
 @Controller('salas')
 export class SalasController {
@@ -13,12 +22,12 @@ export class SalasController {
   }
 
   @Get('cine/:idCine')
-  findByCine(@Param('idCine', ParseIntPipe) idCine: number) {
+  findByCine(@Param('idCine', ParseUUIDPipe) idCine: string) {
     return this.salasService.findByCine(idCine);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.salasService.findOne(id);
   }
 
@@ -28,13 +37,13 @@ export class SalasController {
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSalaDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateSalaDto) {
     return this.salasService.update(id, dto);
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.salasService.remove(id);
-    return { message: `Sala #${id} eliminada correctamente` };
+    return { message: `Sala ${id} eliminada correctamente` };
   }
 }

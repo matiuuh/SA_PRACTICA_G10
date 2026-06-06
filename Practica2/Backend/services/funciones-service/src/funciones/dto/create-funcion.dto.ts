@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export class CreateFuncionDto {
   @IsString()
@@ -10,16 +18,17 @@ export class CreateFuncionDto {
   hora: string;
 
   @IsNumber()
+  @Min(0)
   @IsNotEmpty()
   precio: number;
 
-  @IsNumber()
+  @IsUUID()
   @IsNotEmpty()
-  id_pelicula: number;
+  id_pelicula: string;
 
-  @IsNumber()
+  @IsUUID()
   @IsNotEmpty()
-  id_sala: number;
+  id_sala: string;
 
   @IsBoolean()
   @IsOptional()

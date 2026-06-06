@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreatePeliculaDto {
   @IsString()
@@ -10,7 +19,8 @@ export class CreatePeliculaDto {
   @IsOptional()
   sinopsis?: string;
 
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
   duracion_minutos?: number;
 
@@ -19,13 +29,13 @@ export class CreatePeliculaDto {
   @MaxLength(500)
   poster_url?: string;
 
-  @IsNumber()
+  @IsUUID()
   @IsNotEmpty()
-  id_categoria: number;
+  id_categoria: string;
 
-  @IsNumber()
+  @IsUUID()
   @IsNotEmpty()
-  id_tipo_cartelera: number;
+  id_tipo_cartelera: string;
 
   @IsBoolean()
   @IsOptional()

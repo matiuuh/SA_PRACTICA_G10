@@ -15,6 +15,15 @@ import { PagosService } from './pagos.service';
 export class PagosController {
   constructor(private readonly pagosService: PagosService) {}
 
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      service: 'pagos-service',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get('metodos')
   findMetodos() {
     return this.pagosService.findMetodos();
