@@ -1,24 +1,25 @@
 import {
-  IsEmail,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  MinLength,
+  IsUUID,
+  Min,
 } from 'class-validator';
 
-export class RegisterDto {
+export class CreateSalaDto {
   @IsString()
   @IsNotEmpty()
   nombre!: string;
 
-  @IsEmail()
-  correo!: string;
-
-  @IsString()
-  @MinLength(6)
-  password!: string;
+  @IsInt()
+  @Min(1)
+  capacidad!: number;
 
   @IsOptional()
   @IsString()
-  rol?: string;
+  tipoSala?: string;
+
+  @IsUUID()
+  idCine!: string;
 }

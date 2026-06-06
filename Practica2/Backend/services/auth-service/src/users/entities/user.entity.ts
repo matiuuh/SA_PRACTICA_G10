@@ -10,18 +10,18 @@ import { Role } from './role.entity';
 @Entity({ name: 'usuarios' })
 export class User {
   @PrimaryColumn({ name: 'id_usuario', type: 'uuid' })
-  id: string;
+  id!: string;
 
   @Column()
-  nombre: string;
+  nombre!: string;
 
   @Column({ unique: true })
-  correo: string;
+  correo!: string;
 
   @Column({ name: 'password_hash' })
-  passwordHash: string;
+  passwordHash!: string;
 
   @ManyToOne(() => Role, (role) => role.usuarios, { eager: true })
   @JoinColumn({ name: 'id_rol' })
-  rol: Role;
+  rol!: Role;
 }
