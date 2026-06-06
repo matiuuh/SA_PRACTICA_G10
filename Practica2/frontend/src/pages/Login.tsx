@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { FaEnvelope, FaLock, FaArrowLeft, FaTicketAlt } from 'react-icons/fa'
 import Button from '../components/atoms/Button/Button'
 import MainLayout from '../components/templates/MainLayout/MainLayout'
+import { authService } from '../services/auth.service'
 
 const Login = () => {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    email: '',
+    correo: '',
     password: ''
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -25,10 +26,22 @@ const Login = () => {
     setError(null)
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      console.log('Login exitoso:', formData)
-      navigate('/home')
+      const response = await authService.login({
+        correo: formData.correo,
+        password: formData.password
+      })
+      console.log('Login exitoso:', response)
+      
+      // Redirigir según el rol del usuario
+      if (response.user.rol === 'ADMINISTRADOR') {
+        navigate('/panel/admin')
+      } else if (response.user.rol === 'CLIENTE') {
+        navigate('/panel/usuario')
+      } else {
+        navigate('/home')
+      }
     } catch (err: any) {
+      console.error('Error en login:', err)
       setError(err.message || 'Error al iniciar sesión')
     } finally {
       setIsLoading(false)
@@ -97,10 +110,10 @@ const Login = () => {
                   <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
                     type="email"
-                    name="email"
+                    name="correo"
                     required
                     placeholder="Correo electrónico"
-                    value={formData.email}
+                    value={formData.correo}
                     onChange={handleChange}
                     disabled={isLoading}
                     className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"
