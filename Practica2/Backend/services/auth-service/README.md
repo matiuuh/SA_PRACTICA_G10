@@ -1,28 +1,28 @@
 # auth-service
 
-Base inicial para el servicio de autenticacion y usuarios de la Practica 2.
+Servicio de autenticacion y sesion para la Practica 2.
 
-## Responsabilidades
+## Incluye
 
 - registro de usuarios
 - inicio de sesion
-- hash de contrasenas
-- emision y validacion de JWT
+- hash de contrasenas con `bcrypt`
+- emision y validacion de `JWT`
 - consulta basica de usuarios y roles
+- entidades alineadas con `01-ER_USUARIOS.sql`
 
-## Estructura sugerida
+## Endpoints base
 
-- `src/auth`: login, JWT, guards y estrategias
-- `src/users`: usuarios, roles y registro
-- `test`: pruebas del servicio
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/profile`
+- `GET /api/users/:id`
 
-## Archivos que luego puedes crear
+## Variables de entorno
 
-- `src/main.ts`
-- `src/app.module.ts`
-- `src/auth/auth.module.ts`
-- `src/auth/auth.controller.ts`
-- `src/auth/auth.service.ts`
-- `src/users/users.module.ts`
-- `src/users/users.controller.ts`
-- `src/users/users.service.ts`
+Revisa `.env.example` para configurar:
+
+- puerto
+- conexion a PostgreSQL
+- secreto JWT
+- rol por defecto
