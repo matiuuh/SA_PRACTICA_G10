@@ -622,6 +622,6 @@
 
 ![CDU005](./img/CDU005.png)
 
-[Link de diagramas](https://lucid.app/lucidchart/8bfc13c1-a39a-4b25-85ad-273c552af5e2/edit?viewport_loc=-516%2C215%2C2029%2C1024%2CPtr3jjK7RCOS&invitationId=inv_0974d951-34be-4425-892c-707ef4fb5b97)
+[Link de diagramas](https://lucid.app/lucidchart/0bbb84d4-08e3-4fbd-9a22-720388feb958/edit?viewport_loc=-640%2C-1078%2C2219%2C1120%2Ct1q30VS.E34j&invitationId=inv_0e22b3ff-977c-4046-a2ba-8e42f5cfc939)
 
 [Volver a Documentacion](../Documentación.md)
