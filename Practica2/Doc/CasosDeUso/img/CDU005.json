@@ -1,0 +1,241 @@
+{
+    "id": "45d726bb-6086-40fd-bc65-ac959798c804",
+    "title": "CDU005",
+    "product": "lucidchart",
+    "pages": [
+        {
+            "id": "0_0",
+            "title": "Página 1",
+            "index": 0,
+            "items": {
+                "shapes": [
+                    {
+                        "id": "lS22UO4R-.E0",
+                        "class": "UMLActorBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "Cliente"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "bq32Gn.V_caw",
+                        "class": "UMLRectangleContainerBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "CDU005 Reserva y Compra de Boletos"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": [],
+                        "contains": {
+                            "shapes": [
+                                "Dcc3ldq5rljq",
+                                "U9a3qoNG93W1",
+                                "acc3HNOW-5cq",
+                                "~3a3Q-UKO4KL"
+                            ],
+                            "lines": [
+                                "7fc35hEBc06-",
+                                "Pgc3wq6MgaYv",
+                                "kfc36ibZvgAX"
+                            ],
+                            "groups": []
+                        }
+                    },
+                    {
+                        "id": "~3a3Q-UKO4KL",
+                        "class": "UMLUseCaseBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "CDU005.1 - Seleccionar Ubicación"
+                            },
+                            {
+                                "label": "ExtensionPoints",
+                                "text": "Punto 1"
+                            },
+                            {
+                                "label": "ExtensionPointLabel",
+                                "text": "Puntos de extensión"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "U9a3qoNG93W1",
+                        "class": "UMLUseCaseBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "CDU005.2 - Visualizar Funciones Disponibles"
+                            },
+                            {
+                                "label": "ExtensionPoints",
+                                "text": "Punto 1"
+                            },
+                            {
+                                "label": "ExtensionPointLabel",
+                                "text": "Puntos de extensión"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "acc3HNOW-5cq",
+                        "class": "UMLUseCaseBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "CDU005.3 - Seleccionar Asientos"
+                            },
+                            {
+                                "label": "ExtensionPoints",
+                                "text": "Punto 1"
+                            },
+                            {
+                                "label": "ExtensionPointLabel",
+                                "text": "Puntos de extensión"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "Dcc3ldq5rljq",
+                        "class": "UMLUseCaseBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "CDU005.4 - Procesar Compra y Emitir Boleto"
+                            },
+                            {
+                                "label": "ExtensionPoints",
+                                "text": "Punto 1"
+                            },
+                            {
+                                "label": "ExtensionPointLabel",
+                                "text": "Puntos de extensión"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "ddc3h4bc2RNa",
+                        "class": "UMLActorBlock",
+                        "textAreas": [
+                            {
+                                "label": "Text",
+                                "text": "Sistema de Pago"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    }
+                ],
+                "lines": [
+                    {
+                        "id": "Eec3A9IZ-RNv",
+                        "endpoint1": {
+                            "style": "None",
+                            "connectedTo": "lS22UO4R-.E0"
+                        },
+                        "endpoint2": {
+                            "style": "Equilateral Arrow",
+                            "connectedTo": "~3a3Q-UKO4KL"
+                        },
+                        "textAreas": [],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "kfc36ibZvgAX",
+                        "endpoint1": {
+                            "style": "None",
+                            "connectedTo": "U9a3qoNG93W1"
+                        },
+                        "endpoint2": {
+                            "style": "None",
+                            "connectedTo": "~3a3Q-UKO4KL"
+                        },
+                        "textAreas": [
+                            {
+                                "label": "t0",
+                                "text": "<<include>>"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "7fc35hEBc06-",
+                        "endpoint1": {
+                            "style": "None",
+                            "connectedTo": "U9a3qoNG93W1"
+                        },
+                        "endpoint2": {
+                            "style": "None",
+                            "connectedTo": "acc3HNOW-5cq"
+                        },
+                        "textAreas": [
+                            {
+                                "label": "t0",
+                                "text": "<<extended>>"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "Pgc3wq6MgaYv",
+                        "endpoint1": {
+                            "style": "None",
+                            "connectedTo": "acc3HNOW-5cq"
+                        },
+                        "endpoint2": {
+                            "style": "None",
+                            "connectedTo": "Dcc3ldq5rljq"
+                        },
+                        "textAreas": [
+                            {
+                                "label": "t0",
+                                "text": "<<include>>"
+                            }
+                        ],
+                        "customData": [],
+                        "linkedData": []
+                    },
+                    {
+                        "id": "uhc3_BbSdxlF",
+                        "endpoint1": {
+                            "style": "None",
+                            "connectedTo": "ddc3h4bc2RNa"
+                        },
+                        "endpoint2": {
+                            "style": "Equilateral Arrow",
+                            "connectedTo": "Dcc3ldq5rljq"
+                        },
+                        "textAreas": [],
+                        "customData": [],
+                        "linkedData": []
+                    }
+                ],
+                "groups": [],
+                "layers": []
+            },
+            "customData": [],
+            "linkedData": []
+        }
+    ],
+    "data": {
+        "collections": []
+    },
+    "accountId": 216497735
+}
