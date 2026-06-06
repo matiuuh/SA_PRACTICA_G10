@@ -23,7 +23,7 @@ import { UsersModule } from '../users/users.module';
           expiresIn: configService.get<string>(
             'JWT_EXPIRES_IN',
             jwtConstants.defaultExpiresIn,
-          ),
+          ) as unknown as number,
         },
       }),
     }),

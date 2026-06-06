@@ -12,18 +12,18 @@ import { Sala } from './sala.entity';
 @Entity({ name: 'cines' })
 export class Cine {
   @PrimaryColumn({ name: 'id_cine', type: 'uuid' })
-  id: string;
+  id!: string;
 
   @Column()
-  nombre: string;
+  nombre!: string;
 
   @Column()
-  direccion: string;
+  direccion!: string;
 
   @ManyToOne(() => Ciudad, (ciudad) => ciudad.cines, { eager: true })
   @JoinColumn({ name: 'id_ciudad' })
-  ciudad: Ciudad;
+  ciudad!: Ciudad;
 
   @OneToMany(() => Sala, (sala) => sala.cine)
-  salas: Sala[];
+  salas!: Sala[];
 }

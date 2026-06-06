@@ -3,12 +3,12 @@ import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 export class CreateCineDto {
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  nombre!: string;
 
   @IsString()
   @IsNotEmpty()
-  direccion: string;
+  direccion!: string;
 
   @IsUUID()
-  idCiudad: string;
+  idCiudad!: string;
 }

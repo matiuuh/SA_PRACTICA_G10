@@ -10,16 +10,16 @@ import {
 export class CreateSalaDto {
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  nombre!: string;
 
   @IsInt()
   @Min(1)
-  capacidad: number;
+  capacidad!: number;
 
   @IsOptional()
   @IsString()
   tipoSala?: string;
 
   @IsUUID()
-  idCine: string;
+  idCine!: string;
 }

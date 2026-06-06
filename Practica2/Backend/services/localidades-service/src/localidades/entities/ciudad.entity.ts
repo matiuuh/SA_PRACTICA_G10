@@ -4,11 +4,11 @@ import { Cine } from './cine.entity';
 @Entity({ name: 'ciudades' })
 export class Ciudad {
   @PrimaryColumn({ name: 'id_ciudad', type: 'uuid' })
-  id: string;
+  id!: string;
 
   @Column()
-  nombre: string;
+  nombre!: string;
 
   @OneToMany(() => Cine, (cine) => cine.ciudad)
-  cines: Cine[];
+  cines!: Cine[];
 }
