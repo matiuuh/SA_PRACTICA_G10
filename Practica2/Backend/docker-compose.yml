@@ -119,10 +119,50 @@ services:
     networks:
       - filmstars-network
 
+  pagos-db:
+    image: postgres:15-alpine
+    container_name: pagos-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pagos_service
+    ports:
+      - "5436:5432"
+    volumes:
+      - pagos-db-data:/var/lib/postgresql/data
+      - ../scripts sql/04-ER_PAGOS.sql:/docker-entrypoint-initdb.d/04-ER_PAGOS.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pagos_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  pagos-service:
+    build:
+      context: ./services/pagos-service
+    container_name: pagos-service
+    environment:
+      PORT: 3005
+      DB_HOST: pagos-db
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: pagos_service
+    ports:
+      - "3005:3005"
+    depends_on:
+      pagos-db:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
 volumes:
   auth-db-data:
   localidades-db-data:
   reservas-db-data:
+  pagos-db-data:
 
 networks:
   filmstars-network:

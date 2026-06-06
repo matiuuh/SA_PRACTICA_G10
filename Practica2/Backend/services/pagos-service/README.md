@@ -1,18 +1,30 @@
 # pagos-service
 
-Base inicial para el servicio de pagos.
+Servicio encargado del flujo de pagos y transacciones.
 
 ## Responsabilidades
 
-- registro de pagos
+- gestion de metodos de pago
 - control de estados de pago
+- registro de pagos por reserva externa
 - registro de transacciones
-- consumo o publicacion de eventos relacionados con la compra
 
-## Estructura sugerida
+## Endpoints base
 
-- `src/pagos/controllers`
-- `src/pagos/services`
-- `src/pagos/dto`
-- `src/pagos/entities`
-- `src/pagos/events`
+- `GET /api/pagos/metodos`
+- `GET /api/pagos/reserva/:id`
+- `GET /api/pagos/:id`
+- `POST /api/pagos/metodos`
+- `POST /api/pagos/estados`
+- `POST /api/pagos`
+- `POST /api/pagos/:id/aprobar`
+- `POST /api/pagos/:id/rechazar`
+
+## Base de datos
+
+Este servicio sigue el script `04-ER_PAGOS.sql`:
+
+- `metodos_pago`
+- `estado_pago`
+- `pagos`
+- `transacciones`
