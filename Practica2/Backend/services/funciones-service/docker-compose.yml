@@ -1,0 +1,31 @@
+services:
+  funciones-service:
+    build: .
+    ports:
+      - '3002:3002'
+    env_file:
+      - .env
+    depends_on:
+      - postgres-funciones
+    networks:
+      - filmstars-network
+
+  postgres-funciones:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '5434:5432'
+    volumes:
+      - pgdata-funciones:/var/lib/postgresql/data
+    networks:
+      - filmstars-network
+
+volumes:
+  pgdata-funciones:
+
+networks:
+  filmstars-network:
+    driver: bridge

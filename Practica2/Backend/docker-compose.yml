@@ -1,0 +1,129 @@
+services:
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_service
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+      - ../scripts sql/01-ER_USUARIOS.sql:/docker-entrypoint-initdb.d/01-ER_USUARIOS.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service
+    environment:
+      PORT: 3001
+      DB_HOST: auth-db
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: auth_service
+      JWT_SECRET: change_this_secret
+      JWT_EXPIRES_IN: 1h
+      DEFAULT_ROLE: CLIENTE
+    ports:
+      - "3001:3001"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  localidades-db:
+    image: postgres:15-alpine
+    container_name: localidades-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: localidades_service
+    ports:
+      - "5434:5432"
+    volumes:
+      - localidades-db-data:/var/lib/postgresql/data
+      - ../scripts sql/05-ER_LOCALIDADES.sql:/docker-entrypoint-initdb.d/05-ER_LOCALIDADES.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d localidades_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  localidades-service:
+    build:
+      context: ./services/localidades-service
+    container_name: localidades-service
+    environment:
+      PORT: 3002
+      DB_HOST: localidades-db
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: localidades_service
+    ports:
+      - "3002:3002"
+    depends_on:
+      localidades-db:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  reservas-db:
+    image: postgres:15-alpine
+    container_name: reservas-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reservas_service
+    ports:
+      - "5435:5432"
+    volumes:
+      - reservas-db-data:/var/lib/postgresql/data
+      - ../scripts sql/03-ER_RESERVAS.sql:/docker-entrypoint-initdb.d/03-ER_RESERVAS.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reservas_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  reservas-service:
+    build:
+      context: ./services/reservas-service
+    container_name: reservas-service
+    environment:
+      PORT: 3004
+      DB_HOST: reservas-db
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: reservas_service
+    ports:
+      - "3004:3004"
+    depends_on:
+      reservas-db:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+volumes:
+  auth-db-data:
+  localidades-db-data:
+  reservas-db-data:
+
+networks:
+  filmstars-network:
+    driver: bridge
