@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { FaTicketAlt, FaFilm, FaStar, FaCouch, FaHeart, FaTheaterMasks } from 'react-icons/fa'
+import { FaTicketAlt, FaFilm, FaStar, FaCouch, FaHeart } from 'react-icons/fa'
 import MainLayout from '../components/templates/MainLayout/MainLayout'
 import Button from '../components/atoms/Button/Button'
 import PageTransition from '../components/atoms/PageTransition/PageTransition'

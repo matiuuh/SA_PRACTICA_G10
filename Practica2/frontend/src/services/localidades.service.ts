@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api, endpoints } from './api';
 import type {
   Ciudad,
   Cine,
@@ -8,49 +8,35 @@ import type {
   CreateSalaRequest,
 } from '../types/localidades.types';
 
-const LOCALIDADES_URL = import.meta.env.VITE_LOCALIDADES_URL || 'http://localhost:3002';
-
-const localidadesApi = axios.create({
-  baseURL: `${LOCALIDADES_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
-});
-
-localidadesApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
 class LocalidadesService {
   async getCiudades(): Promise<Ciudad[]> {
-    const res = await localidadesApi.get<Ciudad[]>('/localidades/ciudades');
-    return res.data;
+    const response = await api.get<Ciudad[]>(`${endpoints.localidades}/ciudades`);
+    return response.data;
   }
 
   async getCinesByCiudad(idCiudad: string): Promise<Cine[]> {
-    const res = await localidadesApi.get<Cine[]>(`/localidades/ciudades/${idCiudad}/cines`);
-    return res.data;
+    const response = await api.get<Cine[]>(`${endpoints.localidades}/ciudades/${idCiudad}/cines`);
+    return response.data;
   }
 
   async getSalasByCine(idCine: string): Promise<Sala[]> {
-    const res = await localidadesApi.get<Sala[]>(`/localidades/cines/${idCine}/salas`);
-    return res.data;
+    const response = await api.get<Sala[]>(`${endpoints.localidades}/cines/${idCine}/salas`);
+    return response.data;
   }
 
   async createCiudad(data: CreateCiudadRequest): Promise<Ciudad> {
-    const res = await localidadesApi.post<Ciudad>('/localidades/ciudades', data);
-    return res.data;
+    const response = await api.post<Ciudad>(`${endpoints.localidades}/ciudades`, data);
+    return response.data;
   }
 
   async createCine(data: CreateCineRequest): Promise<Cine> {
-    const res = await localidadesApi.post<Cine>('/localidades/cines', data);
-    return res.data;
+    const response = await api.post<Cine>(`${endpoints.localidades}/cines`, data);
+    return response.data;
   }
 
   async createSala(data: CreateSalaRequest): Promise<Sala> {
-    const res = await localidadesApi.post<Sala>('/localidades/salas', data);
-    return res.data;
+    const response = await api.post<Sala>(`${endpoints.localidades}/salas`, data);
+    return response.data;
   }
 }
 

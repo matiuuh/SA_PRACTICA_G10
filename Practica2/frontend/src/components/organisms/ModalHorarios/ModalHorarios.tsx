@@ -1,90 +1,88 @@
-import { useState } from 'react'
-import { FaTimes, FaClock, FaCalendarAlt, FaFilm } from 'react-icons/fa'
-
-interface Pelicula {
-  id: number
-  titulo: string
-  genero: string
-  duracion: string
-  clasificacion: string
-  horarios: string[]
-}
+import { useEffect, useState } from 'react';
+import { FaClock, FaFilm, FaTimes } from 'react-icons/fa';
+import type { CarteleraPelicula, HorarioFuncion } from '../../../types/user-panel.types';
 
 interface ModalHorariosProps {
-  pelicula: Pelicula | null
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: (horario: string) => void
+  pelicula: CarteleraPelicula | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (horario: HorarioFuncion) => void;
 }
 
-const ModalHorarios: React.FC<ModalHorariosProps> = ({ pelicula, isOpen, onClose, onConfirm }) => {
-  const [selectedHorario, setSelectedHorario] = useState<string>('')
+const ModalHorarios: React.FC<ModalHorariosProps> = ({
+  pelicula,
+  isOpen,
+  onClose,
+  onConfirm,
+}) => {
+  const [selectedHorarioId, setSelectedHorarioId] = useState('');
 
-  if (!isOpen || !pelicula) return null
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedHorarioId('');
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !pelicula) {
+    return null;
+  }
+
+  const selectedHorario = pelicula.horarios.find((horario) => horario.id === selectedHorarioId);
 
   const handleConfirm = () => {
     if (selectedHorario) {
-      onConfirm(selectedHorario)
-      setSelectedHorario('')
+      onConfirm(selectedHorario);
+      setSelectedHorarioId('');
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="bg-cinema-dark-800 rounded-2xl max-w-md w-full border border-cinema-gold-500/30 shadow-2xl">
-        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
           <div className="flex items-center gap-3">
             <FaFilm className="text-cinema-red-500 text-2xl" />
             <h2 className="text-xl font-bold text-white">Seleccionar Horario</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <FaTimes className="text-xl" />
           </button>
         </div>
 
-        {/* Contenido */}
         <div className="p-6 space-y-6">
-          {/* Información de la película */}
           <div className="bg-cinema-dark-900/50 rounded-lg p-4">
             <h3 className="font-bold text-white text-lg mb-2">{pelicula.titulo}</h3>
-            <div className="flex gap-4 text-sm">
-              <span className="text-gray-400">{pelicula.genero}</span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-400">{pelicula.duracion}</span>
-              <span className="text-gray-400">•</span>
+            <div className="flex flex-wrap gap-2 text-sm text-gray-400">
+              <span>{pelicula.genero}</span>
+              <span>{pelicula.duracion}</span>
               <span className="text-cinema-gold-500">{pelicula.clasificacion}</span>
             </div>
           </div>
 
-          {/* Selección de horario */}
           <div>
             <label className="block text-gray-300 text-sm font-semibold mb-3">
               <FaClock className="inline mr-2 text-cinema-gold-500" />
               Selecciona un horario
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {pelicula.horarios.map((horario, idx) => (
+            <div className="grid grid-cols-2 gap-2">
+              {pelicula.horarios.map((horario) => (
                 <button
-                  key={idx}
-                  onClick={() => setSelectedHorario(horario)}
-                  className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                    selectedHorario === horario
+                  key={horario.id}
+                  onClick={() => setSelectedHorarioId(horario.id)}
+                  className={`py-3 px-3 rounded-lg text-sm font-medium transition-all text-left ${
+                    selectedHorarioId === horario.id
                       ? 'bg-cinema-red-500 text-white'
                       : 'bg-cinema-dark-900 text-gray-300 hover:bg-cinema-red-500/50 hover:text-white'
                   }`}
                 >
-                  {horario}
+                  <div>{horario.hora}</div>
+                  <div className="text-xs opacity-80">{horario.salaNombre}</div>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-6 border-t border-cinema-gold-500/20 flex gap-3">
           <button
             onClick={onClose}
@@ -106,7 +104,7 @@ const ModalHorarios: React.FC<ModalHorariosProps> = ({ pelicula, isOpen, onClose
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ModalHorarios
+export default ModalHorarios;

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api, endpoints } from './api';
 import type {
   Categoria,
   TipoCartelera,
@@ -13,110 +13,87 @@ import type {
   FuncionesFilter,
 } from '../types/funciones.types';
 
-const FUNCIONES_URL = import.meta.env.VITE_FUNCIONES_URL || 'http://localhost:3003';
-
-const funcionesApi = axios.create({
-  baseURL: `${FUNCIONES_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
-});
-
-funcionesApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
 class FuncionesService {
-  // --- Peliculas ---
-
   async getPeliculas(tipoCartelera?: string): Promise<Pelicula[]> {
-    const res = await funcionesApi.get<Pelicula[]>('/peliculas', {
+    const response = await api.get<Pelicula[]>(`${endpoints.funciones}/peliculas`, {
       params: tipoCartelera ? { tipo_cartelera: tipoCartelera } : undefined,
     });
-    return res.data;
+
+    return response.data;
   }
 
   async getPelicula(id: string): Promise<Pelicula> {
-    const res = await funcionesApi.get<Pelicula>(`/peliculas/${id}`);
-    return res.data;
+    const response = await api.get<Pelicula>(`${endpoints.funciones}/peliculas/${id}`);
+    return response.data;
   }
 
   async createPelicula(data: CreatePeliculaRequest): Promise<Pelicula> {
-    const res = await funcionesApi.post<Pelicula>('/peliculas', data);
-    return res.data;
+    const response = await api.post<Pelicula>(`${endpoints.funciones}/peliculas`, data);
+    return response.data;
   }
 
   async updatePelicula(id: string, data: UpdatePeliculaRequest): Promise<Pelicula> {
-    const res = await funcionesApi.put<Pelicula>(`/peliculas/${id}`, data);
-    return res.data;
+    const response = await api.put<Pelicula>(`${endpoints.funciones}/peliculas/${id}`, data);
+    return response.data;
   }
 
   async deletePelicula(id: string): Promise<void> {
-    await funcionesApi.delete(`/peliculas/${id}`);
+    await api.delete(`${endpoints.funciones}/peliculas/${id}`);
   }
 
-  // --- Funciones ---
-
   async getFunciones(filters?: FuncionesFilter): Promise<Funcion[]> {
-    const res = await funcionesApi.get<Funcion[]>('/funciones', { params: filters });
-    return res.data;
+    const response = await api.get<Funcion[]>(endpoints.funciones, { params: filters });
+    return response.data;
   }
 
   async getFuncion(id: string): Promise<Funcion> {
-    const res = await funcionesApi.get<Funcion>(`/funciones/${id}`);
-    return res.data;
+    const response = await api.get<Funcion>(`${endpoints.funciones}/${id}`);
+    return response.data;
   }
 
   async createFuncion(data: CreateFuncionRequest): Promise<Funcion> {
-    const res = await funcionesApi.post<Funcion>('/funciones', data);
-    return res.data;
+    const response = await api.post<Funcion>(endpoints.funciones, data);
+    return response.data;
   }
 
   async updateFuncion(id: string, data: UpdateFuncionRequest): Promise<Funcion> {
-    const res = await funcionesApi.put<Funcion>(`/funciones/${id}`, data);
-    return res.data;
+    const response = await api.put<Funcion>(`${endpoints.funciones}/${id}`, data);
+    return response.data;
   }
 
-  // --- Categorias ---
-
   async getCategorias(): Promise<Categoria[]> {
-    const res = await funcionesApi.get<Categoria[]>('/categorias');
-    return res.data;
+    const response = await api.get<Categoria[]>(`${endpoints.funciones}/categorias`);
+    return response.data;
   }
 
   async createCategoria(nombre: string): Promise<Categoria> {
-    const res = await funcionesApi.post<Categoria>('/categorias', { nombre });
-    return res.data;
+    const response = await api.post<Categoria>(`${endpoints.funciones}/categorias`, { nombre });
+    return response.data;
   }
 
-  // --- Tipo Cartelera ---
-
   async getTiposCartelera(): Promise<TipoCartelera[]> {
-    const res = await funcionesApi.get<TipoCartelera[]>('/tipo-cartelera');
-    return res.data;
+    const response = await api.get<TipoCartelera[]>(`${endpoints.funciones}/tipo-cartelera`);
+    return response.data;
   }
 
   async createTipoCartelera(nombre: string): Promise<TipoCartelera> {
-    const res = await funcionesApi.post<TipoCartelera>('/tipo-cartelera', { nombre });
-    return res.data;
+    const response = await api.post<TipoCartelera>(`${endpoints.funciones}/tipo-cartelera`, { nombre });
+    return response.data;
   }
 
-  // --- Salas (del servicio de funciones) ---
-
   async getSalas(): Promise<SalaFuncion[]> {
-    const res = await funcionesApi.get<SalaFuncion[]>('/salas');
-    return res.data;
+    const response = await api.get<SalaFuncion[]>(`${endpoints.funciones}/salas`);
+    return response.data;
   }
 
   async getSalasByCine(idCine: string): Promise<SalaFuncion[]> {
-    const res = await funcionesApi.get<SalaFuncion[]>(`/salas/cine/${idCine}`);
-    return res.data;
+    const response = await api.get<SalaFuncion[]>(`${endpoints.funciones}/salas/cine/${idCine}`);
+    return response.data;
   }
 
   async createSala(data: CreateSalaFuncionRequest): Promise<SalaFuncion> {
-    const res = await funcionesApi.post<SalaFuncion>('/salas', data);
-    return res.data;
+    const response = await api.post<SalaFuncion>(`${endpoints.funciones}/salas`, data);
+    return response.data;
   }
 }
 

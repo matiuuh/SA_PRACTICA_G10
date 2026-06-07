@@ -13,14 +13,14 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
@@ -31,18 +31,17 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
-  }
+  },
 );
 
 export const endpoints = {
   auth: '/api/auth',
-  movies: '/api/peliculas',
-  categories: '/api/categorias',
-  tiposCartelera: '/api/tipo-cartelera',
-  bookings: '/api/bookings',
-  payments: '/api/payments',
-  locations: '/api/locations',
+  localidades: '/api/localidades',
+  funciones: '/api/funciones',
+  reservas: '/api/reservas',
+  pagos: '/api/pagos',
 };
 
 export default api;
