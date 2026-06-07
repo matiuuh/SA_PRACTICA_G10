@@ -1,94 +1,140 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { FaFilm, FaUser, FaUserPlus, FaBars, FaTimes, FaStar, FaSignOutAlt, FaCity, FaTheaterMasks } from 'react-icons/fa'
-import Button from '../../atoms/Button/Button'
-import { authService } from '../../../services/auth.service'
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  FaBars,
+  FaCity,
+  FaFilm,
+  FaSignOutAlt,
+  FaStar,
+  FaTheaterMasks,
+  FaTimes,
+  FaUser,
+  FaUserPlus,
+} from 'react-icons/fa';
+import Button from '../../atoms/Button/Button';
+import { authService } from '../../../services/auth.service';
+import { localidadesService } from '../../../services/localidades.service';
+import type { Ciudad, Cine } from '../../../types/localidades.types';
+
+const CITY_STORAGE_KEY = 'selectedCity';
+const CINEMA_STORAGE_KEY = 'selectedCinema';
+const SELECTION_EVENT = 'filmstars-selection-changed';
 
 const Header = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [selectedCity, setSelectedCity] = useState('')
-  const [selectedCinema, setSelectedCinema] = useState('')
-  const [isUserPanel, setIsUserPanel] = useState(false)
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCinema, setSelectedCinema] = useState('');
+  const [isUserPanel, setIsUserPanel] = useState(false);
+  const [cities, setCities] = useState<Ciudad[]>([]);
+  const [cinemas, setCinemas] = useState<Cine[]>([]);
 
-  // Ciudades disponibles
-  const cities = [
-    { id: 1, name: 'Ciudad de Guatemala', value: 'gt' },
-    { id: 2, name: 'Antigua Guatemala', value: 'antigua' },
-    { id: 3, name: 'Quetzaltenango', value: 'xela' },
-    { id: 4, name: 'Escuintla', value: 'escuintla' },
-  ]
-
-  // Cines según ciudad seleccionada
-  const cinemas = {
-    gt: [
-      { id: 1, name: 'Cinépolis Miraflores' },
-      { id: 2, name: 'Cinemark Oakland Mall' },
-      { id: 3, name: 'Cine Centro Maya' },
-    ],
-    antigua: [
-      { id: 4, name: 'Cine Colonial Antigua' },
-      { id: 5, name: 'Cinépolis Antigua' },
-    ],
-    xela: [
-      { id: 6, name: 'Cinemark Quetzaltenango' },
-      { id: 7, name: 'Cine Universal Xela' },
-    ],
-    escuintla: [
-      { id: 8, name: 'Cine Escuintla Center' },
-    ],
-  }
-
-  // Determinar si el logo debe ser clickeable (solo en login/register)
-  const shouldLogoBeClickable = location.pathname === '/login' || location.pathname === '/register'
+  const shouldLogoBeClickable =
+    location.pathname === '/login' || location.pathname === '/register';
 
   useEffect(() => {
-    setIsAuthenticated(authService.isAuthenticated())
-    setUser(authService.getUser())
-    
-    // Verificar si estamos en el panel de usuario
-    setIsUserPanel(window.location.pathname.includes('/panel/usuario'))
-    
-    // Cargar ciudad guardada
-    const savedCity = localStorage.getItem('selectedCity')
-    if (savedCity) {
-      setSelectedCity(savedCity)
-    } else if (cities.length > 0) {
-      setSelectedCity(cities[0].value)
+    setIsAuthenticated(authService.isAuthenticated());
+    setIsUserPanel(location.pathname.includes('/panel/usuario'));
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isUserPanel) {
+      return;
     }
-    
-    // Cargar cine guardado
-    const savedCinema = localStorage.getItem('selectedCinema')
-    if (savedCinema) {
-      setSelectedCinema(savedCinema)
+
+    const loadCities = async () => {
+      try {
+        const loadedCities = await localidadesService.getCiudades();
+        setCities(loadedCities);
+
+        const savedCity = localStorage.getItem(CITY_STORAGE_KEY);
+        const nextCity =
+          savedCity && loadedCities.some((city) => city.id === savedCity)
+            ? savedCity
+            : loadedCities[0]?.id || '';
+
+        setSelectedCity(nextCity);
+
+        if (nextCity) {
+          localStorage.setItem(CITY_STORAGE_KEY, nextCity);
+        }
+      } catch (error) {
+        console.error('No se pudieron cargar las ciudades', error);
+        setCities([]);
+      }
+    };
+
+    void loadCities();
+  }, [isAuthenticated, isUserPanel]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isUserPanel || !selectedCity) {
+      setCinemas([]);
+      setSelectedCinema('');
+      return;
     }
-  }, [location.pathname])
+
+    const loadCinemas = async () => {
+      try {
+        const loadedCinemas = await localidadesService.getCinesByCiudad(selectedCity);
+        setCinemas(loadedCinemas);
+
+        const savedCinema = localStorage.getItem(CINEMA_STORAGE_KEY);
+        const nextCinema =
+          savedCinema && loadedCinemas.some((cinema) => cinema.id === savedCinema)
+            ? savedCinema
+            : '';
+
+        setSelectedCinema(nextCinema);
+
+        if (nextCinema) {
+          localStorage.setItem(CINEMA_STORAGE_KEY, nextCinema);
+        } else {
+          localStorage.removeItem(CINEMA_STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('No se pudieron cargar los cines', error);
+        setCinemas([]);
+        setSelectedCinema('');
+      }
+    };
+
+    void loadCinemas();
+  }, [isAuthenticated, isUserPanel, selectedCity]);
+
+  const notifySelectionChange = () => {
+    window.dispatchEvent(new CustomEvent(SELECTION_EVENT));
+  };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const city = e.target.value
-    setSelectedCity(city)
-    localStorage.setItem('selectedCity', city)
-    setSelectedCinema('')
-    localStorage.removeItem('selectedCinema')
-    window.location.reload()
-  }
+    const cityId = e.target.value;
+    setSelectedCity(cityId);
+    setSelectedCinema('');
+    localStorage.setItem(CITY_STORAGE_KEY, cityId);
+    localStorage.removeItem(CINEMA_STORAGE_KEY);
+    notifySelectionChange();
+  };
 
   const handleCinemaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const cinema = e.target.value
-    setSelectedCinema(cinema)
-    localStorage.setItem('selectedCinema', cinema)
-    window.location.reload()
-  }
+    const cinemaId = e.target.value;
+    setSelectedCinema(cinemaId);
+
+    if (cinemaId) {
+      localStorage.setItem(CINEMA_STORAGE_KEY, cinemaId);
+    } else {
+      localStorage.removeItem(CINEMA_STORAGE_KEY);
+    }
+
+    notifySelectionChange();
+  };
 
   const handleLogout = () => {
-    authService.logout()
-    setIsAuthenticated(false)
-    setUser(null)
-    navigate('/login')
-  }
+    authService.logout();
+    setIsAuthenticated(false);
+    navigate('/login');
+  };
 
   const LogoContent = () => (
     <div className="flex items-center space-x-2 group">
@@ -100,13 +146,12 @@ const Header = () => {
         Film<span className="text-cinema-red-500">Stars</span>
       </span>
     </div>
-  )
+  );
 
   return (
     <header className="bg-cinema-dark-900/95 backdrop-blur-sm border-b border-cinema-gold-500/20 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo - Clickeable solo en login/register */}
           {shouldLogoBeClickable ? (
             <Link to="/home" className="cursor-pointer">
               <LogoContent />
@@ -115,7 +160,6 @@ const Header = () => {
             <LogoContent />
           )}
 
-          {/* Combos de Ciudad y Cine - Solo en panel de usuario */}
           {isUserPanel && isAuthenticated && (
             <div className="hidden md:flex items-center space-x-3">
               <div className="relative">
@@ -125,9 +169,10 @@ const Header = () => {
                   onChange={handleCityChange}
                   className="pl-9 pr-3 py-1.5 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm focus:outline-none focus:border-cinema-gold-500 cursor-pointer"
                 >
+                  <option value="">Seleccionar ciudad</option>
                   {cities.map((city) => (
-                    <option key={city.id} value={city.value}>
-                      {city.name}
+                    <option key={city.id} value={city.id}>
+                      {city.nombre}
                     </option>
                   ))}
                 </select>
@@ -142,9 +187,9 @@ const Header = () => {
                   className="pl-9 pr-3 py-1.5 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm focus:outline-none focus:border-cinema-gold-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar cine</option>
-                  {selectedCity && cinemas[selectedCity as keyof typeof cinemas]?.map((cinema) => (
+                  {cinemas.map((cinema) => (
                     <option key={cinema.id} value={cinema.id}>
-                      {cinema.name}
+                      {cinema.nombre}
                     </option>
                   ))}
                 </select>
@@ -152,19 +197,18 @@ const Header = () => {
             </div>
           )}
 
-          {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <Button onClick={handleLogout} variant="outline" size="sm">
                 <FaSignOutAlt className="inline mr-2" />
-                Cerrar Sesión
+                Cerrar Sesion
               </Button>
             ) : (
               <>
                 <Link to="/login">
                   <Button variant="outline" size="sm">
                     <FaUser className="inline mr-2" />
-                    Iniciar Sesión
+                    Iniciar Sesion
                   </Button>
                 </Link>
                 <Link to="/register">
@@ -177,7 +221,6 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden text-gray-300 hover:text-cinema-gold-500"
@@ -186,10 +229,8 @@ const Header = () => {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-3">
-            {/* Combos móvil */}
             {isUserPanel && isAuthenticated && (
               <>
                 <div className="relative">
@@ -199,9 +240,10 @@ const Header = () => {
                     onChange={handleCityChange}
                     className="w-full pl-9 pr-3 py-2 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm"
                   >
+                    <option value="">Seleccionar ciudad</option>
                     {cities.map((city) => (
-                      <option key={city.id} value={city.value}>
-                        {city.name}
+                      <option key={city.id} value={city.id}>
+                        {city.nombre}
                       </option>
                     ))}
                   </select>
@@ -216,9 +258,9 @@ const Header = () => {
                     className="w-full pl-9 pr-3 py-2 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm disabled:opacity-50"
                   >
                     <option value="">Seleccionar cine</option>
-                    {selectedCity && cinemas[selectedCity as keyof typeof cinemas]?.map((cinema) => (
+                    {cinemas.map((cinema) => (
                       <option key={cinema.id} value={cinema.id}>
-                        {cinema.name}
+                        {cinema.nombre}
                       </option>
                     ))}
                   </select>
@@ -229,14 +271,14 @@ const Header = () => {
             {isAuthenticated ? (
               <Button onClick={handleLogout} variant="outline" size="sm" className="w-full">
                 <FaSignOutAlt className="inline mr-2" />
-                Cerrar Sesión
+                Cerrar Sesion
               </Button>
             ) : (
               <>
                 <Link to="/login" className="block">
                   <Button variant="outline" size="sm" className="w-full">
                     <FaUser className="inline mr-2" />
-                    Iniciar Sesión
+                    Iniciar Sesion
                   </Button>
                 </Link>
                 <Link to="/register" className="block">
@@ -251,7 +293,7 @@ const Header = () => {
         )}
       </nav>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;
