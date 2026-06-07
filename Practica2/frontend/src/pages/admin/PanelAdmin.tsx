@@ -99,17 +99,9 @@ const PanelAdmin = () => {
           />
         )}
 
-        {activeTab === 'localidades' && (
-          <div className="cinema-card p-6">
-            <p className="text-gray-400 text-center">Módulo de Cines en desarrollo</p>
-          </div>
-        )}
+        {activeTab === 'localidades' && <AdminLocalidades />}
 
-        {activeTab === 'salas' && (
-          <div className="cinema-card p-6">
-            <p className="text-gray-400 text-center">Módulo de Salas en desarrollo</p>
-          </div>
-        )}
+        {activeTab === 'salas' && <AdminSalas />}
 
         {activeTab === 'funciones' && (
           <div className="cinema-card p-6">

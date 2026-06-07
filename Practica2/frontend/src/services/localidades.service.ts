@@ -23,8 +23,20 @@ localidadesApi.interceptors.request.use((config) => {
 });
 
 class LocalidadesService {
+  // ─── Ciudades (público) ──────────────────────────────────────────
   async getCiudades(): Promise<Ciudad[]> {
     const res = await localidadesApi.get<Ciudad[]>('/localidades/ciudades');
+    return res.data;
+  }
+
+  async getCiudadById(id: string): Promise<Ciudad> {
+    const res = await localidadesApi.get<Ciudad>(`/localidades/ciudades/${id}`);
+    return res.data;
+  }
+
+  // ─── Cines (público) ─────────────────────────────────────────────
+  async getCines(): Promise<Cine[]> {
+    const res = await localidadesApi.get<Cine[]>('/localidades/cines');
     return res.data;
   }
 
@@ -33,24 +45,55 @@ class LocalidadesService {
     return res.data;
   }
 
+  // ─── Salas (público) ─────────────────────────────────────────────
   async getSalasByCine(idCine: string): Promise<Sala[]> {
     const res = await localidadesApi.get<Sala[]>(`/localidades/cines/${idCine}/salas`);
     return res.data;
   }
 
+  // ─── Admin: Ciudades ─────────────────────────────────────────────
   async createCiudad(data: CreateCiudadRequest): Promise<Ciudad> {
-    const res = await localidadesApi.post<Ciudad>('/localidades/ciudades', data);
+    const res = await localidadesApi.post<Ciudad>('/admin/localidades/ciudades', data);
     return res.data;
   }
 
+  async updateCiudad(id: string, data: Partial<CreateCiudadRequest>): Promise<Ciudad> {
+    const res = await localidadesApi.patch<Ciudad>(`/admin/localidades/ciudades/${id}`, data);
+    return res.data;
+  }
+
+  async deleteCiudad(id: string): Promise<void> {
+    await localidadesApi.delete(`/admin/localidades/ciudades/${id}`);
+  }
+
+  // ─── Admin: Cines ────────────────────────────────────────────────
   async createCine(data: CreateCineRequest): Promise<Cine> {
-    const res = await localidadesApi.post<Cine>('/localidades/cines', data);
+    const res = await localidadesApi.post<Cine>('/admin/localidades/cines', data);
     return res.data;
   }
 
-  async createSala(data: CreateSalaRequest): Promise<Sala> {
-    const res = await localidadesApi.post<Sala>('/localidades/salas', data);
+  async updateCine(id: string, data: Partial<CreateCineRequest>): Promise<Cine> {
+    const res = await localidadesApi.patch<Cine>(`/admin/localidades/cines/${id}`, data);
     return res.data;
+  }
+
+  async deleteCine(id: string): Promise<void> {
+    await localidadesApi.delete(`/admin/localidades/cines/${id}`);
+  }
+
+  // ─── Admin: Salas ────────────────────────────────────────────────
+  async createSala(data: CreateSalaRequest): Promise<Sala> {
+    const res = await localidadesApi.post<Sala>('/admin/localidades/salas', data);
+    return res.data;
+  }
+
+  async updateSala(id: string, data: Partial<CreateSalaRequest>): Promise<Sala> {
+    const res = await localidadesApi.patch<Sala>(`/admin/localidades/salas/${id}`, data);
+    return res.data;
+  }
+
+  async deleteSala(id: string): Promise<void> {
+    await localidadesApi.delete(`/admin/localidades/salas/${id}`);
   }
 }
 
