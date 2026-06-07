@@ -1,16 +1,24 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cine } from './localidades/entities/cine.entity';
 import { Ciudad } from './localidades/entities/ciudad.entity';
 import { Sala } from './localidades/entities/sala.entity';
 import { LocalidadesModule } from './localidades/localidades.module';
+import { JwtStrategy } from './common/strategies/jwt.strategy';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET', 'filmstars_secret_dev'),
+        signOptions: { expiresIn: '1d' },
+      }),
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -27,5 +35,6 @@ import { LocalidadesModule } from './localidades/localidades.module';
     }),
     LocalidadesModule,
   ],
+  providers: [JwtStrategy],
 })
 export class AppModule {}
