@@ -17,7 +17,7 @@
 
 **CDU05**: **Reserva y Compra de Boletos**: Permite a los usuarios seleccionar su ubicación, explorar funciones disponibles, reservar asientos en tiempo real y completar la compra de sus boletos.
 
-![Primera Descomposicion](./img/primeraDescomposicion.png)
+![Primera Descomposicion](./img/Practica1-Primera_Descomposición.drawio.svg)
 
 # Casos de uso expandidos
 ## Registro e inicio de sesión
