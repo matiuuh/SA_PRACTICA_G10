@@ -13,29 +13,27 @@ export class LocalidadesController {
 
   @Get('health')
   health() {
-    return {
-      status: 'ok',
-      service: 'localidades-service',
-      timestamp: new Date().toISOString(),
-    };
+    return { status: 'ok', service: 'localidades-service', timestamp: new Date().toISOString() };
   }
 
   @Get('ciudades')
-  // Lista las ciudades disponibles para el selector inicial del frontend.
   findCiudades() {
     return this.localidadesService.findCiudades();
   }
 
+  @Get('ciudades/:id')
+  findCiudadById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.localidadesService.findCiudadById(id);
+  }
+
   @Get('ciudades/:id/cines')
-  // Devuelve los cines de una ciudad especifica.
   findCinesByCiudad(@Param('id', ParseUUIDPipe) id: string) {
     return this.localidadesService.findCinesByCiudad(id);
   }
 
-  @Get('cines/:id/salas')
-  // Devuelve las salas fisicas asociadas a un cine.
-  findSalasByCine(@Param('id', ParseUUIDPipe) id: string) {
-    return this.localidadesService.findSalasByCine(id);
+  @Get('cines')
+  findCines() {
+    return this.localidadesService.findCines();
   }
 
   @Post('ciudades')

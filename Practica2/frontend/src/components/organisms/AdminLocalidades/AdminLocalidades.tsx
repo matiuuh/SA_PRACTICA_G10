@@ -120,6 +120,16 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = ({ localidades, isSavi
                   x
                 </button>
               </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={cerrarCiudadModal} className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50">
+                  {saving ? 'Guardando...' : editingCiudad ? 'Actualizar' : 'Crear'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
               <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-4">
                 <div>

@@ -332,7 +332,7 @@ const PanelAdmin = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm font-medium ${
                   isActive
                     ? 'bg-cinema-red-500 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-cinema-dark-800'
@@ -345,6 +345,7 @@ const PanelAdmin = () => {
           })}
         </div>
 
+        {/* Contenido */}
         {activeTab === 'peliculas' && (
           <AdminPeliculas
             peliculas={peliculas}
