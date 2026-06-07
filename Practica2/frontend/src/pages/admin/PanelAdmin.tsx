@@ -7,120 +7,51 @@ import AdminFunciones from '../../components/organisms/AdminFunciones/AdminFunci
 import AdminLocalidades from '../../components/organisms/AdminLocalidades/AdminLocalidades'
 import AdminSalas from '../../components/organisms/AdminSalas/AdminSalas'
 import { authService } from '../../services/auth.service'
+import { peliculasService } from '../../services/peliculas.service'
 import type { Pelicula, Funcion, Localidad, Sala, AdminTabType } from '../../types/admin.types'
 
 const PanelAdmin = () => {
   const navigate = useNavigate()
   const user = authService.getUser()
   const [activeTab, setActiveTab] = useState<AdminTabType>('peliculas')
-
-  const [peliculas, setPeliculas] = useState<Pelicula[]>([
-    {
-      id: 1,
-      titulo: 'Dune: Parte 2',
-      genero: 'Ciencia Ficción',
-      duracion: '2h 46min',
-      clasificacion: 'PG-13',
-      sinopsis: 'Paul Atreides se une a Chani y los Fremen mientras busca venganza.',
-      categoria: 'estreno',
-      imagen: '',
-      fechaEstreno: '2026-03-01'
-    }
-  ])
-
-  const [localidades, setLocalidades] = useState<Localidad[]>([
-    {
-      id: 1,
-      ciudad: 'Ciudad de Guatemala',
-      cine: 'Cinépolis Miraflores',
-      direccion: 'Centro Comercial Miraflores, Zona 11'
-    }
-  ])
-
-  const [salas, setSalas] = useState<Sala[]>([
-    {
-      id: 1,
-      localidadId: 1,
-      localidadNombre: 'Cinépolis Miraflores',
-      nombre: 'Sala 1',
-      capacidad: 150,
-      tipo: 'normal'
-    }
-  ])
-
-  const [funciones, setFunciones] = useState<Funcion[]>([
-    {
-      id: 1,
-      peliculaId: 1,
-      peliculaNombre: 'Dune: Parte 2',
-      salaId: 1,
-      salaNombre: 'Sala 1',
-      localidadNombre: 'Cinépolis Miraflores',
-      fecha: '2026-06-10',
-      horario: '20:30',
-      precio: 45
-    }
-  ])
+  const [peliculas, setPeliculas] = useState<Pelicula[]>([])
 
   useEffect(() => {
     document.title = 'Panel de Administración | FilmStars'
+    
+    // Verificar autenticación
     if (!authService.isAuthenticated()) {
       navigate('/login')
-    } else if (user?.rol !== 'ADMINISTRADOR') {
-      navigate('/panel/usuario')
+      return
     }
-  }, [navigate, user])
+    if (user?.rol !== 'ADMINISTRADOR') {
+      navigate('/panel/usuario')
+      return
+    }
+    
+    // Cargar películas solo una vez
+    const cargarPeliculas = async () => {
+      try {
+        const data = await peliculasService.getPeliculas()
+        setPeliculas(data)
+      } catch (error) {
+        console.error('Error cargando películas:', error)
+      }
+    }
+    
+    cargarPeliculas()
+  }, [navigate, user?.rol]) // Solo depende de navigate y el rol
 
-  const handleAgregarPelicula = (pelicula: Omit<Pelicula, 'id'>) => {
-    const newId = Math.max(...peliculas.map(p => p.id), 0) + 1
-    setPeliculas([...peliculas, { ...pelicula, id: newId }])
+  const handleAgregarPelicula = (pelicula: Pelicula) => {
+    setPeliculas([...peliculas, pelicula])
   }
 
   const handleEditarPelicula = (pelicula: Pelicula) => {
-    setPeliculas(peliculas.map(p => p.id === pelicula.id ? pelicula : p))
+    setPeliculas(peliculas.map(p => p.id_pelicula === pelicula.id_pelicula ? pelicula : p))
   }
 
-  const handleEliminarPelicula = (id: number) => {
-    setPeliculas(peliculas.filter(p => p.id !== id))
-  }
-
-  const handleAgregarLocalidad = (localidad: Omit<Localidad, 'id'>) => {
-    const newId = Math.max(...localidades.map(l => l.id), 0) + 1
-    setLocalidades([...localidades, { ...localidad, id: newId }])
-  }
-
-  const handleEditarLocalidad = (localidad: Localidad) => {
-    setLocalidades(localidades.map(l => l.id === localidad.id ? localidad : l))
-  }
-
-  const handleEliminarLocalidad = (id: number) => {
-    setLocalidades(localidades.filter(l => l.id !== id))
-  }
-
-  const handleAgregarSala = (sala: Omit<Sala, 'id'>) => {
-    const newId = Math.max(...salas.map(s => s.id), 0) + 1
-    setSalas([...salas, { ...sala, id: newId }])
-  }
-
-  const handleEditarSala = (sala: Sala) => {
-    setSalas(salas.map(s => s.id === sala.id ? sala : s))
-  }
-
-  const handleEliminarSala = (id: number) => {
-    setSalas(salas.filter(s => s.id !== id))
-  }
-
-  const handleAgregarFuncion = (funcion: Omit<Funcion, 'id'>) => {
-    const newId = Math.max(...funciones.map(f => f.id), 0) + 1
-    setFunciones([...funciones, { ...funcion, id: newId }])
-  }
-
-  const handleEditarFuncion = (funcion: Funcion) => {
-    setFunciones(funciones.map(f => f.id === funcion.id ? funcion : f))
-  }
-
-  const handleEliminarFuncion = (id: number) => {
-    setFunciones(funciones.filter(f => f.id !== id))
+  const handleEliminarPelicula = (id: string) => {
+    setPeliculas(peliculas.filter(p => p.id_pelicula !== id))
   }
 
   const tabs = [
@@ -169,33 +100,21 @@ const PanelAdmin = () => {
         )}
 
         {activeTab === 'localidades' && (
-          <AdminLocalidades
-            localidades={localidades}
-            onAgregar={handleAgregarLocalidad}
-            onEditar={handleEditarLocalidad}
-            onEliminar={handleEliminarLocalidad}
-          />
+          <div className="cinema-card p-6">
+            <p className="text-gray-400 text-center">Módulo de Cines en desarrollo</p>
+          </div>
         )}
 
         {activeTab === 'salas' && (
-          <AdminSalas
-            salas={salas}
-            localidades={localidades}
-            onAgregar={handleAgregarSala}
-            onEditar={handleEditarSala}
-            onEliminar={handleEliminarSala}
-          />
+          <div className="cinema-card p-6">
+            <p className="text-gray-400 text-center">Módulo de Salas en desarrollo</p>
+          </div>
         )}
 
         {activeTab === 'funciones' && (
-          <AdminFunciones
-            funciones={funciones}
-            peliculas={peliculas}
-            salas={salas}
-            onAgregar={handleAgregarFuncion}
-            onEditar={handleEditarFuncion}
-            onEliminar={handleEliminarFuncion}
-          />
+          <div className="cinema-card p-6">
+            <p className="text-gray-400 text-center">Módulo de Funciones en desarrollo</p>
+          </div>
         )}
       </div>
     </MainLayout>
