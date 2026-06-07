@@ -14,7 +14,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: auth_service
-      JWT_SECRET: change_this_secret
+      JWT_SECRET: filmstars_secret_dev
       JWT_EXPIRES_IN: 1h
       DEFAULT_ROLE: CLIENTE
     ports:
@@ -59,6 +59,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: localidades_service
+      JWT_SECRET: filmstars_secret_dev
     ports:
       - '3002:3002'
     depends_on:
