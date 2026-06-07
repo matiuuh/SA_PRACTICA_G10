@@ -7,7 +7,11 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { Roles } from '../../auth/roles.decorator';
+import { RolesGuard } from '../../auth/roles.guard';
 import { CreateSalaDto } from '../dto/create-sala.dto';
 import { UpdateSalaDto } from '../dto/update-sala.dto';
 import { SalasService } from '../services/salas.service';
@@ -32,16 +36,22 @@ export class SalasController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
   create(@Body() dto: CreateSalaDto) {
     return this.salasService.create(dto);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateSalaDto) {
     return this.salasService.update(id, dto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.salasService.remove(id);
     return { message: `Sala ${id} eliminada correctamente` };

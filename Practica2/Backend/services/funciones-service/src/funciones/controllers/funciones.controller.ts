@@ -7,7 +7,11 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { Roles } from '../../auth/roles.decorator';
+import { RolesGuard } from '../../auth/roles.guard';
 import { CreateFuncionDto } from '../dto/create-funcion.dto';
 import { UpdateFuncionDto } from '../dto/update-funcion.dto';
 import { FuncionesService } from '../services/funciones.service';
@@ -43,11 +47,15 @@ export class FuncionesController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
   create(@Body() dto: CreateFuncionDto) {
     return this.funcionesService.create(dto);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateFuncionDto) {
     return this.funcionesService.update(id, dto);
   }
