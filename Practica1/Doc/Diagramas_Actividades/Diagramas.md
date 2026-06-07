@@ -20,7 +20,7 @@ Adicionalmente, el diagrama incorpora puntos de decisión y control que permiten
 
 El objetivo principal del diagrama es proporcionar una representación visual del comportamiento del sistema y facilitar la comprensión de la interacción entre los diferentes módulos implementados dentro de la arquitectura propuesta.
 
-![alt text](DiagramaActividades.png)
+![alt text](./img/DiagramaActividades.png)
 
 
 
