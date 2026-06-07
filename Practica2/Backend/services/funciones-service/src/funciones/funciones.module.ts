@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Categoria } from './entities/categoria.entity';
 import { TipoCartelera } from './entities/tipo-cartelera.entity';
@@ -17,7 +18,7 @@ import { SalasController } from './controllers/salas.controller';
 import { FuncionesController } from './controllers/funciones.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Categoria, TipoCartelera, Pelicula, Sala, Funcion])],
+  imports: [AuthModule, TypeOrmModule.forFeature([Categoria, TipoCartelera, Pelicula, Sala, Funcion])],
   controllers: [
     CategoriasController,
     TipoCarteleraController,

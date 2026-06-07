@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocalidadesController } from './localidades.controller';
 import { AdminLocalidadesController } from './admin-localidades.controller';
@@ -8,8 +9,8 @@ import { Ciudad } from './entities/ciudad.entity';
 import { Sala } from './entities/sala.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Ciudad, Cine, Sala])],
-  controllers: [LocalidadesController, AdminLocalidadesController],
+  imports: [AuthModule, TypeOrmModule.forFeature([Ciudad, Cine, Sala])],
+  controllers: [LocalidadesController],
   providers: [LocalidadesService],
   exports: [LocalidadesService],
 })

@@ -84,6 +84,33 @@ class LocalidadesService {
   async deleteSala(id: string): Promise<void> {
     await api.delete(`${admin}/salas/${id}`);
   }
+
+  async updateCiudad(idCiudad: string, data: Partial<CreateCiudadRequest>): Promise<Ciudad> {
+    const response = await api.put<Ciudad>(`${endpoints.localidades}/ciudades/${idCiudad}`, data);
+    return response.data;
+  }
+
+  async updateCine(idCine: string, data: Partial<CreateCineRequest>): Promise<Cine> {
+    const response = await api.put<Cine>(`${endpoints.localidades}/cines/${idCine}`, data);
+    return response.data;
+  }
+
+  async updateSala(idSala: string, data: Partial<CreateSalaRequest>): Promise<Sala> {
+    const response = await api.put<Sala>(`${endpoints.localidades}/salas/${idSala}`, data);
+    return response.data;
+  }
+
+  async deleteCiudad(idCiudad: string): Promise<void> {
+    await api.delete(`${endpoints.localidades}/ciudades/${idCiudad}`);
+  }
+
+  async deleteCine(idCine: string): Promise<void> {
+    await api.delete(`${endpoints.localidades}/cines/${idCine}`);
+  }
+
+  async deleteSala(idSala: string): Promise<void> {
+    await api.delete(`${endpoints.localidades}/salas/${idSala}`);
+  }
 }
 
 export const localidadesService = new LocalidadesService();

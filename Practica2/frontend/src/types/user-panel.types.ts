@@ -6,6 +6,8 @@ export interface HorarioFuncion {
   fecha: string;
   precio: number;
   salaNombre: string;
+  salaId: string;
+  capacidadSala: number;
 }
 
 export interface CarteleraPelicula {
@@ -17,4 +19,11 @@ export interface CarteleraPelicula {
   imagen: string;
   categoria: CarteleraCategoria;
   horarios: HorarioFuncion[];
+}
+
+export interface UserAsiento {
+  id: string;
+  numero: number;
+  fila: string;
+  estado: 'disponible' | 'seleccionado' | 'ocupado';
 }

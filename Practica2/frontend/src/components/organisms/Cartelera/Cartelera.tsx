@@ -112,8 +112,29 @@ const Cartelera: React.FC<CarteleraProps> = ({
               key={pelicula.id}
               className="cinema-card overflow-hidden group hover:scale-105 transition-all cursor-pointer"
             >
-              <div className="h-80 bg-gradient-to-br from-cinema-red-500 to-cinema-dark-800 flex items-center justify-center relative">
-                <FaFilm className="text-7xl text-white/30 group-hover:scale-110 transition-all" />
+              <div className="h-80 bg-gradient-to-br from-cinema-red-500 to-cinema-dark-800 flex items-center justify-center relative overflow-hidden">
+                {pelicula.imagen ? (
+                  <img
+                    src={pelicula.imagen}
+                    alt={pelicula.titulo}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-all duration-300"
+                    onError={(event) => {
+                      const img = event.currentTarget;
+                      img.style.display = 'none';
+                      const fallback = img.nextElementSibling as HTMLDivElement | null;
+                      if (fallback) {
+                        fallback.style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                <div
+                  style={{ display: pelicula.imagen ? 'none' : 'flex' }}
+                  className="absolute inset-0 items-center justify-center"
+                >
+                  <FaFilm className="text-7xl text-white/30 group-hover:scale-110 transition-all" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">
                   {pelicula.clasificacion}
                 </div>

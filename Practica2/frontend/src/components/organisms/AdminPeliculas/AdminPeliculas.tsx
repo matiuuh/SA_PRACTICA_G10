@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilm, FaStar, FaFire, FaRocket, FaRedo, FaSpinner } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner } from 'react-icons/fa'
 import type { Pelicula, Categoria, TipoCartelera } from '../../../types/admin.types'
 import { peliculasService } from '../../../services/peliculas.service'
 import Toast from '../../atoms/Toast/Toast'

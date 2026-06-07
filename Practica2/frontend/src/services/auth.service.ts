@@ -1,5 +1,6 @@
 import { api, endpoints } from './api';
-import type { RegisterRequest, LoginRequest, AuthResponse } from '../types/auth.types';
+import type { RegisterRequest, LoginRequest, AuthResponse, User } from '../types/auth.types';
+import { clearStoredSession, isTokenExpired, parseTokenPayload } from './auth-token';
 
 class AuthService {
   async register(data: RegisterRequest): Promise<AuthResponse> {
@@ -24,21 +25,64 @@ class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
+    clearStoredSession();
   }
 
   getToken(): string | null {
-    return localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token');
+
+    if (!token) {
+      return null;
+    }
+
+    if (isTokenExpired(token)) {
+      this.logout();
+      return null;
+    }
+
+    return token;
   }
 
-  getUser(): any | null {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+  getUser(): User | null {
+    const token = this.getToken();
+
+    if (!token) {
+      return null;
+    }
+
+    const storedUser = localStorage.getItem('user');
+
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser) as User;
+      } catch {
+        localStorage.removeItem('user');
+      }
+    }
+
+    const payload = parseTokenPayload(token);
+
+    if (!payload) {
+      return null;
+    }
+
+    const derivedUser: User = {
+      id: payload.sub,
+      nombre: payload.name,
+      correo: payload.email,
+      rol: payload.role,
+    };
+
+    localStorage.setItem('user', JSON.stringify(derivedUser));
+    return derivedUser;
   }
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  hasRole(role: string): boolean {
+    return this.getUser()?.rol === role;
   }
 }
 

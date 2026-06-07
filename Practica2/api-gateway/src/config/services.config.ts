@@ -21,7 +21,7 @@ export const services: ServiceConfig[] = [
   {
     name: 'funciones',
     url: process.env.FUNCIONES_SERVICE_URL || 'http://localhost:3003',
-    routes: ['/api/funciones', '/api/peliculas', '/api/categorias', '/api/tipo-cartelera'],
+    routes: ['/api/funciones', '/api/peliculas', '/api/categorias', '/api/tipo-cartelera', '/api/salas'],
     healthCheck: '/api/funciones/health',
   },
   {
