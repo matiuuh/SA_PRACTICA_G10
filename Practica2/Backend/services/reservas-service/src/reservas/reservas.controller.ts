@@ -7,6 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { CreateAsientoDto } from './dto/create-asiento.dto';
+import { CreateCheckoutDto } from './dto/create-checkout.dto';
 import { CreateEstadoReservaDto } from './dto/create-estado-reserva.dto';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { ReservasService } from './reservas.service';
@@ -54,6 +55,12 @@ export class ReservasController {
   // Crea una reserva temporal usando asientos y usuario externo.
   createReserva(@Body() createReservaDto: CreateReservaDto) {
     return this.reservasService.createReserva(createReservaDto);
+  }
+
+  @Post('checkout')
+  // Crea la reserva temporal y envia la solicitud de pago a RabbitMQ.
+  createCheckout(@Body() createCheckoutDto: CreateCheckoutDto) {
+    return this.reservasService.createCheckout(createCheckoutDto);
   }
 
   @Post(':id/confirmar')

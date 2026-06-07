@@ -58,7 +58,7 @@ SET CONSTRAINTS ALL DEFERRED;
 
 INSERT INTO "metodos_pago" ("id_metodo", "nombre") VALUES
   ('11111111-1111-1111-1111-111111111111', 'TARJETA'),
-  ('22222222-2222-2222-2222-222222222222', 'TRANSFERENCIA');
+  ('22222222-2222-2222-2222-222222222222', 'PAYPAL');
 
 INSERT INTO "estado_pago" ("id_estado", "nombre") VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'PENDIENTE'),

@@ -13,6 +13,21 @@ import { EstadoPago } from './entities/estado-pago.entity';
 import { MetodoPago } from './entities/metodo-pago.entity';
 import { Pago } from './entities/pago.entity';
 import { Transaccion } from './entities/transaccion.entity';
+import { RabbitMqService } from './rabbitmq.service';
+
+interface PaymentRequestEvent {
+  reservaId: string;
+  usuarioIdExterno: string;
+  total: number;
+  metodoPago: 'TARJETA' | 'PAYPAL';
+  detallesPago: {
+    numeroTarjeta?: string | null;
+    nombreTitular?: string | null;
+    cvv?: string | null;
+    fechaExpiracion?: string | null;
+    paypalEmail?: string | null;
+  };
+}
 
 @Injectable()
 export class PagosService {
@@ -25,6 +40,7 @@ export class PagosService {
     private readonly pagosRepository: Repository<Pago>,
     @InjectRepository(Transaccion)
     private readonly transaccionesRepository: Repository<Transaccion>,
+    private readonly rabbitMqService: RabbitMqService,
   ) {}
 
   findMetodos(): Promise<MetodoPago[]> {
@@ -119,6 +135,43 @@ export class PagosService {
     return this.findPagoById(savedPago.id);
   }
 
+  async processPaymentRequest(event: PaymentRequestEvent): Promise<void> {
+    const metodo = await this.findMetodoByNombre(event.metodoPago);
+    const simulation = this.simulatePayment(event);
+    const estado = await this.findOrCreateEstado(simulation.estado);
+
+    const pago = this.pagosRepository.create({
+      id: randomUUID(),
+      reservaIdExterna: event.reservaId,
+      monto: event.total,
+      fechaPago: new Date(),
+      metodo,
+      estado,
+    });
+
+    const savedPago = await this.pagosRepository.save(pago);
+
+    const transaccion = this.transaccionesRepository.create({
+      id: randomUUID(),
+      referencia: `TXN-${randomBytes(5).toString('hex').toUpperCase()}`,
+      autorizacion: simulation.autorizacion,
+      fechaTransaccion: new Date(),
+      pago: savedPago,
+    });
+
+    await this.transaccionesRepository.save(transaccion);
+
+    await this.rabbitMqService.publishPaymentResult({
+      reservaId: event.reservaId,
+      pagoId: savedPago.id,
+      estado: simulation.estado,
+      metodoPago: metodo.nombre,
+      referencia: transaccion.referencia,
+      autorizacion: simulation.autorizacion,
+      motivo: simulation.motivo,
+    });
+  }
+
   async changeEstado(id: string, nombreEstado: string): Promise<Pago> {
     const pago = await this.findPagoById(id);
     const estado = await this.findOrCreateEstado(nombreEstado);
@@ -131,6 +184,19 @@ export class PagosService {
 
   private async findMetodoById(id: string): Promise<MetodoPago> {
     const metodo = await this.metodosRepository.findOne({ where: { id } });
+
+    if (!metodo) {
+      throw new NotFoundException('Metodo de pago no encontrado');
+    }
+
+    return metodo;
+  }
+
+  private async findMetodoByNombre(nombre: string): Promise<MetodoPago> {
+    const normalized = nombre.trim().toUpperCase();
+    const metodo = await this.metodosRepository.findOne({
+      where: { nombre: normalized },
+    });
 
     if (!metodo) {
       throw new NotFoundException('Metodo de pago no encontrado');
@@ -164,5 +230,57 @@ export class PagosService {
     }
 
     return estado;
+  }
+
+  private simulatePayment(event: PaymentRequestEvent): {
+    estado: 'APROBADO' | 'RECHAZADO';
+    autorizacion: string | null;
+    motivo?: string;
+  } {
+    if (event.metodoPago === 'TARJETA') {
+      const card = event.detallesPago.numeroTarjeta?.replace(/\s/g, '') || '';
+
+      if (card.length < 16 || !event.detallesPago.nombreTitular || !event.detallesPago.cvv) {
+        return {
+          estado: 'RECHAZADO',
+          autorizacion: null,
+          motivo: 'Datos incompletos de tarjeta',
+        };
+      }
+
+      if (card.endsWith('0000')) {
+        return {
+          estado: 'RECHAZADO',
+          autorizacion: null,
+          motivo: 'Tarjeta rechazada por simulacion',
+        };
+      }
+
+      return {
+        estado: 'APROBADO',
+        autorizacion: `AUTH-${randomBytes(4).toString('hex').toUpperCase()}`,
+      };
+    }
+
+    if (!event.detallesPago.paypalEmail) {
+      return {
+        estado: 'RECHAZADO',
+        autorizacion: null,
+        motivo: 'Cuenta de PayPal no proporcionada',
+      };
+    }
+
+    if (event.detallesPago.paypalEmail.toLowerCase().includes('fail')) {
+      return {
+        estado: 'RECHAZADO',
+        autorizacion: null,
+        motivo: 'Pago PayPal rechazado por simulacion',
+      };
+    }
+
+    return {
+      estado: 'APROBADO',
+      autorizacion: `PAYPAL-${randomBytes(4).toString('hex').toUpperCase()}`,
+    };
   }
 }

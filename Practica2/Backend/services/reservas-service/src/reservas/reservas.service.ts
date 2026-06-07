@@ -1,12 +1,9 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes, randomUUID } from 'crypto';
 import { In, Repository } from 'typeorm';
 import { CreateAsientoDto } from './dto/create-asiento.dto';
+import { CreateCheckoutDto } from './dto/create-checkout.dto';
 import { CreateEstadoReservaDto } from './dto/create-estado-reserva.dto';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { Asiento } from './entities/asiento.entity';
@@ -14,6 +11,7 @@ import { Boleto } from './entities/boleto.entity';
 import { EstadoReserva } from './entities/estado-reserva.entity';
 import { ReservaDetalle } from './entities/reserva-detalle.entity';
 import { Reserva } from './entities/reserva.entity';
+import { RabbitMqService } from './rabbitmq.service';
 
 @Injectable()
 export class ReservasService {
@@ -28,6 +26,7 @@ export class ReservasService {
     private readonly detallesRepository: Repository<ReservaDetalle>,
     @InjectRepository(Boleto)
     private readonly boletosRepository: Repository<Boleto>,
+    private readonly rabbitMqService: RabbitMqService,
   ) {}
 
   findAsientosByFuncion(idFuncionExterna: string): Promise<Asiento[]> {
@@ -107,6 +106,50 @@ export class ReservasService {
   }
 
   async createReserva(createReservaDto: CreateReservaDto): Promise<Reserva> {
+    return this.createReservaRecord(createReservaDto);
+  }
+
+  async createCheckout(createCheckoutDto: CreateCheckoutDto): Promise<Reserva> {
+    const reserva = await this.createReservaRecord({
+      usuarioIdExterno: createCheckoutDto.usuarioIdExterno,
+      asientosIds: createCheckoutDto.asientosIds,
+      total: createCheckoutDto.total,
+      fechaExpiracion:
+        createCheckoutDto.fechaExpiracion ||
+        new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    });
+
+    await this.rabbitMqService.publishPaymentRequested({
+      reservaId: reserva.id,
+      usuarioIdExterno: reserva.usuarioIdExterno,
+      total: Number(reserva.total),
+      metodoPago: createCheckoutDto.metodoPago,
+      detallesPago: {
+        numeroTarjeta: createCheckoutDto.numeroTarjeta || null,
+        nombreTitular: createCheckoutDto.nombreTitular || null,
+        cvv: createCheckoutDto.cvv || null,
+        fechaExpiracion: createCheckoutDto.fechaExpiracion || null,
+        paypalEmail: createCheckoutDto.paypalEmail || null,
+      },
+    });
+
+    return this.findReservaById(reserva.id);
+  }
+
+  async rejectReserva(id: string, motivo?: string): Promise<Reserva> {
+    const reserva = await this.findReservaById(id);
+    const estadoRechazada = await this.findOrCreateEstado('RECHAZADA');
+
+    reserva.estado = estadoRechazada;
+    reserva.fechaExpiracion = reserva.fechaExpiracion ?? new Date();
+    await this.reservasRepository.save(reserva);
+
+    return this.findReservaById(id);
+  }
+
+  private async createReservaRecord(
+    createReservaDto: CreateReservaDto,
+  ): Promise<Reserva> {
     const asientos = await this.asientosRepository.find({
       where: {
         id: In(createReservaDto.asientosIds),

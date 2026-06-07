@@ -3,12 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { FaFilm, FaCalendarAlt, FaCity, FaTheaterMasks } from 'react-icons/fa'
 import MainLayout from '../../components/templates/MainLayout/MainLayout'
 import AdminPeliculas from '../../components/organisms/AdminPeliculas/AdminPeliculas'
-import AdminFunciones from '../../components/organisms/AdminFunciones/AdminFunciones'
-import AdminLocalidades from '../../components/organisms/AdminLocalidades/AdminLocalidades'
-import AdminSalas from '../../components/organisms/AdminSalas/AdminSalas'
 import { authService } from '../../services/auth.service'
 import { peliculasService } from '../../services/peliculas.service'
-import type { Pelicula, Funcion, Localidad, Sala, AdminTabType } from '../../types/admin.types'
+import type { Pelicula, AdminTabType } from '../../types/admin.types'
 
 const PanelAdmin = () => {
   const navigate = useNavigate()

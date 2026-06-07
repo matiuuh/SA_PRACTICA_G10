@@ -7,6 +7,8 @@ import { Boleto } from './entities/boleto.entity';
 import { EstadoReserva } from './entities/estado-reserva.entity';
 import { ReservaDetalle } from './entities/reserva-detalle.entity';
 import { Reserva } from './entities/reserva.entity';
+import { RabbitMqService } from './rabbitmq.service';
+import { ReservasPaymentsConsumer } from './reservas-payments.consumer';
 
 @Module({
   imports: [
@@ -19,7 +21,7 @@ import { Reserva } from './entities/reserva.entity';
     ]),
   ],
   controllers: [ReservasController],
-  providers: [ReservasService],
+  providers: [ReservasService, RabbitMqService, ReservasPaymentsConsumer],
   exports: [ReservasService],
 })
 export class ReservasModule {}
