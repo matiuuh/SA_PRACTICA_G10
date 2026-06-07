@@ -15,7 +15,7 @@ export const services: ServiceConfig[] = [
   {
     name: 'localidades',
     url: process.env.LOCALIDADES_SERVICE_URL || 'http://localhost:3002',
-    routes: ['/api/localidades'],
+    routes: ['/api/localidades', '/api/admin/localidades'],
     healthCheck: '/api/localidades/health',
   },
   {
