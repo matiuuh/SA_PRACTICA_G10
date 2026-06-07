@@ -3,7 +3,11 @@ import { FaPlus, FaEdit, FaTrash, FaSearch, FaTheaterMasks, FaCouch } from 'reac
 import { localidadesService } from '../../../services/localidades.service'
 import type { Cine, Sala } from '../../../types/localidades.types'
 
-const AdminSalas = () => {
+interface Props {
+  triggerCreate?: number
+}
+
+const AdminSalas = ({ triggerCreate = 0 }: Props) => {
   const [cines, setCines] = useState<Cine[]>([])
   const [salas, setSalas] = useState<Sala[]>([])
   const [loading, setLoading] = useState(true)
@@ -15,9 +19,11 @@ const AdminSalas = () => {
   const [editingSala, setEditingSala] = useState<Sala | null>(null)
   const [form, setForm] = useState({ nombre: '', capacidad: 100, tipoSala: '', idCine: '' })
 
+  useEffect(() => { cargarDatos() }, [])
+
   useEffect(() => {
-    cargarDatos()
-  }, [])
+    if (triggerCreate > 0) setShowModal(true)
+  }, [triggerCreate])
 
   const cargarDatos = async () => {
     try {

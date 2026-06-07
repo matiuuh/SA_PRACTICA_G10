@@ -3,7 +3,12 @@ import { FaPlus, FaEdit, FaTrash, FaSearch, FaCity, FaMapMarkerAlt, FaTheaterMas
 import { localidadesService } from '../../../services/localidades.service'
 import type { Ciudad, Cine } from '../../../types/localidades.types'
 
-const AdminLocalidades = () => {
+interface Props {
+  triggerCreateCiudad?: number
+  triggerCreateCine?: number
+}
+
+const AdminLocalidades = ({ triggerCreateCiudad = 0, triggerCreateCine = 0 }: Props) => {
   const [ciudades, setCiudades] = useState<Ciudad[]>([])
   const [cines, setCines] = useState<Cine[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,9 +27,15 @@ const AdminLocalidades = () => {
 
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => { cargarDatos() }, [])
+
   useEffect(() => {
-    cargarDatos()
-  }, [])
+    if (triggerCreateCiudad > 0) setShowCiudadModal(true)
+  }, [triggerCreateCiudad])
+
+  useEffect(() => {
+    if (triggerCreateCine > 0) setShowCineModal(true)
+  }, [triggerCreateCine])
 
   const cargarDatos = async () => {
     try {
