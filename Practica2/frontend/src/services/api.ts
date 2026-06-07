@@ -38,19 +38,10 @@ api.interceptors.response.use(
 
 export const endpoints = {
   auth: '/api/auth',
-<<<<<<< HEAD
   localidades: '/api/localidades',
   funciones: '/api/funciones',
   reservas: '/api/reservas',
   pagos: '/api/pagos',
-=======
-  movies: '/api/peliculas',
-  categories: '/api/categorias',
-  tiposCartelera: '/api/tipo-cartelera',
-  bookings: '/api/bookings',
-  payments: '/api/payments',
-  locations: '/api/locations',
->>>>>>> develop
 };
 
 export default api;
