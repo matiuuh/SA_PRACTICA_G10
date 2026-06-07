@@ -1,15 +1,34 @@
 export type AdminTabType = 'peliculas' | 'funciones' | 'localidades' | 'salas'
 
+export interface Categoria {
+  id_categoria: string
+  nombre: string
+}
+
+export interface TipoCartelera {
+  id_tipo_cartelera: string
+  nombre: string
+}
+
 export interface Pelicula {
-  id: number
+  id_pelicula: string
   titulo: string
-  genero: string
-  duracion: string
-  clasificacion: string
-  sinopsis: string
-  categoria: 'estreno' | 'preventa' | 'reestreno'
-  imagen: string
-  fechaEstreno: string
+  sinopsis: string | null
+  duracion_minutos: number | null
+  poster_url: string | null
+  activa: boolean
+  categoria: Categoria
+  tipoCartelera: TipoCartelera
+}
+
+export interface CreatePeliculaDto {
+  titulo: string
+  sinopsis?: string
+  duracion_minutos?: number
+  poster_url?: string
+  id_categoria: string
+  id_tipo_cartelera: string
+  activa?: boolean
 }
 
 export interface Localidad {
