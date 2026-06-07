@@ -18,7 +18,7 @@ const AdminSalas: React.FC<AdminSalasProps> = ({ salas, localidades, onAgregar, 
     localidadId: 0,
     nombre: '',
     capacidad: 100,
-    tipo: 'normal' as const
+    tipo: 'normal' as Sala['tipo']
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -64,7 +64,7 @@ const AdminSalas: React.FC<AdminSalasProps> = ({ salas, localidades, onAgregar, 
       localidadId: 0,
       nombre: '',
       capacidad: 100,
-      tipo: 'normal'
+      tipo: 'normal' as Sala['tipo']
     })
   }
 

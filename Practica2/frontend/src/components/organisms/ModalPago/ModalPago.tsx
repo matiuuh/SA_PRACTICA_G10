@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaTimes, FaCreditCard, FaCalendarAlt, FaLock, FaTicketAlt, FaMoneyBillWave, FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa'
+import { FaTimes, FaCreditCard, FaCalendarAlt, FaLock, FaMoneyBillWave, FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa'
 
 interface ModalPagoProps {
   isOpen: boolean

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaPlus, FaEdit, FaTrash, FaEye, FaSearch, FaFilm, FaStar, FaFire, FaRocket, FaRedo } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaEye, FaSearch, FaStar, FaFire, FaRocket, FaRedo } from 'react-icons/fa'
 import type { Pelicula } from '../../../types/admin.types'
 
 interface AdminPeliculasProps {
@@ -19,7 +19,8 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     duracion: '',
     clasificacion: '',
     sinopsis: '',
-    categoria: 'estreno' as const,
+    categoria: 'estreno' as Pelicula['categoria'],
+    imagen: '',
     fechaEstreno: ''
   })
 
@@ -47,6 +48,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       clasificacion: pelicula.clasificacion,
       sinopsis: pelicula.sinopsis,
       categoria: pelicula.categoria,
+      imagen: pelicula.imagen,
       fechaEstreno: pelicula.fechaEstreno
     })
     setShowModal(true)
@@ -61,7 +63,8 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       duracion: '',
       clasificacion: '',
       sinopsis: '',
-      categoria: 'estreno',
+      categoria: 'estreno' as Pelicula['categoria'],
+      imagen: '',
       fechaEstreno: ''
     })
   }
