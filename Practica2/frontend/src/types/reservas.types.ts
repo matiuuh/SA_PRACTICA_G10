@@ -3,6 +3,7 @@ export interface ReservaAsiento {
   fila: string;
   numero: number;
   idFuncionExterna: string;
+  ocupado?: boolean;
 }
 
 export interface ReservaBoleto {
@@ -36,12 +37,11 @@ export interface CheckoutPayload {
   usuarioIdExterno: string;
   asientosIds: string[];
   total: number;
-  metodoPago: 'TARJETA' | 'PAYPAL';
+  metodoPago: 'TARJETA';
   numeroTarjeta?: string;
   nombreTitular?: string;
   fechaExpiracion?: string;
   cvv?: string;
-  paypalEmail?: string;
 }
 
 export interface CreateAsientoPayload {

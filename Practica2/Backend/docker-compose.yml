@@ -68,6 +68,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: localidades_service
+      JWT_SECRET: change_this_secret
     ports:
       - '3002:3002'
     depends_on:
@@ -109,6 +110,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: funciones_db
+      JWT_SECRET: change_this_secret
     ports:
       - '3003:3003'
     depends_on:
@@ -151,6 +153,7 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: reservas_service
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: change_this_secret
     ports:
       - '3004:3004'
     depends_on:
@@ -195,6 +198,7 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: pagos_service
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: change_this_secret
     ports:
       - '3005:3005'
     depends_on:

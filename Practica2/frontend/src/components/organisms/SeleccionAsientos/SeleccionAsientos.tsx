@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FaCalendarAlt,
   FaChair,
@@ -8,6 +8,7 @@ import {
   FaTicketAlt,
   FaTrash,
 } from 'react-icons/fa';
+import { io, type Socket } from 'socket.io-client';
 import { reservasService } from '../../../services/reservas.service';
 import type { UserAsiento } from '../../../types/user-panel.types';
 
@@ -24,6 +25,7 @@ interface SeleccionAsientosProps {
 }
 
 const ROW_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const RESERVAS_WS_URL = import.meta.env.VITE_RESERVAS_WS_URL || 'http://localhost:3004';
 
 const createSeatBlueprint = (capacidadSala: number) => {
   const seatsPerRow = 12;
@@ -55,6 +57,8 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   const [asientosSeleccionados, setAsientosSeleccionados] = useState<UserAsiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lockedSeatIds, setLockedSeatIds] = useState<string[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const loadAsientos = async () => {
@@ -86,7 +90,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
             id: seat.id,
             numero: seat.numero,
             fila: seat.fila,
-            estado: 'disponible',
+            estado: seat.ocupado ? 'ocupado' : 'disponible',
           })),
         );
       } catch (loadError) {
@@ -100,6 +104,32 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
     void loadAsientos();
   }, [pelicula.capacidadSala, pelicula.funcionId]);
 
+  useEffect(() => {
+    const reservasSocket = io(`${RESERVAS_WS_URL}/reservas`, {
+      transports: ['websocket'],
+    });
+
+    setSocket(reservasSocket);
+
+    reservasSocket.on('connect', () => {
+      reservasSocket.emit('seats:join', { funcionId: pelicula.funcionId });
+    });
+
+    reservasSocket.on('seats:state', ({ funcionId, lockedSeatIds: nextLockedSeatIds }) => {
+      if (funcionId !== pelicula.funcionId) {
+        return;
+      }
+
+      setLockedSeatIds(nextLockedSeatIds);
+    });
+
+    return () => {
+      reservasSocket.disconnect();
+      setSocket(null);
+      setLockedSeatIds([]);
+    };
+  }, [pelicula.funcionId]);
+
   const handleAsientoClick = (asiento: UserAsiento) => {
     if (asiento.estado === 'ocupado') {
       return;
@@ -108,10 +138,23 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
     const esSeleccionado = asientosSeleccionados.some((item) => item.id === asiento.id);
 
     if (esSeleccionado) {
+      socket?.emit('seats:release', {
+        funcionId: pelicula.funcionId,
+        seatId: asiento.id,
+      });
       setAsientosSeleccionados((current) => current.filter((item) => item.id !== asiento.id));
       setAsientos((current) =>
-        current.map((item) => (item.id === asiento.id ? { ...item, estado: 'disponible' } : item)),
+        current.map((item) =>
+          item.id === asiento.id && item.estado !== 'ocupado'
+            ? { ...item, estado: 'disponible' }
+            : item,
+        ),
       );
+      return;
+    }
+
+    if (lockedSeatIds.includes(asiento.id)) {
+      setError('Este asiento esta siendo seleccionado por otro usuario.');
       return;
     }
 
@@ -121,13 +164,33 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
     }
 
     setError(null);
-    setAsientosSeleccionados((current) => [...current, { ...asiento, estado: 'seleccionado' }]);
-    setAsientos((current) =>
-      current.map((item) => (item.id === asiento.id ? { ...item, estado: 'seleccionado' } : item)),
+    socket?.emit(
+      'seats:select',
+      {
+        funcionId: pelicula.funcionId,
+        seatId: asiento.id,
+      },
+      (response?: { success?: boolean; message?: string }) => {
+        if (response?.success === false) {
+          setError(response.message || 'No se pudo bloquear el asiento.');
+          return;
+        }
+
+        setAsientosSeleccionados((current) => [...current, { ...asiento, estado: 'seleccionado' }]);
+        setAsientos((current) =>
+          current.map((item) =>
+            item.id === asiento.id ? { ...item, estado: 'seleccionado' } : item,
+          ),
+        );
+      },
     );
   };
 
   const handleEliminarSeleccion = (asientoId: string) => {
+    socket?.emit('seats:release', {
+      funcionId: pelicula.funcionId,
+      seatId: asientoId,
+    });
     setAsientosSeleccionados((current) => current.filter((item) => item.id !== asientoId));
     setAsientos((current) =>
       current.map((item) => (item.id === asientoId ? { ...item, estado: 'disponible' } : item)),
@@ -157,6 +220,45 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
     }
   };
 
+  const selectedSeatIds = useMemo(
+    () => new Set(asientosSeleccionados.map((asiento) => asiento.id)),
+    [asientosSeleccionados],
+  );
+  const lockedSeatIdsSet = useMemo(() => new Set(lockedSeatIds), [lockedSeatIds]);
+
+  const asientosRender = useMemo(
+    () =>
+      asientos.map((asiento) => {
+        if (asiento.estado === 'ocupado') {
+          return asiento;
+        }
+
+        if (selectedSeatIds.has(asiento.id)) {
+          return { ...asiento, estado: 'seleccionado' as const };
+        }
+
+        if (lockedSeatIdsSet.has(asiento.id)) {
+          return { ...asiento, estado: 'ocupado' as const };
+        }
+
+        return { ...asiento, estado: 'disponible' as const };
+      }),
+    [asientos, lockedSeatIdsSet, selectedSeatIds],
+  );
+
+  const asientosPorFila = useMemo(
+    () =>
+      asientosRender.reduce<Record<string, UserAsiento[]>>((acc, asiento) => {
+        if (!acc[asiento.fila]) {
+          acc[asiento.fila] = [];
+        }
+
+        acc[asiento.fila].push(asiento);
+        return acc;
+      }, {}),
+    [asientosRender],
+  );
+
   if (loading) {
     return (
       <div className="cinema-card p-8">
@@ -175,15 +277,6 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
       </div>
     );
   }
-
-  const asientosPorFila = asientos.reduce<Record<string, UserAsiento[]>>((acc, asiento) => {
-    if (!acc[asiento.fila]) {
-      acc[asiento.fila] = [];
-    }
-
-    acc[asiento.fila].push(asiento);
-    return acc;
-  }, {});
 
   const total = asientosSeleccionados.length * pelicula.precio;
 

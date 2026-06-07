@@ -5,7 +5,8 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import amqp, { Channel, ChannelModel, ConsumeMessage } from 'amqplib';
+import * as amqp from 'amqplib';
+import type { Channel, ChannelModel, ConsumeMessage } from 'amqplib';
 import {
   FILMSTARS_EXCHANGE,
   PAYMENT_REQUEST_QUEUE,

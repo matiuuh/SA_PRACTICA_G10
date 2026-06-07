@@ -15,7 +15,6 @@ import { funcionesService } from '../../services/funciones.service';
 import { pagosService } from '../../services/pagos.service';
 import { reservasService } from '../../services/reservas.service';
 import { type TabType } from '../../types/panel.types';
-import type { Pago } from '../../types/pagos.types';
 import type { Funcion } from '../../types/funciones.types';
 import type {
   CarteleraCategoria,
@@ -97,7 +96,7 @@ const mapFuncionesToCartelera = (funciones: Funcion[]): CarteleraPelicula[] => {
         genero: funcion.pelicula.categoria?.nombre || 'Cartelera general',
         duracion: formatDuration(funcion.pelicula.duracion_minutos),
         clasificacion: funcion.sala.tipo || 'General',
-        imagen: funcion.pelicula.poster_url || '',
+        imagen: normalizeImageUrl(funcion.pelicula.poster_url),
         categoria,
         horarios: [horario],
       });
@@ -115,6 +114,20 @@ const mapFuncionesToCartelera = (funciones: Funcion[]): CarteleraPelicula[] => {
       ),
     }))
     .sort((a, b) => a.titulo.localeCompare(b.titulo));
+};
+
+const normalizeImageUrl = (url?: string | null) => {
+  if (!url) {
+    return '';
+  }
+
+  const trimmed = url.trim();
+
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`;
+  }
+
+  return trimmed;
 };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -213,11 +226,7 @@ const PanelUser = () => {
     setModalPagoOpen(true);
   };
 
-  const buildPaymentDetail = (pago: Pago, datosPago: DatosPago) => {
-    if (pago.metodo.nombre === 'PAYPAL') {
-      return `PayPal - ${datosPago.paypalEmail}`;
-    }
-
+  const buildPaymentDetail = (datosPago: DatosPago) => {
     const lastDigits = datosPago.numeroTarjeta.replace(/\s/g, '').slice(-4);
     return `Tarjeta de credito **** ${lastDigits}`;
   };
@@ -246,7 +255,7 @@ const PanelUser = () => {
           total: Number(reserva.total),
           fechaCompra: new Date(boleto.fechaEmision).toLocaleString(),
           metodoPago: pago.metodo.nombre,
-          detallePago: buildPaymentDetail(pago, datosPago),
+          detallePago: buildPaymentDetail(datosPago),
         };
 
         setBoletaGenerada(boleta);
@@ -256,7 +265,7 @@ const PanelUser = () => {
       }
 
       if (reserva.estado.nombre === 'RECHAZADA') {
-        throw new Error('El pago fue rechazado. Puedes intentarlo de nuevo con otro metodo.');
+        throw new Error('El pago fue rechazado. Verifica los datos de tu tarjeta e intentalo de nuevo.');
       }
 
       await sleep(1500);
@@ -279,11 +288,10 @@ const PanelUser = () => {
         asientosIds: asientosSeleccionados.map((asiento) => asiento.id),
         total: totalPago,
         metodoPago: datosPago.metodoPago,
-        numeroTarjeta: datosPago.metodoPago === 'TARJETA' ? datosPago.numeroTarjeta : undefined,
-        nombreTitular: datosPago.metodoPago === 'TARJETA' ? datosPago.nombreTitular : undefined,
-        fechaExpiracion: datosPago.metodoPago === 'TARJETA' ? datosPago.fechaExpiracion : undefined,
-        cvv: datosPago.metodoPago === 'TARJETA' ? datosPago.cvv : undefined,
-        paypalEmail: datosPago.metodoPago === 'PAYPAL' ? datosPago.paypalEmail : undefined,
+        numeroTarjeta: datosPago.numeroTarjeta,
+        nombreTitular: datosPago.nombreTitular,
+        fechaExpiracion: datosPago.fechaExpiracion,
+        cvv: datosPago.cvv,
       });
 
       setModalPagoOpen(false);

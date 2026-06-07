@@ -8,6 +8,7 @@ import {
   FaPrint,
   FaTicketAlt,
 } from 'react-icons/fa';
+import { jsPDF } from 'jspdf';
 
 interface ModalConfirmacionProps {
   isOpen: boolean;
@@ -39,28 +40,60 @@ const ModalConfirmacion: React.FC<ModalConfirmacionProps> = ({
   };
 
   const handleDownload = () => {
-    const boletaText = `
-FILMSTARS - BOLETO DE COMPRA
-================================
-Boleta #: ${boleta.id}
-Pelicula: ${boleta.pelicula}
-Horario: ${boleta.horario}
-Fecha: ${boleta.fecha}
-Asientos: ${boleta.asientos.join(', ')}
-Total: Q${boleta.total}
-Fecha de compra: ${boleta.fechaCompra}
-Metodo de pago: ${boleta.detallePago}
-================================
-Gracias por tu compra. Disfruta tu funcion.
-    `.trim();
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
 
-    const blob = new Blob([boletaText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `boleta-${boleta.id}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    pdf.setFillColor(24, 24, 27);
+    pdf.rect(0, 0, 210, 297, 'F');
+
+    pdf.setFillColor(220, 38, 38);
+    pdf.roundedRect(18, 18, 174, 28, 6, 6, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(20);
+    pdf.text('FILMSTARS', 105, 31, { align: 'center' });
+    pdf.setFontSize(11);
+    pdf.text('Boleto de compra', 105, 39, { align: 'center' });
+
+    pdf.setFillColor(39, 39, 42);
+    pdf.roundedRect(18, 54, 174, 120, 6, 6, 'F');
+
+    pdf.setTextColor(245, 245, 245);
+    pdf.setFontSize(16);
+    pdf.text(boleta.pelicula, 28, 70);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+
+    const detailLines = [
+      ['Boleta', boleta.id],
+      ['Fecha', boleta.fecha],
+      ['Horario', boleta.horario],
+      ['Asientos', boleta.asientos.join(', ')],
+      ['Total', `Q${boleta.total}`],
+      ['Metodo de pago', boleta.detallePago],
+      ['Fecha de compra', boleta.fechaCompra],
+    ];
+
+    let y = 86;
+    detailLines.forEach(([label, value]) => {
+      pdf.setTextColor(161, 161, 170);
+      pdf.text(`${label}:`, 28, y);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(value, 75, y);
+      y += 14;
+    });
+
+    pdf.setDrawColor(212, 175, 55);
+    pdf.line(28, 184, 182, 184);
+    pdf.setTextColor(212, 175, 55);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Gracias por tu compra. Disfruta tu funcion.', 105, 198, { align: 'center' });
+
+    pdf.save(`boleta-${boleta.id}.pdf`);
   };
 
   return (

@@ -7,7 +7,6 @@ import {
   FaCreditCard,
   FaLock,
   FaMoneyBillWave,
-  FaPaypal,
   FaTimes,
 } from 'react-icons/fa';
 
@@ -23,12 +22,11 @@ interface ModalPagoProps {
 }
 
 export interface DatosPago {
-  metodoPago: 'TARJETA' | 'PAYPAL';
+  metodoPago: 'TARJETA';
   numeroTarjeta: string;
   nombreTitular: string;
   fechaExpiracion: string;
   cvv: string;
-  paypalEmail: string;
 }
 
 const ModalPago: React.FC<ModalPagoProps> = ({
@@ -47,7 +45,6 @@ const ModalPago: React.FC<ModalPagoProps> = ({
     nombreTitular: '',
     fechaExpiracion: '',
     cvv: '',
-    paypalEmail: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,11 +92,6 @@ const ModalPago: React.FC<ModalPagoProps> = ({
         setError('CVV invalido');
         return;
       }
-    }
-
-    if (datosPago.metodoPago === 'PAYPAL' && !datosPago.paypalEmail.includes('@')) {
-      setError('Correo de PayPal invalido');
-      return;
     }
 
     setIsLoading(true);
@@ -171,118 +163,78 @@ const ModalPago: React.FC<ModalPagoProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-gray-300 text-sm font-semibold mb-2">Metodo de pago</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setDatosPago((prev) => ({ ...prev, metodoPago: 'TARJETA' }))}
-                className={`rounded-lg border px-4 py-3 flex items-center justify-center gap-2 ${
-                  datosPago.metodoPago === 'TARJETA'
-                    ? 'border-cinema-gold-500 bg-cinema-gold-500/10 text-cinema-gold-500'
-                    : 'border-gray-700 text-gray-300'
-                }`}
-              >
-                <FaCreditCard />
-                Tarjeta
-              </button>
-              <button
-                type="button"
-                onClick={() => setDatosPago((prev) => ({ ...prev, metodoPago: 'PAYPAL' }))}
-                className={`rounded-lg border px-4 py-3 flex items-center justify-center gap-2 ${
-                  datosPago.metodoPago === 'PAYPAL'
-                    ? 'border-cinema-gold-500 bg-cinema-gold-500/10 text-cinema-gold-500'
-                    : 'border-gray-700 text-gray-300'
-                }`}
-              >
-                <FaPaypal />
-                PayPal
-              </button>
+            <div className="rounded-lg border border-cinema-gold-500 bg-cinema-gold-500/10 px-4 py-3 flex items-center justify-center gap-2 text-cinema-gold-500">
+              <FaCreditCard />
+              Tarjeta
             </div>
           </div>
 
-          {datosPago.metodoPago === 'TARJETA' ? (
-            <>
-              <div>
-                <label className="block text-gray-300 text-sm font-semibold mb-2">Numero de tarjeta</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="numeroTarjeta"
-                    placeholder="1234 5678 9012 3456"
-                    value={datosPago.numeroTarjeta}
-                    onChange={handleChange}
-                    maxLength={19}
-                    className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
-                    required
-                  />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">{getCardIcon()}</div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-gray-300 text-sm font-semibold mb-2">Nombre del titular</label>
+          <>
+            <div>
+              <label className="block text-gray-300 text-sm font-semibold mb-2">Numero de tarjeta</label>
+              <div className="relative">
                 <input
                   type="text"
-                  name="nombreTitular"
-                  placeholder="Como aparece en la tarjeta"
-                  value={datosPago.nombreTitular}
+                  name="numeroTarjeta"
+                  placeholder="1234 5678 9012 3456"
+                  value={datosPago.numeroTarjeta}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
+                  maxLength={19}
+                  className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
                   required
                 />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">{getCardIcon()}</div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-300 text-sm font-semibold mb-2">Fecha expiracion</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="fechaExpiracion"
-                      placeholder="MM/AA"
-                      value={datosPago.fechaExpiracion}
-                      onChange={handleChange}
-                      maxLength={5}
-                      className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
-                      required
-                    />
-                    <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-300 text-sm font-semibold mb-2">CVV</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      name="cvv"
-                      placeholder="123"
-                      value={datosPago.cvv}
-                      onChange={handleChange}
-                      maxLength={4}
-                      className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
-                      required
-                    />
-                    <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
             <div>
-              <label className="block text-gray-300 text-sm font-semibold mb-2">Correo de PayPal</label>
+              <label className="block text-gray-300 text-sm font-semibold mb-2">Nombre del titular</label>
               <input
-                type="email"
-                name="paypalEmail"
-                placeholder="usuario@paypal.com"
-                value={datosPago.paypalEmail}
+                type="text"
+                name="nombreTitular"
+                placeholder="Como aparece en la tarjeta"
+                value={datosPago.nombreTitular}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
                 required
               />
-              <p className="text-xs text-gray-500 mt-2">
-                Usa un correo que incluya <code>fail</code> si quieres simular rechazo.
-              </p>
             </div>
-          )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-300 text-sm font-semibold mb-2">Fecha expiracion</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="fechaExpiracion"
+                    placeholder="MM/AA"
+                    value={datosPago.fechaExpiracion}
+                    onChange={handleChange}
+                    maxLength={5}
+                    className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
+                    required
+                  />
+                  <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm font-semibold mb-2">CVV</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    name="cvv"
+                    placeholder="123"
+                    value={datosPago.cvv}
+                    onChange={handleChange}
+                    maxLength={4}
+                    className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-cinema-gold-500 focus:outline-none"
+                    required
+                  />
+                  <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                </div>
+              </div>
+            </div>
+          </>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">

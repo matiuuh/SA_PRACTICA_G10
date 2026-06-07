@@ -16,7 +16,7 @@ export class GatewayController {
   @All('*')
   async handleRequest(@Req() req: Request, @Res() res: Response) {
     const startTime = Date.now();
-    const { method, originalUrl, body, query, headers } = req;
+    const { method, originalUrl, body, query, headers, path } = req;
     
     // Ignorar health checks del gateway
     if (originalUrl === '/health') {
@@ -30,7 +30,7 @@ export class GatewayController {
     this.logger.log(`📥 ${method} ${originalUrl}`);
 
     // Encontrar el servicio correspondiente
-    const service = this.gatewayService.findService(originalUrl);
+    const service = this.gatewayService.findService(path);
     
     if (!service) {
       this.logger.warn(`❌ Service not found for path: ${originalUrl}`);
@@ -42,7 +42,7 @@ export class GatewayController {
       });
     }
 
-    const targetUrl = `${service.url}${originalUrl}`;
+    const targetUrl = `${service.url}${path}`;
     
     // Preparar headers para reenviar
     const forwardHeaders = {

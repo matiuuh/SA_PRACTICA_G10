@@ -11,6 +11,7 @@ import { Boleto } from './entities/boleto.entity';
 import { EstadoReserva } from './entities/estado-reserva.entity';
 import { ReservaDetalle } from './entities/reserva-detalle.entity';
 import { Reserva } from './entities/reserva.entity';
+import { ReservasGateway } from './reservas.gateway';
 import { RabbitMqService } from './rabbitmq.service';
 
 @Injectable()
@@ -27,13 +28,33 @@ export class ReservasService {
     @InjectRepository(Boleto)
     private readonly boletosRepository: Repository<Boleto>,
     private readonly rabbitMqService: RabbitMqService,
+    private readonly reservasGateway: ReservasGateway,
   ) {}
 
-  findAsientosByFuncion(idFuncionExterna: string): Promise<Asiento[]> {
-    return this.asientosRepository.find({
+  async findAsientosByFuncion(idFuncionExterna: string) {
+    const asientos = await this.asientosRepository.find({
       where: { idFuncionExterna },
       order: { fila: 'ASC', numero: 'ASC' },
     });
+
+    const reservados = await this.detallesRepository
+      .createQueryBuilder('detalle')
+      .innerJoin('detalle.asiento', 'asiento')
+      .innerJoin('detalle.reserva', 'reserva')
+      .innerJoin('reserva.estado', 'estado')
+      .where('asiento.id_funcion_externa = :idFuncionExterna', { idFuncionExterna })
+      .andWhere('estado.nombre IN (:...estados)', {
+        estados: ['TEMPORAL', 'CONFIRMADA'],
+      })
+      .select('asiento.id_asiento', 'id')
+      .getRawMany<{ id: string }>();
+
+    const reservedIds = new Set(reservados.map((item) => item.id));
+
+    return asientos.map((asiento) => ({
+      ...asiento,
+      ocupado: reservedIds.has(asiento.id),
+    }));
   }
 
   async findReservaById(id: string): Promise<Reserva> {
@@ -143,6 +164,13 @@ export class ReservasService {
     reserva.estado = estadoRechazada;
     reserva.fechaExpiracion = reserva.fechaExpiracion ?? new Date();
     await this.reservasRepository.save(reserva);
+    const funcionId = reserva.detalles[0]?.asiento.idFuncionExterna;
+    if (funcionId) {
+      this.reservasGateway.releaseSeatsForReservation(
+        funcionId,
+        reserva.detalles.map((detalle) => detalle.asiento.id),
+      );
+    }
 
     return this.findReservaById(id);
   }
@@ -158,6 +186,26 @@ export class ReservasService {
 
     if (asientos.length !== createReservaDto.asientosIds.length) {
       throw new NotFoundException('Uno o mas asientos no existen');
+    }
+
+    const asientosYaReservados = await this.detallesRepository
+      .createQueryBuilder('detalle')
+      .innerJoin('detalle.reserva', 'reserva')
+      .innerJoin('reserva.estado', 'estado')
+      .innerJoin('detalle.asiento', 'asiento')
+      .where('asiento.id_asiento IN (:...asientosIds)', {
+        asientosIds: createReservaDto.asientosIds,
+      })
+      .andWhere('estado.nombre IN (:...estados)', {
+        estados: ['TEMPORAL', 'CONFIRMADA'],
+      })
+      .select('asiento.id_asiento', 'id')
+      .getRawMany<{ id: string }>();
+
+    if (asientosYaReservados.length > 0) {
+      throw new ConflictException(
+        'Uno o mas asientos ya fueron reservados por otro usuario.',
+      );
     }
 
     const estadoTemporal = await this.findOrCreateEstado('TEMPORAL');
@@ -208,6 +256,14 @@ export class ReservasService {
         reserva,
       });
       await this.boletosRepository.save(boleto);
+    }
+
+    const funcionId = reserva.detalles[0]?.asiento.idFuncionExterna;
+    if (funcionId) {
+      this.reservasGateway.releaseSeatsForReservation(
+        funcionId,
+        reserva.detalles.map((detalle) => detalle.asiento.id),
+      );
     }
 
     return this.findReservaById(id);

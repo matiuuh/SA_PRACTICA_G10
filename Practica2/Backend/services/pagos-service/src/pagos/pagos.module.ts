@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EstadoPago } from './entities/estado-pago.entity';
 import { MetodoPago } from './entities/metodo-pago.entity';
@@ -11,6 +12,7 @@ import { RabbitMqService } from './rabbitmq.service';
 
 @Module({
   imports: [
+    AuthModule,
     TypeOrmModule.forFeature([MetodoPago, EstadoPago, Pago, Transaccion]),
   ],
   controllers: [PagosController],
