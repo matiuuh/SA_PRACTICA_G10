@@ -14,7 +14,7 @@ En el proyecto, este principio se aplica mediante la separación estricta de res
 
 El controlador de localidades por ejemplo, únicamente recibe las peticiones HTTP y las delega al servicio. No contiene lógica de negocio ni acceso a datos.
 
-##### localidades.controller.ts
+##### [localidades.controller.ts](../../../Practica2/Backend/services/localidades-service/src/localidades/localidades.controller.ts)
 ```typescript
 @Controller('localidades')
 export class LocalidadesController {
@@ -41,7 +41,7 @@ export class LocalidadesController {
 }
 ```
 
-##### localidades.service.ts
+##### [localidades.service.ts](../../../Practica2/Backend/services/localidades-service/src/localidades/localidades.service.ts)
 
 El servicio concentra toda la lógica de negocio, es decir validaciones, creación de entidades y gestión de relaciones. No conoce nada del protocolo HTTP.
 
@@ -91,7 +91,7 @@ Este principio se aplica de dos formas en el proyecto, en los guards de autentic
 
 El `RolesGuard` está diseñado para ser extendido mediante metadatos. Para agregar un nuevo rol al sistema, no se toca la implementación del guard, basta con usar el decorador en el endpoint correspondiente.
 
-##### roles.guard.ts
+##### [roles.guard.ts](../../../Practica2/Backend/services/funciones-service/src/auth/roles.guard.ts)
 
 ```typescript
 @Injectable()
@@ -114,7 +114,7 @@ export class RolesGuard implements CanActivate {
 }
 ```
 
-##### roles.decorator.ts
+##### [roles.decorator.ts](../../../Practica2/Backend/services/funciones-service/src/auth/roles.decorator.ts)
 ```typescript
 export const ROLES_KEY = 'roles';
 export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
@@ -161,7 +161,7 @@ Este principio se aplica en la capa de autenticación a través de la abstracci�
 ##### JwtStrategy y JwtAuthGuard
 `JwtStrategy` extiende `PassportStrategy`, implementando el contrato que Passport espera. El guard no depende de la implementación concreta de la estrategia, sino de la abstracción `AuthGuard`.
 
-##### jwt.strategy.ts
+##### [jwt.strategy.ts](../../../Practica2/Backend/services/auth-service/src/auth/strategies/jwt.strategy.ts)
 ```typescript
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -184,7 +184,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 }
 ```
 
-##### jwt-auth.guard.ts
+##### [jwt-auth.guard.ts](../../../Practica2/Backend/services/auth-service/src/auth/guards/jwt-auth.guard.ts)
 ```typescript
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}
@@ -204,6 +204,8 @@ En lugar de crear un DTO genérico para todas las operaciones, nosotros definimo
 
 ##### DTOs del servicio de localidades
 Tres operaciones distintas, tres contratos distintos:
+
+> Ver archivos: [create-ciudad.dto.ts](../../../Practica2/Backend/services/localidades-service/src/localidades/dto/create-ciudad.dto.ts) · [create-cine.dto.ts](../../../Practica2/Backend/services/localidades-service/src/localidades/dto/create-cine.dto.ts) · [create-sala.dto.ts](../../../Practica2/Backend/services/localidades-service/src/localidades/dto/create-sala.dto.ts)
 
 ```typescript
 // create-ciudad.dto.ts
@@ -250,6 +252,8 @@ export class CreateSalaDto {
 
 Cada entidad del dominio de pagos tiene su propio contrato:
 
+> Ver archivos: [create-pago.dto.ts](../../../Practica2/Backend/services/pagos-service/src/pagos/dto/create-pago.dto.ts) · [create-metodo-pago.dto.ts](../../../Practica2/Backend/services/pagos-service/src/pagos/dto/create-metodo-pago.dto.ts) · [create-estado-pago.dto.ts](../../../Practica2/Backend/services/pagos-service/src/pagos/dto/create-estado-pago.dto.ts)
+
 ```typescript
 // create-pago.dto.ts
 export class CreatePagoDto {
@@ -294,6 +298,7 @@ Si se usara un único DTO genérico, los endpoints de creación de métodos de p
 Este principio se implementa mediante inyección de dependencias en todos los servicios del proyecto. Ningún servicio instancia sus dependencias directamente porque todas son inyectadas por NestJS en el constructor.
 
 ##### AuthService
+> [auth.service.ts](../../../Practica2/Backend/services/auth-service/src/auth/auth.service.ts)
 
 `AuthService` depende de abstracciones como `UsersService`, `JwtService` y `ConfigService`, no de implementaciones concretas:
 
@@ -318,7 +323,7 @@ export class AuthService {
 
 El acceso a la base de datos se realiza a través de la abstracción `Repository<T>` de TypeORM, inyectada por el framework:
 
-##### users.service.ts
+##### [users.service.ts](../../../Practica2/Backend/services/auth-service/src/users/users.service.ts)
 ```typescript
 @Injectable()
 export class UsersService {
@@ -343,7 +348,7 @@ export class UsersService {
 
 El servicio de pagos depende del servicio de mensajería sin conocer su implementación interna. Si en el futuro se reemplaza RabbitMQ por otra herramienta, este no necesita modificarse, siempre que el nuevo servicio cumpla el mismo contrato:
 
-##### pagos.service.ts
+##### [pagos.service.ts](../../../Practica2/Backend/services/pagos-service/src/pagos/pagos.service.ts)
 ```typescript
 @Injectable()
 export class PagosService {
