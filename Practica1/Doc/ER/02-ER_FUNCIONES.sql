@@ -1,27 +1,19 @@
-CREATE TABLE "ciudades" (
-  "id_ciudad" uuid PRIMARY KEY,
-  "nombre" varchar NOT NULL
-);
 
-CREATE TABLE "cines" (
-  "id_cine" uuid PRIMARY KEY,
-  "nombre" varchar NOT NULL,
-  "direccion" varchar NOT NULL,
-  "id_ciudad" uuid NOT NULL
-);
-
-CREATE TABLE "salas" (
-  "id_sala" uuid PRIMARY KEY,
-  "nombre" varchar NOT NULL,
-  "capacidad" integer NOT NULL,
-  "tipo_sala" varchar,
-  "id_cine" uuid NOT NULL
-);
-
-CREATE TABLE "categorias" (
+CREATE TABLE "categorias_peliculas" (
   "id_categoria" uuid PRIMARY KEY,
   "nombre" varchar UNIQUE NOT NULL
 );
+
+COMMENT ON TABLE "categorias_peliculas" IS 'Acción, Comedia, Drama, Terror, etc.';
+
+
+CREATE TABLE "tipos_cartelera" (
+  "id_tipo" uuid PRIMARY KEY,
+  "nombre" varchar UNIQUE NOT NULL
+);
+
+COMMENT ON TABLE "tipos_cartelera" IS 'Estreno, Preventa, Reestreno, Cartelera Normal';
+
 
 CREATE TABLE "peliculas" (
   "id_pelicula" uuid PRIMARY KEY,
@@ -29,8 +21,12 @@ CREATE TABLE "peliculas" (
   "descripcion" text,
   "duracion" integer NOT NULL,
   "clasificacion" varchar,
-  "id_categoria" uuid NOT NULL
+  "id_categoria" uuid NOT NULL,
+  "id_tipo_cartelera" uuid NOT NULL
 );
+
+COMMENT ON TABLE "peliculas" IS 'Peliculas disponibles';
+
 
 CREATE TABLE "funciones" (
   "id_funcion" uuid PRIMARY KEY,
@@ -39,28 +35,20 @@ CREATE TABLE "funciones" (
   "precio" decimal NOT NULL,
   "idioma" varchar,
   "formato" varchar,
-  "id_pelicula" uuid NOT NULL,
-  "id_sala" uuid NOT NULL
+  "id_pelicula" uuid NOT NULL
 );
 
-COMMENT ON TABLE "ciudades" IS 'Ciudades disponibles';
+COMMENT ON TABLE "funciones" IS 'Funciones disponibles por película';
 
-COMMENT ON TABLE "cines" IS 'Cines por ciudad';
 
-COMMENT ON TABLE "salas" IS 'Salas de cada cine';
+ALTER TABLE "peliculas" ADD CONSTRAINT "peliculas_categorias" 
+  FOREIGN KEY ("id_categoria") REFERENCES "categorias_peliculas" ("id_categoria") 
+  DEFERRABLE INITIALLY IMMEDIATE;
 
-COMMENT ON TABLE "categorias" IS 'Estreno, Preventa, Reestreno';
+ALTER TABLE "peliculas" ADD CONSTRAINT "peliculas_tipo_cartelera" 
+  FOREIGN KEY ("id_tipo_cartelera") REFERENCES "tipos_cartelera" ("id_tipo") 
+  DEFERRABLE INITIALLY IMMEDIATE;
 
-COMMENT ON TABLE "peliculas" IS 'Peliculas disponibles';
-
-COMMENT ON TABLE "funciones" IS 'Funciones disponibles';
-
-ALTER TABLE "cines" ADD CONSTRAINT "cines_ciudades" FOREIGN KEY ("id_ciudad") REFERENCES "ciudades" ("id_ciudad") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "salas" ADD CONSTRAINT "salas_cines" FOREIGN KEY ("id_cine") REFERENCES "cines" ("id_cine") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "peliculas" ADD CONSTRAINT "peliculas_categorias" FOREIGN KEY ("id_categoria") REFERENCES "categorias" ("id_categoria") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "funciones" ADD CONSTRAINT "funciones_peliculas" FOREIGN KEY ("id_pelicula") REFERENCES "peliculas" ("id_pelicula") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "funciones" ADD CONSTRAINT "funciones_salas" FOREIGN KEY ("id_sala") REFERENCES "salas" ("id_sala") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "funciones" ADD CONSTRAINT "funciones_peliculas" 
+  FOREIGN KEY ("id_pelicula") REFERENCES "peliculas" ("id_pelicula") 
+  DEFERRABLE INITIALLY IMMEDIATE;

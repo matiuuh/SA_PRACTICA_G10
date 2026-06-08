@@ -59,7 +59,7 @@ El diagrama de paquetes organiza la solución en tres niveles principales:
 | Base de datos | PostgreSQL |
 | Seguridad | JWT |
 
-![Diagrama de Componentes](img/Vista_Componentes.png)
+![Diagrama de Componentes](img/Practica1-Vista-Componentes.drawio.svg)
 
 ### Explicación del Diagrama de Componentes
 El frontend web canaliza las solicitudes hacia el API Gateway. Este distribuye las peticiones a los microservicios encapsulados. Existe un claro desacoplamiento facilitado por la mensajería a través de RabbitMQ (por ejemplo, para pagos y reservas) y persistencia dividida (bases de datos independientes para funcionalidades puntuales). Esto favorece el aislamiento, mantenibilidad y escalado.
@@ -77,7 +77,7 @@ La vista física o de despliegue se dirige a los **ingenieros de sistemas y oper
 5. **Servicio de Bases de Datos (PostgreSQL):** Clúster de bases de datos aisladas por servicio mediante TCP/IP (Puerto 5432).
 6. **Servicios Externos:** Pasarela de pago simulado (HTTPS 443) y proveedor de correo (SMTP 587).
 
-![Diagrama de Vista Física](img/VISTADESPLIEGUE.png)
+![Diagrama de Vista Física](img/Practica1-Vista_Despliegue.drawio.svg)
 
 ### Explicación del Diagrama de Despliegue
 El tráfico web entra por el servidor frontend y se dirige al servidor backend central gestionado por un API Gateway. Una vez en el servidor de Docker, el flujo se bifurca hacia el microservicio apuntado. Las cargas de operaciones persistentes van al servidor de Base de Datos respectivo, aislando responsabilidades funcionales en hardware diferenciado (o contenedores dev), y las tareas de integración asíncronas dependen del nodo de encolamiento (Broker) manteniéndose independientes del tiempo de ejecución sincrónico principal.
