@@ -63,7 +63,7 @@ Responsabilidades:
 * Proporcionar identificadores únicos utilizados por otros servicios
 * Mantener tokens de autenticación activos
 
-Los usuarios registrados dentro de esta tabla podrán interactuar con las funcionalidades principales del sistema, como realizar reservas, efectuar pagos y recibir notificaciones.
+Los usuarios registrados dentro de esta tabla podrán interactuar con las funcionalidades principales del sistema, como realizar reservas, efectuar pagos.
 
 Campos principales almacenados:
 
@@ -89,47 +89,25 @@ Servicios consumidores:
 
 * Servicio de Reservas → utiliza `usuario_id_externo` para asociar reservas
 * Servicio de Pagos → utiliza información relacionada con reservas del usuario
-* Servicio de Notificaciones → utiliza información del usuario para generar mensajes
 
 Esta separación permite mantener desacoplada la arquitectura, evitando dependencias directas entre servicios y facilitando la escalabilidad del sistema.
 
 ### 2. Manejo de Funciones en Cartelera
 
-Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas, salas y horarios disponibles dentro de la plataforma.
+Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas,las funciones disponibles  dentro de la plataforma.
 
 Este servicio permite organizar la información necesaria para que los usuarios puedan consultar la cartelera, seleccionar funciones y posteriormente realizar reservas.
 
 Las tablas utilizadas para este módulo fueron:
 
-* Salas
 * Categorías
-* Clasificaciones
 * Tipo Cartelera
 * Películas
 * Funciones
 
 ![alt text](02-ER_FUNCIONES.png)
 
-#### Tabla Salas
 
-La tabla **salas** almacena las salas disponibles donde se realizarán las funciones dentro de la plataforma.
-
-Cada sala mantiene una referencia externa hacia el servicio de locaciones mediante `id_cine_externo`, permitiendo asociar salas a complejos cinematográficos sin generar dependencias directas entre bases de datos.
-
-Responsabilidades:
-
-* Definir capacidad de salas
-* Clasificar tipos de sala (2D, 3D, IMAX, VIP, etc.)
-* Asociar funciones a espacios físicos
-* Mantener relación lógica con complejos cinematográficos
-
-Relación:
-
-```text
-Cines (externo) -------- (N) Salas
-
-Salas (1) -------- (N) Funciones
-```
 
 ---
 
@@ -157,29 +135,6 @@ Categorias (1) -------- (N) Peliculas
 
 ---
 
-#### Tabla Clasificaciones
-
-La tabla **clasificaciones** almacena las restricciones o recomendaciones de edad para las películas.
-
-Ejemplos:
-
-* PG
-* PG-13
-* R
-* +18
-
-Responsabilidades:
-
-* Informar restricciones de contenido
-* Filtrar contenido según audiencia
-
-Relación:
-
-```text
-Clasificaciones (1) -------- (N) Peliculas
-```
-
----
 
 #### Tabla Tipo Cartelera
 
@@ -255,7 +210,6 @@ Servicios relacionados:
 
 * Servicio de Locaciones → utiliza `id_cine_externo` para asociar salas con complejos cinematográficos
 * Servicio de Reservas → utiliza `id_funcion_externa` para reservar asientos
-* Servicio de Notificaciones → utiliza información de funciones para mensajes
 * Servicio de Pagos → utiliza información proveniente de reservas asociadas a funciones
 
 Esta separación permite que la información de cartelera pueda administrarse independientemente del resto del sistema.
@@ -392,7 +346,6 @@ Servicios relacionados:
 * Servicio de Usuarios → utiliza `usuario_id_externo` para asociar clientes
 * Servicio de Cartelera → utiliza `id_funcion_externa` para identificar funciones
 * Servicio de Pagos → procesa montos asociados a reservas
-* Servicio de Notificaciones → informa cambios de estado y emisión de boletos
 
 ---
 
@@ -505,7 +458,6 @@ Este servicio se comunica con otros módulos mediante identificadores externos.
 Servicios relacionados:
 
 * Servicio de Reservas → utiliza `reserva_id_externa` para procesar compras
-* Servicio de Notificaciones → informa pagos aprobados o rechazados
 
 El servicio no accede directamente a otras bases de datos, manteniendo el desacoplamiento requerido dentro de la arquitectura.
 
@@ -591,6 +543,27 @@ Relación:
 Ciudades (1) -------- (N) Cines
 ```
 
+#### Tabla Salas
+
+La tabla **salas** almacena las salas disponibles donde se realizarán las funciones dentro de la plataforma.
+
+Cada sala mantiene una referencia externa hacia el servicio de locaciones mediante `id_cine_externo`, permitiendo asociar salas a complejos cinematográficos sin generar dependencias directas entre bases de datos.
+
+Responsabilidades:
+
+* Definir capacidad de salas
+* Clasificar tipos de sala (2D, 3D, IMAX, VIP, etc.)
+* Asociar funciones a espacios físicos
+* Mantener relación lógica con complejos cinematográficos
+
+Relación:
+
+```text
+Cines 1 -------- (N) Salas
+
+Salas (1) -------- (N) Funciones
+```
+
 ---
 
 #### Relación con otros servicios
@@ -601,7 +574,6 @@ Servicios relacionados:
 
 * Servicio de Cartelera → utiliza `id_cine_externo` para asociar salas a complejos cinematográficos
 * Servicio de Reservas → consume información indirectamente mediante funciones y salas
-* Servicio de Notificaciones → puede utilizar información de ubicación para mensajes informativos
 
 Esta separación permite mantener desacoplada la infraestructura física del sistema respecto a la lógica de negocio asociada a películas y funciones.
 

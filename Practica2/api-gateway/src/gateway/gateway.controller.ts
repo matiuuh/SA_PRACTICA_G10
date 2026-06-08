@@ -27,13 +27,13 @@ export class GatewayController {
       });
     }
 
-    this.logger.log(`📥 ${method} ${originalUrl}`);
+    this.logger.log(` ${method} ${originalUrl}`);
 
     // Encontrar el servicio correspondiente
     const service = this.gatewayService.findService(path);
     
     if (!service) {
-      this.logger.warn(`❌ Service not found for path: ${originalUrl}`);
+      this.logger.warn(` Service not found for path: ${originalUrl}`);
       return res.status(404).json({
         statusCode: 404,
         message: 'Service not found',
@@ -71,7 +71,7 @@ export class GatewayController {
 
       const responseTime = Date.now() - startTime;
       this.logger.log(
-        `✅ ${method} ${originalUrl} → ${service.name} (${response.status}) - ${responseTime}ms`
+        ` ${method} ${originalUrl} → ${service.name} (${response.status}) - ${responseTime}ms`
       );
 
       // Agregar headers de respuesta
@@ -85,13 +85,13 @@ export class GatewayController {
       if (error.response) {
         // El servicio respondió con error
         this.logger.warn(
-          `⚠️ ${method} ${originalUrl} → ${service.name} (${error.response.status}) - ${responseTime}ms`
+          ` ${method} ${originalUrl} → ${service.name} (${error.response.status}) - ${responseTime}ms`
         );
         res.status(error.response.status).json(error.response.data);
         
       } else if (error.code === 'ECONNREFUSED') {
         // Servicio no disponible
-        this.logger.error(`❌ Service ${service.name} is unavailable on ${service.url}`);
+        this.logger.error(` Service ${service.name} is unavailable on ${service.url}`);
         res.status(503).json({
           statusCode: 503,
           message: `Service ${service.name} is currently unavailable`,

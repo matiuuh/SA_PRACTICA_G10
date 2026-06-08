@@ -20,6 +20,7 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMqService.name);
   private connection?: ChannelModel;
   private channel?: Channel;
+  private connectPromise?: Promise<void>;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -60,32 +61,12 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const url = this.configService.get<string>(
-      'RABBITMQ_URL',
-      'amqp://guest:guest@localhost:5672',
-    );
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
 
-    this.connection = await amqp.connect(url);
-    this.channel = await this.connection.createChannel();
-
-    await this.channel.assertExchange(FILMSTARS_EXCHANGE, 'topic', {
-      durable: true,
-    });
-    await this.channel.assertQueue(PAYMENT_REQUEST_QUEUE, { durable: true });
-    await this.channel.assertQueue(PAYMENT_RESULT_QUEUE, { durable: true });
-    await this.channel.bindQueue(
-      PAYMENT_REQUEST_QUEUE,
-      FILMSTARS_EXCHANGE,
-      PAYMENT_REQUEST_ROUTING_KEY,
-    );
-    await this.channel.bindQueue(
-      PAYMENT_RESULT_QUEUE,
-      FILMSTARS_EXCHANGE,
-      PAYMENT_RESULT_ROUTING_KEY,
-    );
-    await this.channel.prefetch(10);
-
-    this.logger.log('RabbitMQ conectado en pagos-service');
+    this.connectPromise = this.connectWithRetry();
+    await this.connectPromise;
   }
 
   private async getChannel(): Promise<Channel> {
@@ -98,6 +79,56 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
     }
 
     return this.channel;
+  }
+
+  private async connectWithRetry() {
+    const url = this.configService.get<string>(
+      'RABBITMQ_URL',
+      'amqp://guest:guest@localhost:5672',
+    );
+
+    while (!this.channel) {
+      try {
+        this.connection = await amqp.connect(url);
+        this.connection.on('close', () => {
+          this.logger.warn('Conexion RabbitMQ cerrada en pagos-service. Reintentando...');
+          this.channel = undefined;
+          this.connection = undefined;
+          this.connectPromise = undefined;
+        });
+        this.connection.on('error', (error) => {
+          this.logger.error(`Error de conexion RabbitMQ en pagos-service: ${error.message}`);
+        });
+
+        this.channel = await this.connection.createChannel();
+
+        await this.channel.assertExchange(FILMSTARS_EXCHANGE, 'topic', {
+          durable: true,
+        });
+        await this.channel.assertQueue(PAYMENT_REQUEST_QUEUE, { durable: true });
+        await this.channel.assertQueue(PAYMENT_RESULT_QUEUE, { durable: true });
+        await this.channel.bindQueue(
+          PAYMENT_REQUEST_QUEUE,
+          FILMSTARS_EXCHANGE,
+          PAYMENT_REQUEST_ROUTING_KEY,
+        );
+        await this.channel.bindQueue(
+          PAYMENT_RESULT_QUEUE,
+          FILMSTARS_EXCHANGE,
+          PAYMENT_RESULT_ROUTING_KEY,
+        );
+        await this.channel.prefetch(10);
+
+        this.logger.log('RabbitMQ conectado en pagos-service');
+      } catch (error) {
+        this.logger.warn(
+          `No se pudo conectar a RabbitMQ en pagos-service. Reintentando en 3s... ${(error as Error).message}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    }
+
+    this.connectPromise = undefined;
   }
 
   private async handleMessage(
