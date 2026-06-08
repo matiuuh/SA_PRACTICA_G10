@@ -110,85 +110,75 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = ({ localidades, isSavi
             </div>
           ))}
         </div>
+      </div>
 
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-cinema-dark-800 rounded-2xl max-w-md w-full border border-cinema-gold-500/30">
-              <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
-                <h2 className="text-xl font-bold text-white">Nuevo cine</h2>
-                <button onClick={handleCloseModal} className="text-gray-400 hover:text-white">
-                  x
-                </button>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-cinema-dark-800 rounded-2xl max-w-md w-full border border-cinema-gold-500/30">
+            <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
+              <h2 className="text-xl font-bold text-white">Nuevo cine</h2>
+              <button onClick={handleCloseModal} className="text-gray-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">Ciudad</label>
+                <input
+                  type="text"
+                  name="ciudad"
+                  required
+                  value={formData.ciudad}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={cerrarCiudadModal} className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50">
-                  {saving ? 'Guardando...' : editingCiudad ? 'Actualizar' : 'Crear'}
+
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">Nombre del cine</label>
+                <input
+                  type="text"
+                  name="cine"
+                  required
+                  value={formData.cine}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">Direccion</label>
+                <input
+                  type="text"
+                  name="direccion"
+                  required
+                  value={formData.direccion}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? 'Guardando...' : 'Crear'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-              <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Ciudad</label>
-                  <input
-                    type="text"
-                    name="ciudad"
-                    required
-                    value={formData.ciudad}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Nombre del cine</label>
-                  <input
-                    type="text"
-                    name="cine"
-                    required
-                    value={formData.cine}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Direccion</label>
-                  <input
-                    type="text"
-                    name="direccion"
-                    required
-                    value={formData.direccion}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? 'Guardando...' : 'Crear'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
 
       {showToast && <Toast message="Cine creado exitosamente" type="success" onClose={() => setShowToast(false)} />}
     </>
