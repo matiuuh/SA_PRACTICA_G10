@@ -120,7 +120,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = ({ localidades, isSavi
                   x
                 </button>
               </div>
-
               <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Ciudad</label>
