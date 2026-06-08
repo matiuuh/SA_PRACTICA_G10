@@ -13,7 +13,7 @@ Integrantes:
 ## Indice
 
 
-### Requerimientos del sistema
+### Requerimientos del sistemag
 
 - [Requerimientos funcionales](./RF/RF.md)
 - [Requerimientos no funcionales](./RNF/RNF.md)
@@ -34,6 +34,12 @@ Integrantes:
 - [Diagrama de secuencia](./Diagramas_Estructurales/Diagrama_Secuencia.md)
 - [Diagramas entidad relacion](./ER/DiagramasER.md)
 
+### Justificacion de tecnologias y principios SOLID aplicados
+- [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
+- [Principios SOLID aplicados](./Solid/Solid.md)
+- [Despliegue](./Despligue/despliegue.md)
+
+
 ## Introduccion
 
 En esta practica se desarrollo una pagina web para la gestion de venta de boletos de la empresa **FilmStars**. El sistema permite a los usuarios consultar la cartelera de peliculas por ubicacion, seleccionar asientos de forma interactiva en tiempo real, procesar pagos y recibir boletos digitales con numero de confirmacion.
@@ -45,6 +51,8 @@ El frontend estará desarrollado con **React + Vite**, el backend con **Node.js 
 Los actores principales del sistema son el **Cliente**, que realiza reservas y compras, el **Sistema de pagos**, que procesa las transacciones financieras, y el **Administrador**, que gestiona la cartelera, funciones y salas.
 
 Este archivo funciona como indice principal de la documentacion. Desde aqui se puede acceder a cada uno de los documentos del proyecto.
+
+---
 
 ## Conclusiones
 

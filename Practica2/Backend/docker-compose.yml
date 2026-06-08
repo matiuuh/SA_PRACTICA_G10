@@ -1,0 +1,241 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - filmstars-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service
+    env_file:
+      - ./services/auth-service/.env
+    environment:
+      PORT: 3001
+      DB_HOST: postgres-auth
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: auth_service
+      JWT_SECRET: change_this_secret
+      JWT_EXPIRES_IN: 1h
+      DEFAULT_ROLE: CLIENTE
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: postgres-auth
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_service
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata-auth:/var/lib/postgresql/data
+      - ./services/auth-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d auth_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  localidades-service:
+    build:
+      context: ./services/localidades-service
+    container_name: localidades-service
+    env_file:
+      - ./services/localidades-service/.env
+    environment:
+      PORT: 3002
+      DB_HOST: postgres-localidades
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: localidades_service
+      JWT_SECRET: change_this_secret
+    ports:
+      - '3002:3002'
+    depends_on:
+      postgres-localidades:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  postgres-localidades:
+    image: postgres:15-alpine
+    container_name: postgres-localidades
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: localidades_service
+    ports:
+      - '5434:5432'
+    volumes:
+      - pgdata-localidades:/var/lib/postgresql/data
+      - ./services/localidades-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d localidades_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  funciones-service:
+    build:
+      context: ./services/funciones-service
+    container_name: funciones-service
+    env_file:
+      - ./services/funciones-service/.env
+    environment:
+      PORT: 3003
+      DB_HOST: postgres-funciones
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: funciones_db
+      JWT_SECRET: change_this_secret
+    ports:
+      - '3003:3003'
+    depends_on:
+      postgres-funciones:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  postgres-funciones:
+    image: postgres:15-alpine
+    container_name: postgres-funciones
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: funciones_db
+    ports:
+      - '5435:5432'
+    volumes:
+      - pgdata-funciones:/var/lib/postgresql/data
+      - ./services/funciones-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d funciones_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  reservas-service:
+    build:
+      context: ./services/reservas-service
+    container_name: reservas-service
+    env_file:
+      - ./services/reservas-service/.env
+    environment:
+      PORT: 3004
+      DB_HOST: postgres-reservas
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: reservas_service
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: change_this_secret
+    ports:
+      - '3004:3004'
+    depends_on:
+      postgres-reservas:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - filmstars-network
+
+  postgres-reservas:
+    image: postgres:15-alpine
+    container_name: postgres-reservas
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reservas_service
+    ports:
+      - '5436:5432'
+    volumes:
+      - pgdata-reservas:/var/lib/postgresql/data
+      - ./services/reservas-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d reservas_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+  pagos-service:
+    build:
+      context: ./services/pagos-service
+    container_name: pagos-service
+    env_file:
+      - ./services/pagos-service/.env
+    environment:
+      PORT: 3005
+      DB_HOST: postgres-pagos
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: pagos_service
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: change_this_secret
+    ports:
+      - '3005:3005'
+    depends_on:
+      postgres-pagos:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - filmstars-network
+
+  postgres-pagos:
+    image: postgres:15-alpine
+    container_name: postgres-pagos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pagos_service
+    ports:
+      - '5437:5432'
+    volumes:
+      - pgdata-pagos:/var/lib/postgresql/data
+      - ./services/pagos-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d pagos_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+volumes:
+  pgdata-auth:
+  pgdata-localidades:
+  pgdata-funciones:
+  pgdata-reservas:
+  pgdata-pagos:
+
+networks:
+  filmstars-network:
+    driver: bridge

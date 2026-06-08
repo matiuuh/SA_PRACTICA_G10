@@ -1,0 +1,38 @@
+services:
+  reservas-service:
+    build: .
+    ports:
+      - '3004:3004'
+    env_file:
+      - .env
+    depends_on:
+      postgres-reservas:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  postgres-reservas:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '5436:5432'
+    volumes:
+      - pgdata-reservas:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_NAME}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+volumes:
+  pgdata-reservas:
+
+networks:
+  filmstars-network:
+    driver: bridge

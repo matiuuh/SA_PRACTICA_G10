@@ -1,0 +1,38 @@
+services:
+  funciones-service:
+    build: .
+    ports:
+      - '3003:3003'
+    env_file:
+      - .env
+    depends_on:
+      postgres-funciones:
+        condition: service_healthy
+    networks:
+      - filmstars-network
+
+  postgres-funciones:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '5435:5432'
+    volumes:
+      - pgdata-funciones:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_NAME}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-network
+
+volumes:
+  pgdata-funciones:
+
+networks:
+  filmstars-network:
+    driver: bridge

@@ -1,0 +1,95 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE "categorias" (
+  "id_categoria" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nombre" varchar(100) UNIQUE NOT NULL
+);
+
+COMMENT ON TABLE "categorias" IS 'Categorias de clasificacion de peliculas';
+
+CREATE TABLE "tipo_cartelera" (
+  "id_tipo_cartelera" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nombre" varchar(100) UNIQUE NOT NULL
+);
+
+COMMENT ON TABLE "tipo_cartelera" IS 'Tipos de cartelera como estreno, preventa o reestreno';
+
+CREATE TABLE "salas" (
+  "id_sala" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nombre" varchar(100) NOT NULL,
+  "capacidad" integer NOT NULL,
+  "tipo" varchar(50) NOT NULL DEFAULT '2D',
+  "id_cine_externo" uuid NOT NULL
+);
+
+COMMENT ON TABLE "salas" IS 'Salas sincronizadas desde el servicio de localidades';
+
+CREATE TABLE "peliculas" (
+  "id_pelicula" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "titulo" varchar(255) NOT NULL,
+  "sinopsis" text,
+  "duracion_minutos" integer,
+  "poster_url" varchar(500),
+  "activa" boolean NOT NULL DEFAULT true,
+  "id_categoria" uuid NOT NULL,
+  "id_tipo_cartelera" uuid NOT NULL
+);
+
+COMMENT ON TABLE "peliculas" IS 'Peliculas disponibles en cartelera';
+
+CREATE TABLE "funciones" (
+  "id_funcion" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "fecha" date NOT NULL,
+  "hora" time NOT NULL,
+  "precio" decimal(10,2) NOT NULL,
+  "activa" boolean NOT NULL DEFAULT true,
+  "id_pelicula" uuid NOT NULL,
+  "id_sala" uuid NOT NULL
+);
+
+COMMENT ON TABLE "funciones" IS 'Funciones programadas por sala';
+
+ALTER TABLE "peliculas"
+  ADD CONSTRAINT "peliculas_categorias"
+  FOREIGN KEY ("id_categoria") REFERENCES "categorias" ("id_categoria")
+  DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "peliculas"
+  ADD CONSTRAINT "peliculas_tipo_cartelera"
+  FOREIGN KEY ("id_tipo_cartelera") REFERENCES "tipo_cartelera" ("id_tipo_cartelera")
+  DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "funciones"
+  ADD CONSTRAINT "funciones_peliculas"
+  FOREIGN KEY ("id_pelicula") REFERENCES "peliculas" ("id_pelicula")
+  DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "funciones"
+  ADD CONSTRAINT "funciones_salas"
+  FOREIGN KEY ("id_sala") REFERENCES "salas" ("id_sala")
+  DEFERRABLE INITIALLY IMMEDIATE;
+
+CREATE UNIQUE INDEX "ux_funciones_sala_fecha_hora_activa"
+  ON "funciones" ("id_sala", "fecha", "hora")
+  WHERE "activa" = true;
+
+INSERT INTO "categorias" ("id_categoria", "nombre") VALUES
+  ('11111111-1111-4111-8111-111111111111', 'Accion'),
+  ('22222222-2222-4222-8222-222222222222', 'Aventura'),
+  ('33333333-3333-4333-8333-333333333333', 'Ciencia Ficcion'),
+  ('44444444-4444-4444-8444-444444444444', 'Comedia'),
+  ('55555555-5555-4555-8555-555555555555', 'Drama'),
+  ('66666666-6666-4666-8666-666666666666', 'Fantasia'),
+  ('77777777-7777-4777-8777-777777777777', 'Infantil'),
+  ('88888888-8888-4888-8888-888888888888', 'Romance'),
+  ('99999999-9999-4999-8999-999999999999', 'Suspenso'),
+  ('aaaaaaaa-1111-4111-8111-bbbbbbbbbbbb', 'Terror')
+ON CONFLICT ("nombre") DO NOTHING;
+
+INSERT INTO "tipo_cartelera" ("id_tipo_cartelera", "nombre") VALUES
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Estreno'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Preventa'),
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'Reestreno'),
+  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'Festival'),
+  ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'Especial')
+ON CONFLICT ("nombre") DO NOTHING;

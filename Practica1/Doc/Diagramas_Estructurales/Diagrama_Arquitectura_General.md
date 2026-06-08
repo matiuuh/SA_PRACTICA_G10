@@ -15,7 +15,7 @@ Ambos diagramas representan la solucion desplegada sobre Google Cloud Platform y
 
 ## Arquitectura Sincronica
 
-![Diagrama de Arquitectura General - Sincrona](<imagenes/DIAGRAMA ARQUITECTURA SINCRONA.png>)
+![Diagrama de Arquitectura General - Sincrona](<imagenes/Practica1-Arquitectura-Sincrónica.drawio.svg>)
 
 ### Descripcion
 
@@ -56,7 +56,7 @@ El acceso desde los microservicios hacia sus bases de datos se realiza mediante 
 
 ## Arquitectura Asincronica
 
-![Diagrama de Arquitectura General - Asincrona](<imagenes/DIAGRAMA ARQUITECTURA ASINCRONA.png>)
+![Diagrama de Arquitectura General - Asincrona](<imagenes/Practica1-Arquitectura-Asicronica.drawio.png>)
 
 ### Descripcion
 
