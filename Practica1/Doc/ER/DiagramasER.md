@@ -94,41 +94,20 @@ Esta separación permite mantener desacoplada la arquitectura, evitando dependen
 
 ### 2. Manejo de Funciones en Cartelera
 
-Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas, salas y horarios disponibles dentro de la plataforma.
+Para la administración de películas y funciones disponibles se implementó un servicio independiente encargado de gestionar la información relacionada con películas,las funciones disponibles  dentro de la plataforma.
 
 Este servicio permite organizar la información necesaria para que los usuarios puedan consultar la cartelera, seleccionar funciones y posteriormente realizar reservas.
 
 Las tablas utilizadas para este módulo fueron:
 
-* Salas
 * Categorías
-* Clasificaciones
 * Tipo Cartelera
 * Películas
 * Funciones
 
 ![alt text](02-ER_FUNCIONES.png)
 
-#### Tabla Salas
 
-La tabla **salas** almacena las salas disponibles donde se realizarán las funciones dentro de la plataforma.
-
-Cada sala mantiene una referencia externa hacia el servicio de locaciones mediante `id_cine_externo`, permitiendo asociar salas a complejos cinematográficos sin generar dependencias directas entre bases de datos.
-
-Responsabilidades:
-
-* Definir capacidad de salas
-* Clasificar tipos de sala (2D, 3D, IMAX, VIP, etc.)
-* Asociar funciones a espacios físicos
-* Mantener relación lógica con complejos cinematográficos
-
-Relación:
-
-```text
-Cines (externo) -------- (N) Salas
-
-Salas (1) -------- (N) Funciones
-```
 
 ---
 
@@ -156,29 +135,6 @@ Categorias (1) -------- (N) Peliculas
 
 ---
 
-#### Tabla Clasificaciones
-
-La tabla **clasificaciones** almacena las restricciones o recomendaciones de edad para las películas.
-
-Ejemplos:
-
-* PG
-* PG-13
-* R
-* +18
-
-Responsabilidades:
-
-* Informar restricciones de contenido
-* Filtrar contenido según audiencia
-
-Relación:
-
-```text
-Clasificaciones (1) -------- (N) Peliculas
-```
-
----
 
 #### Tabla Tipo Cartelera
 
@@ -585,6 +541,27 @@ Relación:
 
 ```text id="w6z3yo"
 Ciudades (1) -------- (N) Cines
+```
+
+#### Tabla Salas
+
+La tabla **salas** almacena las salas disponibles donde se realizarán las funciones dentro de la plataforma.
+
+Cada sala mantiene una referencia externa hacia el servicio de locaciones mediante `id_cine_externo`, permitiendo asociar salas a complejos cinematográficos sin generar dependencias directas entre bases de datos.
+
+Responsabilidades:
+
+* Definir capacidad de salas
+* Clasificar tipos de sala (2D, 3D, IMAX, VIP, etc.)
+* Asociar funciones a espacios físicos
+* Mantener relación lógica con complejos cinematográficos
+
+Relación:
+
+```text
+Cines 1 -------- (N) Salas
+
+Salas (1) -------- (N) Funciones
 ```
 
 ---
