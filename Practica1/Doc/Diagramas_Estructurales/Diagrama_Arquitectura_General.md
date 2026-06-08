@@ -15,7 +15,7 @@ Ambos diagramas representan la solucion desplegada sobre Google Cloud Platform y
 
 ## Arquitectura Sincronica
 
-![Diagrama de Arquitectura General - Sincrona](<imagenes/Practica1-Arquitectura-Sincrónica.drawio.png>)
+![Diagrama de Arquitectura General - Sincrona](<imagenes/Practica1-Arquitectura-Sincrónica.drawio.svg>)
 
 ### Descripcion
 

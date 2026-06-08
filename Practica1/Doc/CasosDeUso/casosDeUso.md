@@ -20,7 +20,7 @@
 ![Primera Descomposicion](./img/Practica1-Primera_Descomposición.drawio.svg)
 
 # Casos de uso expandidos
-## Registro e inicio de sesión
+## Registro y manejo de autenticación
 ### CDU-001.1: Registrar Cliente
 
 | Campo | Descripción |
@@ -37,11 +37,10 @@
 |------|-------|--------|
 | 1 | Usuario | Accede a la página de registro. |
 | 2 | Usuario | Ingresa su nombre, correo electrónico y contraseña. |
-| 3 | Usuario | Confirma la contraseña y envía el formulario. |
-| 4 | Sistema | Valida que todos los campos estén completos y con formato correcto. |
-| 5 | Sistema | Verifica que el correo electrónico no esté registrado previamente. |
-| 6 | Sistema | Almacena el nuevo usuario con la contraseña cifrada. |
-| 7 | Sistema | Muestra un mensaje de registro exitoso y redirige al inicio de sesión. |
+| 3 | Sistema | Valida que todos los campos estén completos y con formato correcto. |
+| 4 | Sistema | Verifica que el correo electrónico no esté registrado previamente. |
+| 5 | Sistema | Almacena el nuevo usuario con la contraseña cifrada. |
+| 6 | Sistema | Muestra un mensaje de registro exitoso y redirige al inicio de sesión. |
 
 **Flujos alternativos:**
 | ID | Condición | Acción |
@@ -96,97 +95,12 @@
 | FE-02 | Formato de correo inválido | En el paso 4, el sistema muestra un error de formato y solicita corrección antes de continuar. |
 | FE-03 | Error de conexión con la base de datos | En el paso 5, el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
----
-
-![CDU001](./img/Practica1-CDU001.drawio.svg)
-
-## Gestión de información personal
-
-### CDU-002.1: Actualizar Datos Personales
+### CDU-001.3: Cierre de sesión
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-002.1 |
-| **Nombre** | Actualizar Datos Personales |
-| **Actor** | Cliente, Administrador |
-| **Descripción** | Permite al usuario modificar su nombre y correo electrónico registrados en la plataforma. |
-| **Precondiciones** | El usuario tiene una sesión activa. |
-| **Postcondiciones** | Los datos personales del usuario quedan actualizados en el sistema. |
-
-**Flujo principal:**
-
-| Paso | Actor | Acción |
-|------|-------|--------|
-| 1 | Usuario | Accede a la sección de perfil desde el menú de usuario. |
-| 2 | Usuario | Selecciona la opción de editar datos personales. |
-| 3 | Usuario | Modifica los campos deseados y envía el formulario. |
-| 4 | Sistema | Valida que los campos no estén vacíos y tengan formato correcto. |
-| 5 | Sistema | Verifica que el nuevo correo electrónico no esté en uso por otra cuenta. |
-| 6 | Sistema | Actualiza los datos del usuario en la base de datos. |
-| 7 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
-
-**Flujos alternativos:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FA-01 | El usuario no modifica ningún campo | En el paso 3, el sistema no realiza ninguna operación y mantiene los datos actuales. |
-| FA-02 | El usuario cancela | En cualquier paso, el usuario puede cancelar y el sistema descarta los cambios. |
-
-**Flujos de excepción:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FE-01 | Formato de correo inválido | En el paso 4, el sistema muestra un mensaje de error y solicita corrección. |
-| FE-02 | El nuevo correo ya está en uso | En el paso 5, el sistema notifica que el correo pertenece a otra cuenta y solicita uno diferente. |
-
----
-
-### CDU-002.2: Cambiar Contraseña
-
-| Campo | Descripción |
-|-------|-------------|
-| **ID** | CDU-002.2 |
-| **Nombre** | Cambiar Contraseña |
-| **Actor** | Cliente, Administrador |
-| **Descripción** | Permite al usuario actualizar su contraseña actual por una nueva, previa verificación de la contraseña vigente. |
-| **Precondiciones** | El usuario tiene una sesión activa. |
-| **Postcondiciones** | La contraseña del usuario queda actualizada en el sistema. |
-
-**Flujo principal:**
-
-| Paso | Actor | Acción |
-|------|-------|--------|
-| 1 | Usuario | Accede a la sección de perfil y selecciona la opción de cambiar contraseña. |
-| 2 | Usuario | Ingresa su contraseña actual. |
-| 3 | Usuario | Ingresa la nueva contraseña y la confirma. |
-| 4 | Usuario | Envía el formulario. |
-| 5 | Sistema | Verifica que la contraseña actual coincida con el hash almacenado. |
-| 6 | Sistema | Valida que la nueva contraseña cumpla con los requisitos de seguridad. |
-| 7 | Sistema | Almacena la nueva contraseña cifrada. |
-| 8 | Sistema | Muestra un mensaje de confirmación y redirige al inicio de sesión. |
-
-**Flujos alternativos:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FA-01 | El usuario cancela | En cualquier paso, el usuario puede cancelar y el sistema descarta los cambios. |
-
-**Flujos de excepción:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FE-01 | Contraseña actual incorrecta | En el paso 5, el sistema muestra un error de credenciales inválidas sin revelar detalles adicionales. |
-| FE-02 | Nueva contraseña no cumple requisitos | En el paso 6, el sistema indica los requisitos no cumplidos y solicita corrección. |
-| FE-03 | Nueva contraseña y confirmación no coinciden | En el paso 6, el sistema muestra un error y limpia los campos de nueva contraseña. |
-
----
-
-### CDU-002.3: Cerrar Sesión
-
-| Campo | Descripción |
-|-------|-------------|
-| **ID** | CDU-002.3 |
-| **Nombre** | Cerrar Sesión |
+| **ID** | CDU-001.3 |
+| **Nombre** | Cierre de sesión |
 | **Actor** | Cliente, Administrador |
 | **Descripción** | Permite al usuario finalizar su sesión activa en la plataforma, invalidando el token de autenticación. |
 | **Precondiciones** | El usuario tiene una sesión activa. |
@@ -212,15 +126,17 @@
 |----|-----------|--------|
 | FE-01 | Error al invalidar el token | En el paso 2, el sistema muestra un mensaje de error e intenta invalidar el token nuevamente. |
 
-![CDU002](./img/Practica1-CDU002.drawio.svg)
+---
+
+![CDU001](./img/Practica1-CDU001.drawio.svg)
 
 ## Gestión de películas y cartelera
 
-### CDU-003.1: Modificar Cartelera
+### CDU-002.1: Modificar Cartelera
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-003.1 |
+| **ID** | CDU-002.1 |
 | **Nombre** | Modificar Cartelera |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador agregar o quitar películas de la cartelera activa, controlando qué títulos son visibles para los clientes según su tipo de proyección. |
@@ -232,7 +148,7 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de gestión de cartelera. |
-| 2 | Sistema | Muestra el listado de películas en cartelera y las disponibles para agregar. |
+| 2 | Sistema | Muestra el listado de películas en cartelera y la opción para agregar. |
 | 3 | Administrador | Selecciona las películas a agregar o quitar de la cartelera. |
 | 4 | Administrador | Confirma los cambios. |
 | 5 | Sistema | Valida que las películas seleccionadas existan y tengan información completa. |
@@ -255,11 +171,11 @@
 
 ---
 
-### CDU-003.2: Añadir Película
+### CDU-002.2: Añadir Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-003.2 |
+| **ID** | CDU-002.2 |
 | **Nombre** | Añadir Película |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador registrar una nueva película en el sistema con toda su información, incluyendo título, género, duración, sinopsis, clasificación y tipo de proyección. |
@@ -296,11 +212,11 @@
 
 ---
 
-### CDU-003.3: Modificar Película
+### CDU-002.3: Modificar Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-003.3 |
+| **ID** | CDU-002.3 |
 | **Nombre** | Modificar Película |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador editar la información de una película existente en el sistema, como su título, sinopsis, clasificación, género o tipo de proyección. |
@@ -336,11 +252,11 @@
 
 ---
 
-### CDU-003.4: Eliminar Película
+### CDU-002.4: Eliminar Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-003.4 |
+| **ID** | CDU-002.4 |
 | **Nombre** | Eliminar Película |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador eliminar del sistema una película que no tenga funciones activas ni boletos vendidos asociados. |
@@ -375,11 +291,11 @@
 
 ---
 
-### CDU-003.5: Visualizar Cartelera
+### CDU-002.5: Visualizar Cartelera
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-003.5 |
+| **ID** | CDU-002.5 |
 | **Nombre** | Visualizar Cartelera |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente consultar las películas actualmente en cartelera, incluyendo su título, género, clasificación, duración y tipos de proyección disponibles. |
@@ -394,7 +310,7 @@
 | 2 | Sistema | Recupera y muestra las películas actualmente en cartelera. |
 | 3 | Cliente | Aplica filtros opcionales por género, clasificación o tipo de proyección. |
 | 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con los filtros seleccionados. |
-| 5 | Cliente | Selecciona una película para ver su detalle. |
+| 5 | Cliente | Visualiza las películas |
 
 **Flujos alternativos:**
 
@@ -412,11 +328,11 @@
 
 ---
 
-### CDU-003.6: Visualizar Detalle de Película
+### CDU-002.6: Visualizar Detalle de Película
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-003.6 |
+| **ID** | CDU-002.6 |
 | **Nombre** | Visualizar Detalle de Película |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente consultar la información completa de una película seleccionada, incluyendo sinopsis, reparto, clasificación, duración y funciones disponibles. |
@@ -427,10 +343,11 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Selecciona una película desde la cartelera. |
-| 2 | Sistema | Recupera y muestra la información completa de la película: título, póster, sinopsis, género, clasificación, duración, reparto y tipos de proyección. |
-| 3 | Sistema | Muestra las funciones disponibles para esa película ordenadas por fecha y horario. |
-| 4 | Cliente | Revisa la información y selecciona una función para continuar con la compra. |
+| 1 | Cliente | Accede a la sección de cartelera desde la página principal. |
+| 2 | Sistema | Recupera y muestra las películas actualmente en cartelera. |
+| 3 | Cliente | Aplica filtros opcionales por género, clasificación o tipo de proyección. |
+| 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con los filtros seleccionados. |
+| 5 | Cliente | Visualiza el detalle de las películas |
 
 **Flujos alternativos:**
 
@@ -448,15 +365,15 @@
 
 ---
 
-![CDU003](./img/Practica1-CDU003.drawio.svg)
+![CDU002](./img/Practica1-CDU002.drawio.svg)
 
 ## Gestión de funciones
 
-### CDU-004.1: Registrar Función
+### CDU-003.1: Registrar Función
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-004.1 |
+| **ID** | CDU-003.1 |
 | **Nombre** | Registrar Función |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador programar una nueva función asignando una película a una sala, fecha y horario específicos. |
@@ -473,7 +390,6 @@
 | 4 | Sistema | Valida que todos los campos estén completos. |
 | 5 | Sistema | Verifica que no exista otra función programada en la misma sala, fecha y horario. |
 | 6 | Sistema | Registra la función y genera el mapa de asientos disponibles. |
-| 7 | Sistema | Muestra un mensaje de confirmación de registro exitoso. |
 
 **Flujos alternativos:**
 
@@ -490,11 +406,11 @@
 
 ---
 
-### CDU-004.2: Actualizar Función
+### CDU-003.2: Actualizar Función
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-004.2 |
+| **ID** | CDU-003.2 |
 | **Nombre** | Actualizar Función |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador modificar los datos de una función existente, como su fecha, horario o sala asignada. |
@@ -507,10 +423,9 @@
 |------|-------|--------|
 | 1 | Administrador | Accede al listado de funciones y selecciona la función a modificar. |
 | 2 | Administrador | Modifica los campos deseados y envía el formulario. |
-| 3 | Sistema | Verifica que la función no tenga boletos vendidos ni asientos bloqueados activos. |
-| 4 | Sistema | Valida que los nuevos datos no generen conflicto de sala y horario. |
-| 5 | Sistema | Actualiza los datos de la función en la base de datos. |
-| 6 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
+| 3 | Sistema | Valida que los nuevos datos no generen conflicto de sala y horario. |
+| 4 | Sistema | Actualiza los datos de la función en la base de datos. |
+| 5 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
 
 **Flujos alternativos:**
 
@@ -526,15 +441,15 @@
 | FE-01 | La función tiene boletos vendidos | En el paso 3, el sistema impide la modificación e informa que existen compras registradas para esta función. |
 | FE-02 | Conflicto de sala y horario | En el paso 4, el sistema notifica que la sala ya tiene una función en el nuevo horario solicitado. |
 
-![CDU004](./img/Practica1-CDU004.drawio.svg)
+![CDU003](./img/Practica1-CDU003.drawio.svg)
 
 ## Reserva y Compra de Boletos
 
-### CDU-005.1: Seleccionar Ubicación
+### CDU-004.1: Seleccionar Ubicación
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-005.1 |
+| **ID** | CDU-004.1 |
 | **Nombre** | Seleccionar Ubicación |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente seleccionar su ciudad para visualizar dinámicamente los cines disponibles y sus funciones en dicha localidad. |
@@ -564,11 +479,11 @@
 
 ---
 
-### CDU-005.2: Visualizar Funciones Disponibles
+### CDU-004.2: Visualizar Funciones Disponibles
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-005.2 |
+| **ID** | CDU-004.2 |
 | **Nombre** | Visualizar Funciones Disponibles |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente consultar las funciones disponibles en el cine seleccionado, con sus horarios, sala y disponibilidad de asientos. |
@@ -600,11 +515,11 @@
 
 ---
 
-### CDU-005.3: Seleccionar Asientos
+### CDU-004.3: Seleccionar Asientos
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-005.3 |
+| **ID** | CDU-004.3 |
 | **Nombre** | Seleccionar Asientos |
 | **Actor** | Cliente |
 | **Descripción** | Permite al cliente elegir sus asientos mediante un mapa interactivo de la sala. La disponibilidad se actualiza en tiempo real a través de WebSocket. |
@@ -638,11 +553,11 @@
 
 ---
 
-### CDU-005.4: Procesar Compra y Emitir Boleto
+### CDU-004.4: Procesar Compra 
 
 | Campo | Descripción |
 |-------|-------------|
-| **ID** | CDU-005.4 |
+| **ID** | CDU-004.4 |
 | **Nombre** | Procesar Compra y Emitir Boleto |
 | **Actor** | Cliente, Sistema de Pagos |
 | **Descripción** | Permite al cliente confirmar su selección de asientos, procesar el pago a través del sistema externo y recibir su boleto digital como resultado de una transacción exitosa. |
@@ -676,6 +591,43 @@
 | FE-02 | El pago es rechazado por el Sistema de Pagos | En el paso 6, el sistema notifica el rechazo al cliente, mantiene el bloqueo temporal activo y permite reintentar. |
 | FE-03 | Error de conexión con el Sistema de Pagos | En el paso 5, el sistema encola el reintento de cobro y notifica al cliente que la transacción está en proceso. |
 
-![CDU005](./img/Practica1-CDU005.drawio.svg)
+### CDU-004.5: Emitir Boleto
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-004.5 |
+| **Nombre** | Emitir Boleto |
+| **Actor** | Sistema |
+| **Descripción** | Permite al sistema generar y emitir el boleto digital una vez que el pago ha sido procesado exitosamente, incluyendo toda la información relevante de la función y los asientos adquiridos. |
+| **Precondiciones** | El pago ha sido procesado y confirmado exitosamente por el Sistema de Pagos. Los asientos han sido marcados como Ocupado. |
+| **Postcondiciones** | El boleto digital es generado con un código único de confirmación y queda disponible para el cliente. Se registra la transacción completa en el sistema. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Sistema | Recibe la confirmación de pago exitoso del Sistema de Pagos. |
+| 2 | Sistema | Crea el boleto digital con los datos de la función (película, fecha, hora, sala), asientos seleccionados y código de confirmación. |
+| 3 | Sistema | Registra la transacción completa en la base de datos asociándola al cliente. |
+| 4 | Cliente | Visualiza y/o descarga el boleto digital. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El cliente solicita reenvío del boleto | El sistema permite al cliente solicitar el reenvío del boleto a su correo electrónico registrado. |
+| FA-02 | El cliente desea imprimir el boleto | El sistema ofrece una versión optimizada para impresión del boleto digital. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Error al generar el código de confirmación | En el paso 2, el sistema reintenta la generación y si persiste el error, notifica al administrador del sistema. |
+| FE-02 | Error al enviar el correo electrónico | En el paso 5, el sistema guarda el boleto en el perfil del cliente y muestra un mensaje indicando que puede descargarlo desde su cuenta. |
+| FE-03 | Error de conexión con la base de datos | En el paso 4, el sistema encola el registro para procesarlo posteriormente y continúa con la emisión del boleto. |
+
+---
+
+![CDU004](./img/Practica1-CDU004.drawio.svg)
 
 [Volver a Documentacion](../Documentación.md)
