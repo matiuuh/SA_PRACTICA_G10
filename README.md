@@ -14,5 +14,4 @@ Programadores:
 ```
 ---
 
-## Descripción del Proyecto
 
