@@ -36,7 +36,7 @@ Integrantes:
 
 ### Justificacion de tecnologias y principios SOLID aplicados
 - [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
-- [Principios SOLID aplicados](./Solid/solid.md)
+- [Principios SOLID aplicados](./Solid/Solid.md)
 - [Despliegue](./Despligue/despliegue.md)
 
 
