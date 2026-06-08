@@ -33,9 +33,9 @@ Integrantes:
 - [Diagrama de actividades](./Diagramas_Actividades/Diagramas.md)
 - [Diagrama de secuencia](./Diagramas_Estructurales/Diagrama_Secuencia.md)
 - [Diagramas entidad relacion](./ER/DiagramasER.md)
-- 
+
 ### Justificacion de tecnologias y principios SOLID aplicados
-- [Justificacion de Tecnologías](./JustificacionDeTecnologias/justificacionDeTecnologias.md)
+- [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
 - [Principios SOLID aplicados](./Solid/solid.md)
 - [Despliegue](./Despligue/Despliegue.md)
 
