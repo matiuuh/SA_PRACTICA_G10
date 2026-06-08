@@ -40,6 +40,7 @@ export class LocalidadesController {
   }
 }
 ```
+![Localildades](/Practica2/Doc/img/localidades_controller.png)
 
 ##### [localidades.service.ts](../../../Practica2/Backend/services/localidades-service/src/localidades/localidades.service.ts)
 
@@ -77,6 +78,7 @@ export class LocalidadesService {
   }
 }
 ```
+![Localildades](/Practica2/Doc/img/localidades_service.png)
 
 Si cambia la forma en que se expone la API, por ejemplo, de REST a GraphQL, solo se modifica el controlador. Si cambia la lógica de negocio, solo se modifica el servicio.
 
@@ -113,6 +115,7 @@ export class RolesGuard implements CanActivate {
   }
 }
 ```
+![Localildades](/Practica2/Doc/img/roles_guard.png)
 
 ##### [roles.decorator.ts](../../../Practica2/Backend/services/funciones-service/src/auth/roles.decorator.ts)
 ```typescript
@@ -130,6 +133,7 @@ create(@Body() dto: CreateFuncionDto) {
   return this.funcionesService.create(dto);
 }
 ```
+![Localildades](/Practica2/Doc/img/roles_decorator.png)
 
 El guard no necesita modificarse en ningún momento.
 
@@ -184,11 +188,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 }
 ```
 
+![Localildades](/Practica2/Doc/img/jwt_strategy.png)
+
 ##### [jwt-auth.guard.ts](../../../Practica2/Backend/services/auth-service/src/auth/guards/jwt-auth.guard.ts)
 ```typescript
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}
 ```
+![Localildades](/Practica2/Doc/img/roles_guard.png)
 
 Gracias a este diseño, si en el futuro se necesita incorporar una nueva estrategia de autenticación, puede coexistir con la actual sin modificar el guard ni los controladores que ya lo usan. 
 
@@ -247,6 +254,7 @@ export class CreateSalaDto {
   idCine!: string;
 }
 ```
+![Localildades](/Practica2/Doc/img/dto_i.png)
 
 ##### DTOs del servicio de pagos
 
@@ -286,6 +294,8 @@ export class CreateEstadoPagoDto {
   nombre!: string;
 }
 ```
+
+![Localildades](/Practica2/Doc/img/dto_ii.png)
 
 Si se usara un único DTO genérico, los endpoints de creación de métodos de pago recibirían campos como `monto` o `reservaIdExterna` que no les corresponden, violando la segregación. Con este diseño, cada endpoint recibe exactamente los campos que necesita.
 
@@ -365,7 +375,12 @@ export class PagosService {
   }
 }
 ```
+![Localildades](/Practica2/Doc/img/pagos_sevice.png)
+
+![Localildades](/Practica2/Doc/img/auth_service.png)
+
 Esta misma estructura se repite en `ReservasService`, `FuncionesService` y `LocalidadesService`, donde todos los repositorios y servicios auxiliares son inyectados en el constructor, nunca instanciados manualmente con `new`.
+
 
 [Volver al índice](#índice)
 
