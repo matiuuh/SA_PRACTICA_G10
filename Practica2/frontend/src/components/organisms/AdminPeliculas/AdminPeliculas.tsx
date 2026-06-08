@@ -93,13 +93,20 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     setIsLoading(true)
     
     try {
+      const categoriaId = formData.id_categoria || categorias[0]?.id_categoria || ''
+      const tipoCarteleraId = formData.id_tipo_cartelera || tiposCartelera[0]?.id_tipo_cartelera || ''
+
+      if (!categoriaId || !tipoCarteleraId) {
+        throw new Error('No hay categorias o tipos de cartelera disponibles para seleccionar')
+      }
+
       const data = {
-        titulo: formData.titulo,
-        sinopsis: formData.sinopsis || undefined,
+        titulo: formData.titulo.trim(),
+        sinopsis: formData.sinopsis.trim() || undefined,
         duracion_minutos: formData.duracion_minutos ? parseInt(formData.duracion_minutos) : undefined,
-        poster_url: formData.poster_url || undefined,
-        id_categoria: formData.id_categoria,
-        id_tipo_cartelera: formData.id_tipo_cartelera,
+        poster_url: formData.poster_url.trim() || undefined,
+        id_categoria: categoriaId,
+        id_tipo_cartelera: tipoCarteleraId,
         activa: formData.activa
       }
       
@@ -121,7 +128,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     } finally {
       setIsLoading(false)
     }
-  }, [formData, editingPelicula, onAgregar, onEditar, handleCloseModal])
+  }, [categorias, formData, editingPelicula, onAgregar, onEditar, handleCloseModal, tiposCartelera])
 
   const handleEdit = useCallback((pelicula: Pelicula) => {
     setEditingPelicula(pelicula)

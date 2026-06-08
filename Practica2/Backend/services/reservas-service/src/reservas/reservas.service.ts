@@ -43,9 +43,9 @@ export class ReservasService {
       .innerJoin('detalle.reserva', 'reserva')
       .innerJoin('reserva.estado', 'estado')
       .where('asiento.id_funcion_externa = :idFuncionExterna', { idFuncionExterna })
-      .andWhere('estado.nombre IN (:...estados)', {
-        estados: ['TEMPORAL', 'CONFIRMADA'],
-      })
+      .andWhere(
+        `(estado.nombre = 'CONFIRMADA' OR (estado.nombre = 'TEMPORAL' AND (reserva.fecha_expiracion IS NULL OR reserva.fecha_expiracion > NOW())))`,
+      )
       .select('asiento.id_asiento', 'id')
       .getRawMany<{ id: string }>();
 
@@ -196,9 +196,9 @@ export class ReservasService {
       .where('asiento.id_asiento IN (:...asientosIds)', {
         asientosIds: createReservaDto.asientosIds,
       })
-      .andWhere('estado.nombre IN (:...estados)', {
-        estados: ['TEMPORAL', 'CONFIRMADA'],
-      })
+      .andWhere(
+        `(estado.nombre = 'CONFIRMADA' OR (estado.nombre = 'TEMPORAL' AND (reserva.fecha_expiracion IS NULL OR reserva.fecha_expiracion > NOW())))`,
+      )
       .select('asiento.id_asiento', 'id')
       .getRawMany<{ id: string }>();
 
