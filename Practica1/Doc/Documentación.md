@@ -13,7 +13,7 @@ Integrantes:
 ## Indice
 
 
-### Requerimientos del sistema
+### Requerimientos del sistemag
 
 - [Requerimientos funcionales](./RF/RF.md)
 - [Requerimientos no funcionales](./RNF/RNF.md)
