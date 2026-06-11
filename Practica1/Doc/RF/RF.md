@@ -3,7 +3,7 @@
 | ID | Prioridad | Requerimiento | Descripción |
 |----|-----------|----------------|-------------|
 | RF-01 | Alta | Registro de Usuario | El sistema debe permitir a los usuarios registrarse proporcionando su nombre, correo electrónico y contraseña. |
-| RF-02 | Alta | Inicio de Sesión | El sistema debe permitir a los usuarios autenticarse proporcionando su correo electrónico y contraseña, generando una sesión válida mediante token. |
+| RF-02 | Alta | Inicio de Sesión | El sistema debe permitir a los usuarios autenticarse proporcionando su correo electrónico y contraseña, generando una sesión válida mediante token JWT. |
 | RF-03 | Media | Cierre de Sesión | El sistema debe permitir a los usuarios cerrar su sesión activa, invalidando el token correspondiente. |
 | RF-04 | Alta | Selección de Ubicación | El sistema debe permitir al usuario seleccionar su ciudad para visualizar dinámicamente los cines disponibles y sus funciones/horarios en dicha localidad. |
 | RF-05 | Alta | Selección de Función/Horario | El sistema debe permitir al usuario seleccionar una función específica  para proceder con la reserva de asientos. |
