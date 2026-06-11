@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { FaCouch, FaEdit, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
+import { FaCouch, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
 import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
+import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
 import type { CreateSalaForm, Localidad, Sala } from '../../../types/admin.types';
 
 interface AdminSalasProps {
@@ -35,6 +36,9 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [salaToDelete, setSalaToDelete] = useState<Sala | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState<CreateSalaForm>(initialForm);
 
   const salasFiltradas = useMemo(() => {
@@ -106,18 +110,32 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
       setToastMessage('Sala creada exitosamente');
     }
 
+    setToastType('success');
     setShowToast(true);
     handleCloseModal();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta sala?')) {
+  const handleDelete = async () => {
+    if (!salaToDelete) {
       return;
     }
 
-    await onEliminar(id);
-    setToastMessage('Sala eliminada exitosamente');
-    setShowToast(true);
+    setIsDeleting(true);
+
+    try {
+      await onEliminar(salaToDelete.id);
+      setToastType('success');
+      setToastMessage('Sala eliminada exitosamente');
+      setShowToast(true);
+      setSalaToDelete(null);
+    } catch (error) {
+      console.error('Error eliminando sala:', error);
+      setToastType('error');
+      setToastMessage('No se pudo eliminar la sala');
+      setShowToast(true);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getTipoIcon = (tipo: string) => {
@@ -187,7 +205,8 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
                 <AdminActionButtons
                   onView={() => handleViewDetails(sala)}
                   onEdit={() => handleEdit(sala)}
-                  onDelete={() => void handleDelete(sala.id)}
+                  onDelete={() => setSalaToDelete(sala)}
+                  itemLabel={`"${sala.nombre}"`}
                 />
               </div>
             </div>
@@ -259,15 +278,6 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
               </div>
               
               <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    handleEdit(selectedSala);
-                  }}
-                  className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
-                >
-                  <FaEdit /> Editar
-                </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
@@ -369,7 +379,17 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
         )}
       </div>
 
-      {showToast && <Toast message={toastMessage} type="success" onClose={() => setShowToast(false)} />}
+      <ConfirmDialog
+        isOpen={salaToDelete !== null}
+        onClose={() => setSalaToDelete(null)}
+        onConfirm={() => void handleDelete()}
+        title="Eliminar Sala"
+        message={`Estas seguro que deseas eliminar "${salaToDelete?.nombre}"? Esta accion no se puede deshacer.`}
+        isLoading={isDeleting}
+        loadingLabel="Eliminando..."
+      />
+
+      {showToast && <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />}
     </>
   );
 };

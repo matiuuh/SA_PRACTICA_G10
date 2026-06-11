@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaEdit, FaInfoCircle } from 'react-icons/fa';
+import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle } from 'react-icons/fa';
 import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
 import CineModal from './CineModal';
@@ -223,6 +223,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
                     setSelectedCine(cine);
                     setShowDeleteConfirm(true);
                   }}
+                  itemLabel={`"${cine.nombre}"`}
                 />
               </div>
             </div>
@@ -278,16 +279,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
             </div>
             
             <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  setSelectedCine(selectedCine);
-                  setShowEditModal(true);
-                }}
-                className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
-              >
-                <FaEdit /> Editar
-              </button>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"

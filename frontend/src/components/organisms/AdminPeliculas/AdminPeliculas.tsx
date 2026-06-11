@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FaPlus, FaEdit, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm } from 'react-icons/fa'
+import { FaPlus, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm } from 'react-icons/fa'
 import type { Pelicula, Categoria, TipoCartelera } from '../../../types/admin.types'
 import { peliculasService } from '../../../services/peliculas.service'
 import AdminActionButtons from '../../admin/AdminActionButtons'
 import Toast from '../../atoms/Toast/Toast'
+import ConfirmDialog from '../AdminLocalidades/ConfirmDialog'
 interface AdminPeliculasProps {
   peliculas: Pelicula[]
   onAgregar: (pelicula: Pelicula) => void
@@ -25,6 +26,8 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
   const [showErrorToast, setShowErrorToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [peliculaToDelete, setPeliculaToDelete] = useState<Pelicula | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
     titulo: '',
     sinopsis: '',
@@ -151,19 +154,26 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     setShowModal(true)
   }, [categorias, tiposCartelera])
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar esta película?')) {
-      try {
-        await peliculasService.deletePelicula(id)
-        onEliminar(id)
-        setSuccessMessage('Película eliminada exitosamente')
-        setShowSuccessToast(true)
-      } catch (error: any) {
-        setErrorMessage(error.response?.data?.message || 'Error al eliminar la película')
-        setShowErrorToast(true)
-      }
+  const handleDelete = useCallback(async () => {
+    if (!peliculaToDelete) {
+      return
     }
-  }, [onEliminar])
+
+    setIsDeleting(true)
+
+    try {
+      await peliculasService.deletePelicula(peliculaToDelete.id_pelicula)
+      onEliminar(peliculaToDelete.id_pelicula)
+      setSuccessMessage('Película eliminada exitosamente')
+      setShowSuccessToast(true)
+      setPeliculaToDelete(null)
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'Error al eliminar la película')
+      setShowErrorToast(true)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [onEliminar, peliculaToDelete])
 
   const getCategoriaIcon = useCallback((categoriaNombre: string) => {
     switch(categoriaNombre?.toLowerCase()) {
@@ -255,7 +265,8 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
                     <AdminActionButtons
                       onView={() => handleViewDetails(pelicula)}
                       onEdit={() => handleEdit(pelicula)}
-                      onDelete={() => handleDelete(pelicula.id_pelicula)}
+                      onDelete={() => setPeliculaToDelete(pelicula)}
+                      itemLabel={`"${pelicula.titulo}"`}
                     />
                   </td>
                 </tr>
@@ -345,15 +356,6 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
               </div>
               
               <div className="sticky bottom-0 p-6 border-t border-cinema-gold-500/20 bg-cinema-dark-800/95 flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false)
-                    handleEdit(selectedPelicula)
-                  }}
-                  className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
-                >
-                  <FaEdit /> Editar
-                </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
@@ -499,6 +501,15 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       {showErrorToast && (
         <Toast message={errorMessage} type="error" onClose={() => setShowErrorToast(false)} />
       )}
+      <ConfirmDialog
+        isOpen={peliculaToDelete !== null}
+        onClose={() => setPeliculaToDelete(null)}
+        onConfirm={() => void handleDelete()}
+        title="Eliminar Pelicula"
+        message={`Estas seguro que deseas eliminar "${peliculaToDelete?.titulo}"? Esta accion no se puede deshacer.`}
+        isLoading={isDeleting}
+        loadingLabel="Eliminando..."
+      />
     </>
   )
 }
