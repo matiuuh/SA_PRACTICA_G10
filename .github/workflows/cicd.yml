@@ -89,7 +89,9 @@ jobs:
 
       - name: Instalar dependencias
         working-directory: Backend/services/${{ matrix.service }}
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          echo "unsafe-perm=true" >> .npmrc
+          pnpm install --no-frozen-lockfile
 
       - name: Build (compilacion TypeScript)
         working-directory: Backend/services/${{ matrix.service }}
@@ -121,7 +123,9 @@ jobs:
 
       - name: Instalar dependencias
         working-directory: Backend/services/${{ matrix.service }}
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          echo "unsafe-perm=true" >> .npmrc
+          pnpm install --no-frozen-lockfile
 
       - name: Ejecutar tests con cobertura
         working-directory: Backend/services/${{ matrix.service }}
@@ -156,7 +160,9 @@ jobs:
 
       - name: Instalar dependencias
         working-directory: api-gateway
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          echo "unsafe-perm=true" >> .npmrc
+          pnpm install --no-frozen-lockfile
 
       - name: Build (compilacion TypeScript)
         working-directory: api-gateway
