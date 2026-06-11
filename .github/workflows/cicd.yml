@@ -103,8 +103,6 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - auth-service
-          - localidades-service
           - funciones-service
           - reservas-service
           - pagos-service
