@@ -236,5 +236,110 @@ describe('ReservasService', () => {
       expect(result[0]).toHaveProperty('ocupado');
       expect(result[0]).toHaveProperty('propio');
     });
+
+    it('debe marcar como propio el asiento reservado por el usuario actual', async () => {
+      asientosRepo.find.mockResolvedValue([mockAsiento]);
+      const qb = detallesRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([{ id: 'asiento-1', usuarioIdExterno: 'user-1' }]);
+
+      const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
+      expect(result[0].ocupado).toBe(true);
+      expect(result[0].propio).toBe(true);
+    });
+
+    it('debe marcar ocupado=true pero propio=false si el asiento es de otro usuario', async () => {
+      asientosRepo.find.mockResolvedValue([mockAsiento]);
+      const qb = detallesRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([{ id: 'asiento-1', usuarioIdExterno: 'otro-user' }]);
+
+      const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
+      expect(result[0].ocupado).toBe(true);
+      expect(result[0].propio).toBe(false);
+    });
+  });
+
+  describe('createCheckout', () => {
+    it('debe crear reserva, publicar pago en RabbitMQ y retornar la reserva', async () => {
+      asientosRepo.find.mockResolvedValue([mockAsiento]);
+      estadosRepo.findOne.mockResolvedValue(mockEstadoTemporal);
+      reservasRepo.findOne.mockResolvedValue(mockReserva);
+
+      const result = await service.createCheckout({
+        usuarioIdExterno: 'user-1',
+        asientosIds: ['asiento-1'],
+        total: 100,
+        metodoPago: 'TARJETA',
+        numeroTarjeta: '4111111111111111',
+        nombreTitular: 'Test User',
+        cvv: '123',
+        fechaExpiracion: '2027-12-31',
+        paypalEmail: 'test@test.com',
+      });
+
+      expect(rabbitMqService.publishPaymentRequested).toHaveBeenCalledWith(
+        expect.objectContaining({ reservaId: expect.any(String), total: 100 }),
+      );
+      expect(result).toEqual(mockReserva);
+    });
+
+    it('debe generar fecha de expiracion automaticamente si no se proporciona', async () => {
+      asientosRepo.find.mockResolvedValue([mockAsiento]);
+      estadosRepo.findOne.mockResolvedValue(mockEstadoTemporal);
+      reservasRepo.findOne.mockResolvedValue(mockReserva);
+
+      await service.createCheckout({
+        usuarioIdExterno: 'user-1',
+        asientosIds: ['asiento-1'],
+        total: 100,
+        metodoPago: 'PAYPAL',
+      });
+
+      expect(rabbitMqService.publishPaymentRequested).toHaveBeenCalledWith(
+        expect.objectContaining({ metodoPago: 'PAYPAL' }),
+      );
+    });
+  });
+
+  describe('findOrCreateEstado (cuando no existe)', () => {
+    it('debe crear el estado si no existe en la base de datos', async () => {
+      asientosRepo.find.mockResolvedValue([mockAsiento]);
+      estadosRepo.findOne.mockResolvedValue(null);
+      reservasRepo.findOne.mockResolvedValue(mockReserva);
+
+      await service.createReserva({
+        usuarioIdExterno: 'user-1',
+        asientosIds: ['asiento-1'],
+        total: 100,
+      });
+
+      expect(estadosRepo.create).toHaveBeenCalled();
+      expect(estadosRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('rejectReserva', () => {
+    it('no debe notificar al gateway si la reserva no tiene detalles', async () => {
+      const estadoRechazada = { id: 'est-3', nombre: 'RECHAZADA' };
+      const reservaSinDetalles = { ...mockReserva, detalles: [], fechaExpiracion: new Date() };
+      reservasRepo.findOne.mockResolvedValue(reservaSinDetalles);
+      estadosRepo.findOne.mockResolvedValue(estadoRechazada);
+
+      await service.rejectReserva('reserva-1', 'Sin detalles');
+      expect(reservasGateway.releaseSeatsForReservation).not.toHaveBeenCalled();
+      expect(reservasGateway.notifySeatAvailabilityChanged).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirmReserva', () => {
+    it('no debe notificar al gateway si la reserva no tiene detalles', async () => {
+      const reservaSinDetalles = { ...mockReserva, detalles: [] };
+      reservasRepo.findOne.mockResolvedValue(reservaSinDetalles);
+      estadosRepo.findOne.mockResolvedValue(mockEstadoConfirmada);
+      boletosRepo.findOne.mockResolvedValue(null);
+
+      await service.confirmReserva('reserva-1');
+      expect(reservasGateway.releaseSeatsForReservation).not.toHaveBeenCalled();
+      expect(reservasGateway.notifySeatAvailabilityChanged).not.toHaveBeenCalled();
+    });
   });
 });
