@@ -16,9 +16,19 @@ El administrador es un actor clave que opera sobre múltiples microservicios (lo
 
 ## Responsabilidad Única 
 
+**¿Dónde se aplico?**
+
+En:
+
+- AdminLocalidadesController
+- LocalidadesController
+- LocalidadesService
+- JwtAuthGuard
+- RolesGuard
+
 **Principio:** Una clase debe tener una sola razón para cambiar.
 
-### Justificación en el contexto del administrador
+### Justificación del COMO se aplico el contexto del administrador
 
 En el proyecto, la separación de responsabilidades permite que las operaciones de administrador estén claramente diferenciadas de las operaciones públicas. Cada controlador tiene un rol único y no mezcla responsabilidades.
 
@@ -93,13 +103,22 @@ export class LocalidadesService {
 
 ## Abierto/Cerrado 
 
+
+**¿Dónde?**
+
+En:
+
+RolesGuard
+PartialType
+Decorador @Roles
+
 **Principio:** Las entidades deben estar abiertas para extensión, pero cerradas para modificación.
 
 ### Justificación en el contexto del administrador
 
 El sistema permite agregar nuevas acciones para administradores sin modificar el código existente de autenticación y autorización.
 
-#### Ejemplo: Sistema de roles extensible
+#### Ejemplo de COMO se aplico: Sistema de roles extensible
 
 El `RolesGuard` está cerrado para modificación pero abierto para extensión mediante el decorador `@Roles`:
 
@@ -120,6 +139,12 @@ export class RolesGuard implements CanActivate {
 ```
 
 [roles.guard.ts](../../Backend/services/funciones-service/src/auth/roles.guard.ts)
+
+**¿Por qué?**
+
+Porque el sistema admite nuevos roles o nuevas propiedades sin alterar código probado.
+
+
 
 **Extensión para nuevo rol de administrador:**
 
@@ -151,13 +176,22 @@ export class UpdatePeliculaDto extends PartialType(CreatePeliculaDto) {}
 
 **Beneficio para el administrador:** Cuando se agrega un nuevo campo a `CreatePeliculaDto` (ej: `fecha_estreno`), automáticamente `UpdatePeliculaDto` lo hereda como opcional, permitiendo al administrador actualizar ese campo sin modificar el DTO de actualización.
 
+
+
+
+
+
 ## Sustitución de Liskov 
 
 **Principio:** Las clases derivadas deben poder sustituir a sus clases base sin alterar el comportamiento del programa.
 
-### Justificación en el contexto del administrador
+### Justificación del COMO se aplico en el contexto del administrador
 
 El sistema de autenticación permite que cualquier estrategia de validación de tokens pueda sustituir a `JwtStrategy` sin afectar los endpoints protegidos del administrador.
+
+
+¿Dónde?
+
 
 #### Ejemplo: Estrategia JWT sustituible
 
@@ -189,7 +223,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {}
 ```
 [jwt-payload.interface.ts](../../Backend/services/auth-service/src/auth/interfaces/jwt-payload.interface.ts)
 
-**¿Qué significa para el administrador?**
+**¿por que se aplico esto para el administrador?**
 
 Si en el futuro se decide:
 
@@ -216,11 +250,22 @@ export class OAuth2Strategy extends PassportStrategy(Strategy, 'oauth2') {
 
 **Beneficio para el administrador:** Los controladores administrativos dependen únicamente de la información presente en `request.user`, no de la implementación específica que la genera. Esto permite reemplazar mecanismos de autenticación sin afectar las funcionalidades de gestión de películas, funciones, localidades o pagos.
 
+
+
 ## Segregación de Interfaces 
+
+
+**¿Dónde?**
+
+En:
+
+CreateCiudadDto
+CreateCineDto
+CreateSalaDto
 
 **Principio:** Ningún cliente debe depender de métodos que no usa.
 
-### Justificación en el contexto del administrador
+### Justificación del COMO se integro en el contexto del administrador
 
 El administrador opera sobre diferentes entidades (ciudades, cines, salas, películas y funciones). Cada operación recibe DTOs específicos con únicamente los campos necesarios para realizar la acción correspondiente, evitando interfaces excesivamente grandes con atributos irrelevantes.
 
@@ -265,6 +310,9 @@ export class CreateSalaDto {
 - Crear un cine requeriría campos relacionados con salas, como `capacidad` o `tipoSala`.
 - Las validaciones serían más complejas y existirían dependencias innecesarias entre entidades distintas.
 
+
+**por que se aplico?**
+
 Esto violaría el principio ISP porque cada operación dependería de información que realmente no utiliza.
 
 #### Ejemplo 2: Controladores segregados por tipo de operación
@@ -288,11 +336,26 @@ Si existiera un único endpoint como `@Post('crear')` que recibiera un parámetr
 
 **Beneficio para el administrador:** Cada operación utiliza contratos específicos y minimalistas, facilitando el mantenimiento, reduciendo errores de validación y permitiendo que cada recurso evolucione de manera independiente sin afectar a los demás.
 
+
+
+
+
 ## Inversión de Dependencias
+
+
+
+**¿Dónde?**
+
+En:
+```typescript
+Repository<Ciudad>
+Repository<Cine>
+Repository<Sala>
+```
 
 **Principio:** Los módulos de alto nivel no deben depender de módulos de bajo nivel. Ambos deben depender de abstracciones.
 
-### Justificación en el contexto del administrador
+### Justificación del COMO se aplico en el contexto del administrador
 
 El administrador realiza operaciones sobre localidades, películas, funciones y pagos a través de servicios que dependen de abstracciones proporcionadas por el framework, como repositorios de TypeORM y servicios especializados. De esta manera, la lógica de negocio permanece desacoplada de las tecnologías concretas utilizadas para almacenamiento o comunicación.
 
@@ -314,7 +377,7 @@ export class LocalidadesService {
 }
 ```
 
-**¿Qué permite esto para el administrador?**
+**¿por qué permite esto para el administrador?**
 
 - La base de datos puede cambiar de PostgreSQL a MySQL sin modificar `LocalidadesService`.
 - La estrategia de conexión puede cambiar (pooling, réplicas de lectura, balanceo de carga) sin afectar la lógica de negocio.

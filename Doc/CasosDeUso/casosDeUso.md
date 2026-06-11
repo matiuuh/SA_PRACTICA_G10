@@ -44,20 +44,20 @@
 | 3 | Sistema | Valida que todos los campos estén completos y con formato correcto. |
 | 4 | Sistema | Verifica que el correo electrónico no esté registrado previamente. |
 | 5 | Sistema | Almacena el nuevo usuario con la contraseña cifrada. |
-| 6 | Sistema | Muestra un mensaje de registro exitoso y redirige al inicio de sesión. |
+| 6 | Sistema | Muestra un mensaje de registro exitoso y redirige al login |
 
 **Flujos alternativos:**
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El usuario ya tiene una cuenta | El sistema notifica que el correo ya está en uso y sugiere reintentarlo. |
-| FA-02 | El usuario interrumpe o no completa el registro | El usuario puede salir de la página de registro y el sistema descarta los datos ingresados. |
+| 
 
 **Flujos de excepción:**
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FE-01 | Formato de correo inválido | El sistema muestra un mensaje de error indicando el formato correcto y solicita corrección. |
-| FE-02 | Contraseñas no coinciden | En el paso 4, el sistema muestra un mensaje de error y limpia los campos de contraseña. |
-| FE-03 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
+| 
+| FE-03 | Error de conexión con la base de datos | el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
 
@@ -88,8 +88,8 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El usuario no tiene cuenta | En el paso 5, el sistema informa que el correo no está registrado y sugiere crear una cuenta. |
-| FA-02 | El usuario cancela | En cualquier paso, el usuario puede cancelar y el sistema descarta los datos ingresados. |
+| FA-01 | El usuario no tiene cuenta | En el paso, el sistema informa que el correo no está registrado y sugiere crear una cuenta. |
+
 
 **Flujos de excepción:**
 
@@ -124,11 +124,7 @@
 |----|-----------|--------|
 | FA-01 | El usuario cancela el cierre de sesión | En el paso 1, el sistema no realiza ninguna acción y mantiene la sesión activa. |
 
-**Flujos de excepción:**
 
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FE-01 | Error al invalidar el token | En el paso 2, el sistema muestra un mensaje de error e intenta invalidar el token nuevamente. |
 
 ---
 
@@ -143,7 +139,7 @@
 | **ID** | CDU-002.1 |
 | **Nombre** | Modificar Cartelera |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador agregar o quitar películas de la cartelera activa, controlando qué títulos son visibles para los clientes según su tipo de proyección. |
+| **Descripción** | Permite al administrador modificar o quitar películas de la cartelera activa, controlando qué títulos son visibles para los clientes según su tipo de proyección. |
 | **Precondiciones** | El administrador tiene una sesión activa. Existen películas registradas en el sistema. |
 | **Postcondiciones** | La cartelera queda actualizada y los cambios son visibles para los clientes de forma inmediata. |
 
@@ -153,11 +149,10 @@
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de gestión de cartelera. |
 | 2 | Sistema | Muestra el listado de películas en cartelera y la opción para agregar. |
-| 3 | Administrador | Selecciona las películas a agregar o quitar de la cartelera. |
-| 4 | Administrador | Confirma los cambios. |
-| 5 | Sistema | Valida que las películas seleccionadas existan y tengan información completa. |
+| 3 | Administrador | puede editar o eliminar alguna pelicula de la cartelera|
+| 4 | Administrador | confirma su decision |
+| 5 | Sistema | muestra un mensaje de confirmacion |
 | 6 | Sistema | Actualiza la cartelera en la base de datos. |
-| 7 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
 
 **Flujos alternativos:**
 
@@ -170,7 +165,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | La película seleccionada no tiene información completa | En el paso 5, el sistema notifica al administrador los campos faltantes y no permite agregarla a la cartelera. |
+| FE-01 | La película seleccionada no tiene información completa | En el paso 5, el sistema notifica al administrador los campos obligatorios|
 | FE-02 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
@@ -191,10 +186,10 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de añadir película. |
-| 2 | Administrador | Ingresa el título, género, duración, sinopsis, clasificación y tipo de proyección. |
-| 3 | Administrador | Carga la imagen del póster de la película. |
+| 2 | Administrador | Ingresa el título, género, duración, sinopsis, categoria y tipo de cartelera. |
+| 3 | Administrador | Carga la imagen del póster de la película por medio de un url. |
 | 4 | Administrador | Envía el formulario. |
-| 5 | Sistema | Valida que todos los campos obligatorios estén completos y con formato correcto. |
+| 5 | Sistema | Valida que todos los campos obligatorios estén completos |
 | 6 | Sistema | Verifica que no exista otra película con el mismo título registrada. |
 | 7 | Sistema | Almacena la película con toda su información en la base de datos. |
 | 8 | Sistema | Muestra un mensaje de confirmación de registro exitoso. |
@@ -203,7 +198,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El administrador no carga imagen | En el paso 3, el sistema asigna una imagen predeterminada a la película. |
+| FA-01 | El administrador no carga imagen | En el paso 3, no se registra una imagen para la pelicula |
 | FA-02 | El administrador cancela | En cualquier paso, el administrador puede cancelar y el sistema descarta los datos ingresados. |
 
 **Flujos de excepción:**
@@ -212,7 +207,7 @@
 |----|-----------|--------|
 | FE-01 | Campos obligatorios incompletos | En el paso 5, el sistema resalta los campos faltantes y solicita completarlos. |
 | FE-02 | Ya existe una película con el mismo título | En el paso 6, el sistema notifica la duplicidad y sugiere verificar el catálogo existente. |
-| FE-03 | Formato de imagen no permitido | En el paso 5, el sistema indica los formatos aceptados y solicita cargar nuevamente el archivo. |
+
 
 ---
 
@@ -234,24 +229,21 @@
 | 1 | Administrador | Accede al catálogo de películas y selecciona la película a modificar. |
 | 2 | Sistema | Muestra el formulario con la información actual de la película. |
 | 3 | Administrador | Modifica los campos deseados y envía el formulario. |
-| 4 | Sistema | Valida que los campos modificados no estén vacíos y tengan formato correcto. |
-| 5 | Sistema | Verifica que el nuevo título no corresponda a otra película ya registrada. |
-| 6 | Sistema | Actualiza la información de la película en la base de datos. |
-| 7 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
+| 4 | Sistema | Valida que los campos modificados no estén vacíos|
+| 5 | Sistema | Actualiza la información de la película en la base de datos. |
+| 6 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El administrador no modifica ningún campo | En el paso 3, el sistema no realiza ninguna operación y mantiene la información actual. |
-| FA-02 | El administrador cancela | En cualquier paso, el administrador puede cancelar y el sistema descarta los cambios. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FE-01 | Campo obligatorio vacío tras la edición | En el paso 4, el sistema resalta los campos inválidos y solicita corrección. |
-| FE-02 | El nuevo título corresponde a otra película registrada | En el paso 5, el sistema notifica la duplicidad y solicita un título diferente. |
 | FE-03 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
@@ -275,7 +267,7 @@
 | 2 | Administrador | Selecciona la opción de eliminar. |
 | 3 | Sistema | Solicita confirmación al administrador. |
 | 4 | Administrador | Confirma la eliminación. |
-| 5 | Sistema | Verifica que la película no tenga funciones activas ni boletos vendidos asociados. |
+| 5 | Sistema | Verifica que la película no tenga funciones activas |
 | 6 | Sistema | Elimina la película y su información de la base de datos. |
 | 7 | Sistema | Muestra un mensaje de confirmación de eliminación exitosa. |
 
@@ -290,7 +282,6 @@
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FE-01 | La película tiene funciones activas asociadas | En el paso 5, el sistema impide la eliminación e informa que existen funciones programadas para ese título. |
-| FE-02 | La película tiene boletos vendidos asociados | En el paso 5, el sistema impide la eliminación e informa que existen transacciones registradas. |
 | FE-03 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
@@ -312,8 +303,8 @@
 |------|-------|--------|
 | 1 | Cliente | Accede a la sección de cartelera desde la página principal. |
 | 2 | Sistema | Recupera y muestra las películas actualmente en cartelera. |
-| 3 | Cliente | Aplica filtros opcionales por género, clasificación o tipo de proyección. |
-| 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con los filtros seleccionados. |
+| 3 | Cliente | Aplica filtro por tipo de categoria |
+| 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con la categoria seleccionada|
 | 5 | Cliente | Visualiza las películas |
 
 **Flujos alternativos:**
@@ -349,22 +340,22 @@
 |------|-------|--------|
 | 1 | Cliente | Accede a la sección de cartelera desde la página principal. |
 | 2 | Sistema | Recupera y muestra las películas actualmente en cartelera. |
-| 3 | Cliente | Aplica filtros opcionales por género, clasificación o tipo de proyección. |
+| 3 | Cliente | Aplica filtro por categoria |
 | 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con los filtros seleccionados. |
-| 5 | Cliente | Visualiza el detalle de las películas |
+| 5 | Cliente | Visualiza el detalle de las película en el que se refleja titulo de la pelicula, genero, duracion, sinopsis |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El cliente regresa a la cartelera | En cualquier paso, el cliente puede volver al listado de cartelera sin seleccionar función. |
-| FA-02 | El cliente filtra funciones por tipo de proyección | En el paso 3, el sistema muestra únicamente las funciones del tipo seleccionado. |
+
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | La película no tiene funciones programadas | En el paso 3, el sistema muestra un mensaje indicando que no hay funciones disponibles para ese título en este momento. |
+
 | FE-02 | Error al recuperar la información de la película | En el paso 2, el sistema muestra un mensaje de error genérico y sugiere regresar a la cartelera. |
 
 ---
@@ -381,7 +372,7 @@
 | **ID** | CDU-003.1 |
 | **Nombre** | Registrar Función |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador programar una nueva función asignando una película a una sala, fecha y horario específicos. |
+| **Descripción** | Permite al administrador programar una nueva función asignando una película a una sala, fecha, horario y precio en específicos por medio de un formulario. |
 | **Precondiciones** | El administrador tiene una sesión activa. Existen películas y salas registradas en el sistema. |
 | **Postcondiciones** | La función queda registrada y disponible para que los clientes consulten y compren boletos. |
 
@@ -391,7 +382,6 @@
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de registrar función. |
 | 2 | Administrador | Selecciona la película, el cine, la sala, la fecha y el horario. |
-| 3 | Administrador | Confirma la capacidad de asientos y envía el formulario. |
 | 4 | Sistema | Valida que todos los campos estén completos. |
 | 5 | Sistema | Verifica que no exista otra función programada en la misma sala, fecha y horario. |
 | 6 | Sistema | Registra la función y genera el mapa de asientos disponibles. |
@@ -430,7 +420,6 @@
 | 2 | Administrador | Modifica los campos deseados y envía el formulario. |
 | 3 | Sistema | Valida que los nuevos datos no generen conflicto de sala y horario. |
 | 4 | Sistema | Actualiza los datos de la función en la base de datos. |
-| 5 | Sistema | Muestra un mensaje de confirmación de actualización exitosa. |
 
 **Flujos alternativos:**
 
@@ -443,7 +432,6 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | La función tiene boletos vendidos | En el paso 3, el sistema impide la modificación e informa que existen compras registradas para esta función. |
 | FE-02 | Conflicto de sala y horario | En el paso 4, el sistema notifica que la sala ya tiene una función en el nuevo horario solicitado. |
 
 ## Reserva y Compra de Boletos
@@ -501,15 +489,15 @@
 |------|-------|--------|
 | 1 | Cliente | Selecciona un cine. |
 | 2 | Sistema | Recupera y muestra las funciones disponibles en ese cine. |
-| 3 | Cliente | Filtra las funciones por película y horarios. |
-| 4 | Cliente | Selecciona una función específica para proceder con la compra. |
+| 3 | Cliente | Filtra las funciones por tipo de cartelera |
+| 4 | Cliente | Selecciona una función específica para visualizar los horarios o ver detalles |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El cliente aplica filtro por película | En el paso 3, el sistema muestra únicamente las funciones correspondientes a la película seleccionada. |
-| FA-02 | El cliente aplica filtro por fecha | En el paso 3, el sistema muestra únicamente las funciones programadas para esa fecha. |
+| FA-02 | El cliente aplica filtro por categoria | En el paso 3, el sistema muestra únicamente las funciones programadas para esa categoria |
 | FA-03 | El cliente regresa a la selección de cine | En cualquier paso, el cliente puede volver al listado de cines sin seleccionar función. |
 
 **Flujos de excepción:**
@@ -535,9 +523,11 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Accede al mapa interactivo de la sala para la función seleccionada. |
+
+| 1 | Cliente | selecciona el horario de una pelicula |
+| 2 | Cliente | Accede al mapa interactivo de la sala para la función seleccionada. |
 | 2 | Sistema | Establece una conexión WebSocket con el cliente para la sala correspondiente. |
-| 3 | Sistema | Muestra el estado actualizado de cada asiento: Disponible, Seleccionado u Ocupado. |
+| 3 | Sistema | Muestra el estado actualizado de cada asiento: Disponible, Seleccionado, ocupado o tus asientos |
 | 4 | Cliente | Selecciona uno o más asientos disponibles. |
 | 5 | Sistema | Marca los asientos como Seleccionados y transmite el cambio de estado vía WebSocket a todos los clientes conectados a esa función. |
 | 6 | Sistema | Refleja visualmente en el mapa de todos los usuarios que los asientos ya no están disponibles. |
@@ -573,26 +563,28 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Revisa el resumen de su compra y confirma. |
+
+
+| 1 | Cliente | Revisa el resumen de su compra y confirma los detalles. |
 | 2 | Sistema | Envía la solicitud de compra a la cola de mensajería para su validación. |
 | 3 | Sistema | El consumidor de la cola valida que los asientos siguen bloqueados y disponibles. |
 | 4 | Cliente | Ingresa los datos de pago y confirma la transacción. |
 | 5 | Sistema | Envía la solicitud de cobro al Sistema de Pagos. |
 | 6 | Sistema de Pagos | Procesa la transacción y retorna el resultado al sistema. |
 | 7 | Sistema | Registra el pago, cambia el estado de los asientos a Ocupado y genera el boleto digital. |
-| 8 | Sistema | Muestra el boleto al cliente con los detalles de la función, asientos y número de confirmación. |
+| 8 | Sistema | Muestra el boleto al cliente con los detalles de la función, asientos y número de boleta. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente cancela antes de pagar | En el paso 4, el sistema libera los asientos bloqueados y regresa al mapa de asientos. |
+| FA-01 | El cliente cancela antes de pagar | En el paso 4, el sistema conserva los asientos seleccionados y regresa al mapa de asientos. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Un asiento seleccionado fue tomado por otro usuario antes de confirmar el pago | En el paso 3, el sistema detecta el conflicto, notifica al cliente y lo redirige al mapa de asientos para actualizar su selección. |
+
 | FE-02 | El pago es rechazado por el Sistema de Pagos | En el paso 6, el sistema notifica el rechazo al cliente, mantiene el bloqueo temporal activo y permite reintentar. |
 | FE-03 | Error de conexión con el Sistema de Pagos | En el paso 5, el sistema encola el reintento de cobro y notifica al cliente que la transacción está en proceso. |
 
@@ -612,7 +604,7 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Sistema | Recibe la confirmación de pago exitoso del Sistema de Pagos. |
-| 2 | Sistema | Crea el boleto digital con los datos de la función (película, fecha, hora, sala), asientos seleccionados y código de confirmación. |
+| 2 | Sistema | Crea el boleto digital con los datos de la función (película, fecha, hora), asientos seleccionados,total y código de boleta. |
 | 3 | Sistema | Registra la transacción completa en la base de datos asociándola al cliente. |
 | 4 | Cliente | Visualiza y/o descarga el boleto digital. |
 
@@ -620,15 +612,13 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente solicita reenvío del boleto | El sistema permite al cliente solicitar el reenvío del boleto a su correo electrónico registrado. |
 | FA-02 | El cliente desea imprimir el boleto | El sistema ofrece una versión optimizada para impresión del boleto digital. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Error al generar el código de confirmación | En el paso 2, el sistema reintenta la generación y si persiste el error, notifica al administrador del sistema. |
-| FE-02 | Error al enviar el correo electrónico | En el paso 5, el sistema guarda el boleto en el perfil del cliente y muestra un mensaje indicando que puede descargarlo desde su cuenta. |
+| FE-01 | Error al generar el código de confirmación | En el paso 2, el sistema reintenta la generación y si persiste el error |
 | FE-03 | Error de conexión con la base de datos | En el paso 4, el sistema encola el registro para procesarlo posteriormente y continúa con la emisión del boleto. |
 
 ---
@@ -644,7 +634,7 @@
 | **ID** | CDU-005.1 |
 | **Nombre** | Visualizar Sucursales de Cine |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar las sucursales de cine disponibles en una ciudad, mostrando dirección, horario y contacto. |
+| **Descripción** | Permite al cliente consultar las sucursales de cine disponibles en una ciudad |
 | **Precondiciones** | Existe al menos una sucursal registrada en el sistema. |
 | **Postcondiciones** | El cliente visualiza la lista de sucursales y puede seleccionar una para ver sus salas y funciones disponibles. |
 
@@ -653,15 +643,15 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Cliente | Accede a la sección de sucursales desde la página principal. |
-| 2 | Sistema | Recupera y muestra las sucursales filtradas por ciudad o por proximidad. |
-| 3 | Cliente | Selecciona una sucursal para ver detalles (dirección, contacto, salas). |
-| 4 | Sistema | Muestra la información detallada de la sucursal y sus salas disponibles. |
+| 2 | Sistema | Recupera y muestra las sucursales filtradas por ciudad |
+| 3 | Cliente | el cliente visualiza las sucursales disponibles por ciudad |
+
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente no selecciona ciudad | El sistema muestra todas las sucursales disponibles. |
+| FA-01 | El cliente no selecciona ciudad | El sistema indica que se debe de seleccionar una ciudad y un cine |
 
 **Flujos de excepción:**
 
@@ -678,7 +668,7 @@
 | **ID** | CDU-005.2 |
 | **Nombre** | Añadir Sucursal de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador registrar una nueva sucursal con su nombre, dirección, ciudad, teléfono y salas asociadas. |
+| **Descripción** | Permite al administrador registrar una nueva sucursal con su nombre, dirección, ciudad |
 | **Precondiciones** | El administrador tiene una sesión activa. |
 | **Postcondiciones** | La sucursal queda registrada y disponible en las búsquedas del sistema. |
 
@@ -686,9 +676,9 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Accede al panel de administración y selecciona "Añadir sucursal". |
-| 2 | Administrador | Ingresa nombre, dirección, ciudad, teléfono y datos adicionales. |
-| 3 | Sistema | Valida los campos obligatorios y el formato de contacto. |
+| 1 | Administrador | Accede al panel de administración y selecciona "Añadir Cine". |
+| 2 | Administrador | Ingresa nombre, dirección y ciudad. |
+| 3 | Sistema | Valida los campos obligatorios . |
 | 4 | Sistema | Crea la sucursal en la base de datos. |
 | 5 | Sistema | Muestra un mensaje de confirmación y lista la nueva sucursal. |
 
@@ -696,14 +686,14 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | No se proporcionan salas al crear | El sistema permite crear la sucursal sin salas y editarla posteriormente para añadir salas. |
+| FA-01 |no se crea una nueva sucursal | el administrador decide no realizar algun cambio |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Dirección incompleta | El sistema solicita completar los campos obligatorios. |
-| FE-02 | Error de persistencia | El sistema muestra un mensaje de error y sugiere reintentar. |
+| FE-01 | seccion incompleta | El sistema solicita completar los campos obligatorios. |
+
 
 ---
 
@@ -714,7 +704,7 @@
 | **ID** | CDU-005.3 |
 | **Nombre** | Editar Sucursal de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador modificar los datos de una sucursal existente (dirección, teléfono, horarios, salas asociadas). |
+| **Descripción** | Permite al administrador modificar los datos de una sucursal existente (dirección,nombre, ciudad). |
 | **Precondiciones** | El administrador tiene una sesión activa. La sucursal existe en el sistema. |
 | **Postcondiciones** | Los datos de la sucursal quedan actualizados en el sistema. |
 
@@ -792,15 +782,16 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Desde la vista de sucursal, selecciona la opción de salas. |
-| 2 | Sistema | Recupera y muestra la lista de salas con su capacidad y características. |
-| 3 | Cliente | Selecciona una sala para ver el mapa de asientos y funciones disponibles. |
+| 1 | Cliente |Selecciona el cine que desea visualizar |
+| 2 | Sistema | el sistema muestra las funciones disponibles |
+| 3 | Cliente | Selecciona una funcion para ver el mapa de asientos de dicha funcion. |
+| 4 | Sistema | Despliega el mapa de asientos con cada estado |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | No hay salas registradas en la sucursal | El sistema muestra un mensaje indicando que no hay salas disponibles. |
+| FA-01 | No hay funciones registradas en la sucursla | el sistema no muestra las funciones por ende no meustre las salas disponibles |
 
 **Flujos de excepción:**
 
@@ -826,7 +817,7 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de la sucursal y selecciona "Añadir sala". |
-| 2 | Administrador | Ingresa nombre, capacidad, tipo de proyección y configura el mapa de asientos. |
+| 2 | Administrador | Ingresa cine, capacidad,nombre de la sala, tipo de proyección  |
 | 3 | Sistema | Valida los datos y crea la sala en la sucursal. |
 | 4 | Sistema | Muestra confirmación y la nueva sala en el listado. |
 
@@ -859,7 +850,7 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Selecciona la sala a editar desde el panel de la sucursal. |
+| 1 | Administrador | Selecciona la sala a editar desde el panel de las salas. |
 | 2 | Sistema | Muestra el formulario con la configuración actual de la sala. |
 | 3 | Administrador | Realiza cambios y guarda. |
 | 4 | Sistema | Valida cambios y actualiza la sala en la base de datos. |
@@ -894,7 +885,7 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Selecciona la sala a eliminar desde la sucursal. |
+| 1 | Administrador | Selecciona la sala a eliminar desde la seccion de salas   . |
 | 2 | Sistema | Solicita confirmación y verifica dependencias (funciones, reservas). |
 | 3 | Administrador | Confirma la eliminación. |
 | 4 | Sistema | Elimina la sala y muestra confirmación. |
