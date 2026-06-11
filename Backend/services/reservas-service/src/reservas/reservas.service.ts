@@ -31,7 +31,7 @@ export class ReservasService {
     private readonly reservasGateway: ReservasGateway,
   ) {}
 
-  async findAsientosByFuncion(idFuncionExterna: string) {
+  async findAsientosByFuncion(idFuncionExterna: string, usuarioIdExterno?: string) {
     const asientos = await this.asientosRepository.find({
       where: { idFuncionExterna },
       order: { fila: 'ASC', numero: 'ASC' },
@@ -47,13 +47,20 @@ export class ReservasService {
         `(estado.nombre = 'CONFIRMADA' OR (estado.nombre = 'TEMPORAL' AND (reserva.fecha_expiracion IS NULL OR reserva.fecha_expiracion > NOW())))`,
       )
       .select('asiento.id_asiento', 'id')
-      .getRawMany<{ id: string }>();
+      .addSelect('reserva.usuario_id_externo', 'usuarioIdExterno')
+      .getRawMany<{ id: string; usuarioIdExterno: string }>();
 
     const reservedIds = new Set(reservados.map((item) => item.id));
+    const ownReservedIds = new Set(
+      reservados
+        .filter((item) => item.usuarioIdExterno === usuarioIdExterno)
+        .map((item) => item.id),
+    );
 
     return asientos.map((asiento) => ({
       ...asiento,
       ocupado: reservedIds.has(asiento.id),
+      propio: ownReservedIds.has(asiento.id),
     }));
   }
 
@@ -170,6 +177,7 @@ export class ReservasService {
         funcionId,
         reserva.detalles.map((detalle) => detalle.asiento.id),
       );
+      this.reservasGateway.notifySeatAvailabilityChanged(funcionId);
     }
 
     return this.findReservaById(id);
@@ -233,6 +241,11 @@ export class ReservasService {
 
     await this.detallesRepository.save(detalles);
 
+    const funcionId = asientos[0]?.idFuncionExterna;
+    if (funcionId) {
+      this.reservasGateway.notifySeatAvailabilityChanged(funcionId);
+    }
+
     return this.findReservaById(savedReserva.id);
   }
 
@@ -264,6 +277,7 @@ export class ReservasService {
         funcionId,
         reserva.detalles.map((detalle) => detalle.asiento.id),
       );
+      this.reservasGateway.notifySeatAvailabilityChanged(funcionId);
     }
 
     return this.findReservaById(id);

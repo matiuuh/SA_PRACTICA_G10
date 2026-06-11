@@ -13,11 +13,13 @@ export interface HorarioFuncion {
 export interface CarteleraPelicula {
   id: string;
   titulo: string;
+  sinopsis: string | null;
   genero: string;
   duracion: string;
   clasificacion: string;
   imagen: string;
   categoria: CarteleraCategoria;
+  tipoCartelera: string;
   horarios: HorarioFuncion[];
 }
 
@@ -25,5 +27,5 @@ export interface UserAsiento {
   id: string;
   numero: number;
   fila: string;
-  estado: 'disponible' | 'seleccionado' | 'ocupado';
+  estado: 'disponible' | 'seleccionado' | 'ocupado' | 'propio';
 }

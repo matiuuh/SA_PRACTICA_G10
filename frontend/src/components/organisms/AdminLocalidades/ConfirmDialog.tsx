@@ -5,6 +5,9 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   isLoading?: boolean;
+  confirmLabel?: string;
+  loadingLabel?: string;
+  confirmVariant?: 'danger' | 'primary';
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -14,8 +17,16 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   title,
   message,
   isLoading = false,
+  confirmLabel = 'Eliminar',
+  loadingLabel = 'Procesando...',
+  confirmVariant = 'danger',
 }) => {
   if (!isOpen) return null;
+
+  const confirmClass =
+    confirmVariant === 'danger'
+      ? 'bg-cinema-red-500 text-white hover:bg-cinema-red-600'
+      : 'bg-cinema-gold-500 text-black hover:bg-cinema-gold-400';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -34,9 +45,9 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex-1 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${confirmClass}`}
             >
-              {isLoading ? 'Eliminando...' : 'Eliminar'}
+              {isLoading ? loadingLabel : confirmLabel}
             </button>
           </div>
         </div>

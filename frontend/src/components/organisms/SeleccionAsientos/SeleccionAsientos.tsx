@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FaCalendarAlt,
   FaChair,
   FaClock,
-  FaCouch,
   FaFilm,
   FaTicketAlt,
   FaTrash,
@@ -60,49 +59,57 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   const [lockedSeatIds, setLockedSeatIds] = useState<string[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
 
-  useEffect(() => {
-    const loadAsientos = async () => {
+  const loadAsientos = useCallback(async (resetSelection = false, showLoading = false) => {
+    if (showLoading) {
       setLoading(true);
-      setError(null);
+    }
+
+    setError(null);
+
+    if (resetSelection) {
       setAsientosSeleccionados([]);
+    }
 
-      try {
-        let remoteSeats = await reservasService.getAsientosByFuncion(pelicula.funcionId);
+    try {
+      let remoteSeats = await reservasService.getAsientosByFuncion(pelicula.funcionId);
 
-        if (remoteSeats.length === 0) {
-          const blueprint = createSeatBlueprint(pelicula.capacidadSala);
+      if (remoteSeats.length === 0) {
+        const blueprint = createSeatBlueprint(pelicula.capacidadSala);
 
-          await Promise.all(
-            blueprint.map((seat) =>
-              reservasService.createAsiento({
-                fila: seat.fila,
-                numero: seat.numero,
-                idFuncionExterna: pelicula.funcionId,
-              }),
-            ),
-          );
-
-          remoteSeats = await reservasService.getAsientosByFuncion(pelicula.funcionId);
-        }
-
-        setAsientos(
-          remoteSeats.map((seat) => ({
-            id: seat.id,
-            numero: seat.numero,
-            fila: seat.fila,
-            estado: seat.ocupado ? 'ocupado' : 'disponible',
-          })),
+        await Promise.all(
+          blueprint.map((seat) =>
+            reservasService.createAsiento({
+              fila: seat.fila,
+              numero: seat.numero,
+              idFuncionExterna: pelicula.funcionId,
+            }),
+          ),
         );
-      } catch (loadError) {
-        console.error('No se pudo cargar el mapa de asientos', loadError);
-        setError('No se pudieron cargar los asientos de esta funcion.');
-      } finally {
+
+        remoteSeats = await reservasService.getAsientosByFuncion(pelicula.funcionId);
+      }
+
+      setAsientos(
+        remoteSeats.map((seat) => ({
+          id: seat.id,
+          numero: seat.numero,
+          fila: seat.fila,
+          estado: seat.propio ? 'propio' : seat.ocupado ? 'ocupado' : 'disponible',
+        })),
+      );
+    } catch (loadError) {
+      console.error('No se pudo cargar el mapa de asientos', loadError);
+      setError('No se pudieron cargar los asientos de esta funcion.');
+    } finally {
+      if (showLoading) {
         setLoading(false);
       }
-    };
-
-    void loadAsientos();
+    }
   }, [pelicula.capacidadSala, pelicula.funcionId]);
+
+  useEffect(() => {
+    void loadAsientos(true, true);
+  }, [loadAsientos]);
 
   useEffect(() => {
     const reservasSocket = io(`${RESERVAS_WS_URL}/reservas`, {
@@ -123,15 +130,23 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
       setLockedSeatIds(nextLockedSeatIds);
     });
 
+    reservasSocket.on('seats:availability-changed', ({ funcionId }) => {
+      if (funcionId !== pelicula.funcionId) {
+        return;
+      }
+
+      void loadAsientos();
+    });
+
     return () => {
       reservasSocket.disconnect();
       setSocket(null);
       setLockedSeatIds([]);
     };
-  }, [pelicula.funcionId]);
+  }, [loadAsientos, pelicula.funcionId]);
 
   const handleAsientoClick = (asiento: UserAsiento) => {
-    if (asiento.estado === 'ocupado') {
+    if (asiento.estado === 'ocupado' || asiento.estado === 'propio') {
       return;
     }
 
@@ -213,6 +228,8 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
         return 'bg-gradient-to-br from-gray-600 to-gray-700 hover:from-cinema-gold-500 hover:to-cinema-gold-600 hover:text-black hover:shadow-lg hover:scale-110';
       case 'seleccionado':
         return 'bg-gradient-to-br from-cinema-gold-500 to-cinema-gold-600 text-black shadow-lg scale-105 ring-2 ring-white/50';
+      case 'propio':
+        return 'bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg scale-105 ring-2 ring-blue-200/70';
       case 'ocupado':
         return 'bg-gradient-to-br from-green-700 to-green-800 cursor-not-allowed opacity-60';
       default:
@@ -229,12 +246,16 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   const asientosRender = useMemo(
     () =>
       asientos.map((asiento) => {
-        if (asiento.estado === 'ocupado') {
+        if (asiento.estado === 'propio') {
           return asiento;
         }
 
         if (selectedSeatIds.has(asiento.id)) {
           return { ...asiento, estado: 'seleccionado' as const };
+        }
+
+        if (asiento.estado === 'ocupado') {
+          return asiento;
         }
 
         if (lockedSeatIdsSet.has(asiento.id)) {
@@ -327,8 +348,8 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
           <span className="text-sm text-gray-300">Ocupado</span>
         </div>
         <div className="flex items-center gap-3">
-          <FaCouch className="text-cinema-gold-500 text-xl" />
-          <span className="text-sm text-gray-300">Butaca Premium</span>
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg shadow-md ring-1 ring-blue-200/70" />
+          <span className="text-sm text-gray-300">Tus asientos</span>
         </div>
       </div>
 
@@ -351,7 +372,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
                     <button
                       key={asiento.id}
                       onClick={() => handleAsientoClick(asiento)}
-                      disabled={asiento.estado === 'ocupado'}
+                      disabled={asiento.estado === 'ocupado' || asiento.estado === 'propio'}
                       className={`w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold transition-all duration-200 ${getColorAsiento(asiento.estado)}`}
                     >
                       {asiento.numero}

@@ -4,7 +4,7 @@ import type { Cine, Ciudad } from '../../../types/localidades.types';
 interface CineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { nombre: string; direccion: string; idCiudad: string }) => Promise<void>;
+  onSave: (data: { nombre: string; direccion: string; idCiudad?: string; ciudad?: string }) => Promise<void>;
   cine?: Cine | null;
   ciudades: Ciudad[];
   isSaving?: boolean;
@@ -24,7 +24,9 @@ const CineModal: React.FC<CineModalProps> = ({
     nombre: '',
     direccion: '',
     idCiudad: '',
+    ciudad: '',
   });
+  const [usarNuevaCiudad, setUsarNuevaCiudad] = useState(false);
 
   useEffect(() => {
     if (cine) {
@@ -32,13 +34,17 @@ const CineModal: React.FC<CineModalProps> = ({
         nombre: cine.nombre,
         direccion: cine.direccion,
         idCiudad: cine.ciudad.id,
+        ciudad: '',
       });
+      setUsarNuevaCiudad(false);
     } else {
       setFormData({
         nombre: '',
         direccion: '',
         idCiudad: ciudades[0]?.id || '',
+        ciudad: '',
       });
+      setUsarNuevaCiudad(ciudades.length === 0);
     }
   }, [cine, ciudades]);
 
@@ -46,7 +52,12 @@ const CineModal: React.FC<CineModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(formData);
+    await onSave({
+      nombre: formData.nombre.trim(),
+      direccion: formData.direccion.trim(),
+      idCiudad: usarNuevaCiudad ? undefined : formData.idCiudad,
+      ciudad: usarNuevaCiudad ? formData.ciudad.trim() : undefined,
+    });
   };
 
   return (
@@ -62,18 +73,55 @@ const CineModal: React.FC<CineModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-gray-300 text-sm mb-2">Ciudad</label>
-            <select
-              value={formData.idCiudad}
-              onChange={(e) => setFormData({ ...formData, idCiudad: e.target.value })}
-              required
-              className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-            >
-              {ciudades.map((ciudad) => (
-                <option key={ciudad.id} value={ciudad.id}>
-                  {ciudad.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => setUsarNuevaCiudad(false)}
+                disabled={ciudades.length === 0}
+                className={`py-2 rounded-lg border text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  !usarNuevaCiudad
+                    ? 'border-cinema-gold-500 bg-cinema-gold-500/20 text-cinema-gold-500'
+                    : 'border-gray-700 text-gray-400 hover:text-white'
+                }`}
+              >
+                Existente
+              </button>
+              <button
+                type="button"
+                onClick={() => setUsarNuevaCiudad(true)}
+                className={`py-2 rounded-lg border text-sm transition-all ${
+                  usarNuevaCiudad
+                    ? 'border-cinema-gold-500 bg-cinema-gold-500/20 text-cinema-gold-500'
+                    : 'border-gray-700 text-gray-400 hover:text-white'
+                }`}
+              >
+                Nueva ciudad
+              </button>
+            </div>
+
+            {usarNuevaCiudad ? (
+              <input
+                type="text"
+                value={formData.ciudad}
+                onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
+                required
+                placeholder="Nombre de la ciudad"
+                className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
+              />
+            ) : (
+              <select
+                value={formData.idCiudad}
+                onChange={(e) => setFormData({ ...formData, idCiudad: e.target.value })}
+                required
+                className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+              >
+                {ciudades.map((ciudad) => (
+                  <option key={ciudad.id} value={ciudad.id}>
+                    {ciudad.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>

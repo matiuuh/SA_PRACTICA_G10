@@ -14,11 +14,15 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
+    const requestUrl = config.url ?? '';
+    const isLoginRequest = requestUrl.includes('/api/auth/login');
 
     if (token) {
       if (isTokenExpired(token)) {
         clearStoredSession();
-        window.location.href = '/login';
+        if (!isLoginRequest) {
+          window.location.href = '/login';
+        }
         return config;
       }
 
@@ -33,7 +37,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url ?? '';
+    const isLoginRequest = requestUrl.includes('/api/auth/login');
+
+    if (error.response?.status === 401 && !isLoginRequest) {
       clearStoredSession();
       window.location.href = '/login';
     }
