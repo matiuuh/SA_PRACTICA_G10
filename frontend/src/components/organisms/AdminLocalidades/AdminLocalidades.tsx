@@ -1,18 +1,15 @@
-// frontend/src/components/organisms/AdminLocalidades/AdminLocalidades.tsx
-
 import { useMemo, useState, useEffect } from 'react';
-import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
-import Toast from '../../../components/atoms/Toast/Toast';
+import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaEdit, FaTrash, FaEye, FaInfoCircle, FaBuilding } from 'react-icons/fa';
+import Toast from '../../atoms/Toast/Toast';
 import CineModal from './CineModal';
 import ConfirmDialog from './ConfirmDialog';
 import type { Cine, Ciudad } from '../../../types/localidades.types';
 import { localidadesService } from '../../../services/localidades.service';
 
-// Props para mantener compatibilidad con PanelAdmin
 interface AdminLocalidadesProps {
-  localidades?: any[];  // Se ignora, usamos nuestra propia data
-  isSaving?: boolean;   // Se ignora, usamos nuestro propio estado
-  onAgregar?: (data: any) => Promise<void>; // Se ignora, usamos nuestro propio método
+  localidades?: any[];
+  isSaving?: boolean;
+  onAgregar?: (data: any) => Promise<void>;
 }
 
 const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
@@ -24,6 +21,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedCine, setSelectedCine] = useState<Cine | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -65,7 +63,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     );
   }, [cines, searchTerm]);
 
-  // ========== CREATE ==========
   const handleCreate = async (data: { nombre: string; direccion: string; idCiudad: string }) => {
     setIsSaving(true);
     try {
@@ -81,7 +78,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     }
   };
 
-  // ========== EDIT ==========
   const handleEdit = async (data: { nombre: string; direccion: string; idCiudad: string }) => {
     if (!selectedCine) return;
     setIsSaving(true);
@@ -99,7 +95,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     }
   };
 
-  // ========== DELETE ==========
   const handleDelete = async () => {
     if (!selectedCine) return;
     setIsSaving(true);
@@ -117,9 +112,9 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     }
   };
 
-  // ========== VIEW ==========
   const handleViewDetails = (cine: Cine) => {
-    alert(`📽️ DETALLES DEL CINE\n\n🏷️ Nombre: ${cine.nombre}\n📍 Dirección: ${cine.direccion}\n🏙️ Ciudad: ${cine.ciudad.nombre}\n🆔 ID: ${cine.id}`);
+    setSelectedCine(cine);
+    setShowDetailsModal(true);
   };
 
   if (isLoading) {
@@ -151,7 +146,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
           </button>
         </div>
 
-        {/* Buscador */}
         <div className="relative mb-6">
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -163,7 +157,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
           />
         </div>
 
-        {/* Lista de cines */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {localidadesFiltradas.map((cine) => (
             <div
@@ -183,7 +176,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
                 <span>{cine.direccion}</span>
               </div>
 
-              {/* Botones de acción */}
               <div className="flex gap-2 pt-2 border-t border-cinema-gold-500/20">
                 <button
                   onClick={() => handleViewDetails(cine)}
@@ -224,7 +216,82 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
         )}
       </div>
 
-      {/* Modal de creación (CREATE) */}
+      {/* Modal de detalles para Cine */}
+      {showDetailsModal && selectedCine && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-cinema-dark-800 to-cinema-dark-900 rounded-2xl max-w-md w-full border border-cinema-gold-500/30 shadow-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20 bg-cinema-dark-800/95">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <FaInfoCircle className="text-cinema-gold-500" />
+                Detalles del Cine
+              </h2>
+              <button onClick={() => setShowDetailsModal(false)} className="text-gray-400 hover:text-white transition-colors text-2xl">
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-cinema-gold-500/20 mb-3">
+                  <FaTheaterMasks className="text-4xl text-cinema-gold-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-white">{selectedCine.nombre}</h3>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                  <FaCity className="text-cinema-gold-500 text-lg" />
+                  <div>
+                    <p className="text-gray-400 text-xs">Ciudad</p>
+                    <p className="text-white font-medium">{selectedCine.ciudad.nombre}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                  <FaMapMarkerAlt className="text-cinema-gold-500 text-lg" />
+                  <div>
+                    <p className="text-gray-400 text-xs">Dirección</p>
+                    <p className="text-white font-medium">{selectedCine.direccion}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                  <FaBuilding className="text-cinema-gold-500 text-lg" />
+                  <div>
+                    <p className="text-gray-400 text-xs">ID del Cine</p>
+                    <p className="text-white font-mono text-sm">{selectedCine.id}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-gray-500 text-xs">ID de Ciudad</p>
+                <p className="text-gray-500 text-sm font-mono">{selectedCine.ciudad.id}</p>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setSelectedCine(selectedCine);
+                  setShowEditModal(true);
+                }}
+                className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
+              >
+                <FaEdit /> Editar
+              </button>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CineModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -234,7 +301,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
         title="Nuevo Cine"
       />
 
-      {/* Modal de edición (EDIT) */}
       <CineModal
         isOpen={showEditModal}
         onClose={() => {
@@ -248,7 +314,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
         title="Editar Cine"
       />
 
-      {/* Diálogo de confirmación para eliminar (DELETE) */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
         onClose={() => {
@@ -261,7 +326,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
         isLoading={isSaving}
       />
 
-      {/* Toast de notificación */}
       {showToast && (
         <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />
       )}
