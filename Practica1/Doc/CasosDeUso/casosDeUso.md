@@ -1,26 +1,30 @@
 # Casos de Uso
 
 ## Core del negocio
-![coreDelNegocio](./img/Practica1-Core.drawio.svg)
+![coreDelNegocio](./img/Practica-Core.drawio.svg)
 
 ## Casos de uso de alto nivel
-![Caso de Uso de Alto Nivel](./img/Practica1-CDU-Alto_Nivel.drawio.svg)
+![Caso de Uso de Alto Nivel](./img/Practica-CDU-Alto_Nivel.drawio.svg)
 
 ## Primera descomposición
+
+![Primera Descomposicion](./img/Practica-Primera_Descomposición.drawio.svg)
+
 **CDU01**: **Registro e inicio de sesión**: Es el punto de partido para que cualquier usuario pueda interactuar con el sistema. Permite a los usuarios crear una cuenta y autenticarse para acceder a las funcionalidades del sistema.
 
-**CDU02**: **Gestión de información personal**: Permite a los usuarios actualizar su información personal, como nombre, correo electrónico y contraseña. De la misma manera, permite a los usuarios gestionar su perfil.
+**CDU02**: **Gestión de películas y cartelera**: Permite al administrador gestionar las películas del sistema y mostrarlas en cartelera según su tipo de proyección.
 
-**CDU03**: **Gestión de películas y cartelera**: Permite al administrador gestionar las películas del sistema y mostrarlas en cartelera según su tipo de proyección.
+**CDU03**: **Gestión de funciones de cine**: Permite al administrador gestionar las funciones de las películas, incluyendo la asignación de horarios.
 
-**CDU04**: **Gestión de funciones de cine**: Permite al administrador gestionar las funciones de las películas, incluyendo la asignación de horarios y salas.s
+**CDU04**: **Reserva y Compra de Boletos**: Permite a los usuarios seleccionar su ubicación, explorar funciones disponibles, reservar asientos en tiempo real y completar la compra de sus boletos.
 
-**CDU05**: **Reserva y Compra de Boletos**: Permite a los usuarios seleccionar su ubicación, explorar funciones disponibles, reservar asientos en tiempo real y completar la compra de sus boletos.
-
-![Primera Descomposicion](./img/Practica1-Primera_Descomposición.drawio.svg)
+**CDU05**: **Gestión de cines y salas**: Permite al administrador gestionar las sedes de cine y las salas
 
 # Casos de uso expandidos
 ## Registro y manejo de autenticación
+
+![CDU001](./img/Practica-CDU001.drawio.svg)
+
 ### CDU-001.1: Registrar Cliente
 
 | Campo | Descripción |
@@ -45,13 +49,13 @@
 **Flujos alternativos:**
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El usuario ya tiene una cuenta | En el paso 5, el sistema notifica que el correo ya está en uso y sugiere iniciar sesión. |
-| FA-02 | El usuario cancela el registro | El usuario puede cancelar y el sistema descarta los datos ingresados. |
+| FA-01 | El usuario ya tiene una cuenta | El sistema notifica que el correo ya está en uso y sugiere reintentarlo. |
+| FA-02 | El usuario interrumpe o no completa el registro | El usuario puede salir de la página de registro y el sistema descarta los datos ingresados. |
 
 **Flujos de excepción:**
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Formato de correo inválido | En el paso 4, el sistema muestra un mensaje de error indicando el formato correcto y solicita corrección. |
+| FE-01 | Formato de correo inválido | El sistema muestra un mensaje de error indicando el formato correcto y solicita corrección. |
 | FE-02 | Contraseñas no coinciden | En el paso 4, el sistema muestra un mensaje de error y limpia los campos de contraseña. |
 | FE-03 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
@@ -63,8 +67,8 @@
 |-------|-------------|
 | **ID** | CDU-001.2 |
 | **Nombre** | Iniciar Sesión |
-| **Actor** | Usuario |
-| **Descripción** | Permite a un usuario registrado autenticarse en la plataforma mediante su correo electrónico y contraseña para acceder a las funcionalidades del sistema. |
+| **Actor** | Usuario / Administrador|
+| **Descripción** | Permite a un usuario registrado o al administrador autenticarse en la plataforma mediante su correo electrónico y contraseña para acceder a las funcionalidades del sistema. |
 | **Precondiciones** | El usuario tiene una cuenta registrada y no tiene una sesión activa. |
 | **Postcondiciones** | El sistema genera un token de sesión válido y el usuario accede a la plataforma. |
 
@@ -101,7 +105,7 @@
 |-------|-------------|
 | **ID** | CDU-001.3 |
 | **Nombre** | Cierre de sesión |
-| **Actor** | Cliente, Administrador |
+| **Actor** | Usuario, Administrador |
 | **Descripción** | Permite al usuario finalizar su sesión activa en la plataforma, invalidando el token de autenticación. |
 | **Precondiciones** | El usuario tiene una sesión activa. |
 | **Postcondiciones** | El token de sesión queda invalidado y el usuario es redirigido a la página de inicio. |
@@ -128,9 +132,9 @@
 
 ---
 
-![CDU001](./img/Practica1-CDU001.drawio.svg)
-
 ## Gestión de películas y cartelera
+
+![CDU002](./img/Practica-CDU002.drawio.svg)
 
 ### CDU-002.1: Modificar Cartelera
 
@@ -365,11 +369,12 @@
 
 ---
 
-![CDU002](./img/Practica1-CDU002.drawio.svg)
-
 ## Gestión de funciones
 
-### CDU-003.1: Registrar Función
+
+![CDU003](./img/Practica-CDU003.drawio.svg)
+
+### CDU-003.1: Registrar Función de cine
 
 | Campo | Descripción |
 |-------|-------------|
@@ -406,7 +411,7 @@
 
 ---
 
-### CDU-003.2: Actualizar Función
+### CDU-003.2: Actualizar Función de cine
 
 | Campo | Descripción |
 |-------|-------------|
@@ -441,11 +446,11 @@
 | FE-01 | La función tiene boletos vendidos | En el paso 3, el sistema impide la modificación e informa que existen compras registradas para esta función. |
 | FE-02 | Conflicto de sala y horario | En el paso 4, el sistema notifica que la sala ya tiene una función en el nuevo horario solicitado. |
 
-![CDU003](./img/Practica1-CDU003.drawio.svg)
-
 ## Reserva y Compra de Boletos
 
-### CDU-004.1: Seleccionar Ubicación
+![CDU004](./img/Practica-CDU004.drawio.svg)
+
+### CDU-004.1: Seleccionar asientos
 
 | Campo | Descripción |
 |-------|-------------|
@@ -628,6 +633,282 @@
 
 ---
 
-![CDU004](./img/Practica1-CDU004.drawio.svg)
+## Gestión de cines y salas
+
+![CDU005](./img/Practica-CDU005.drawio.svg)
+
+### CDU-005.1: Visualizar Sucursales de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.1 |
+| **Nombre** | Visualizar Sucursales de Cine |
+| **Actor** | Cliente |
+| **Descripción** | Permite al cliente consultar las sucursales de cine disponibles en una ciudad, mostrando dirección, horario y contacto. |
+| **Precondiciones** | Existe al menos una sucursal registrada en el sistema. |
+| **Postcondiciones** | El cliente visualiza la lista de sucursales y puede seleccionar una para ver sus salas y funciones disponibles. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Cliente | Accede a la sección de sucursales desde la página principal. |
+| 2 | Sistema | Recupera y muestra las sucursales filtradas por ciudad o por proximidad. |
+| 3 | Cliente | Selecciona una sucursal para ver detalles (dirección, contacto, salas). |
+| 4 | Sistema | Muestra la información detallada de la sucursal y sus salas disponibles. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El cliente no selecciona ciudad | El sistema muestra todas las sucursales disponibles. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No hay sucursales en la ciudad seleccionada | El sistema muestra un mensaje indicando que no hay sucursales disponibles. |
+
+---
+
+### CDU-005.2: Añadir Sucursal de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.2 |
+| **Nombre** | Añadir Sucursal de Cine |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador registrar una nueva sucursal con su nombre, dirección, ciudad, teléfono y salas asociadas. |
+| **Precondiciones** | El administrador tiene una sesión activa. |
+| **Postcondiciones** | La sucursal queda registrada y disponible en las búsquedas del sistema. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede al panel de administración y selecciona "Añadir sucursal". |
+| 2 | Administrador | Ingresa nombre, dirección, ciudad, teléfono y datos adicionales. |
+| 3 | Sistema | Valida los campos obligatorios y el formato de contacto. |
+| 4 | Sistema | Crea la sucursal en la base de datos. |
+| 5 | Sistema | Muestra un mensaje de confirmación y lista la nueva sucursal. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | No se proporcionan salas al crear | El sistema permite crear la sucursal sin salas y editarla posteriormente para añadir salas. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Dirección incompleta | El sistema solicita completar los campos obligatorios. |
+| FE-02 | Error de persistencia | El sistema muestra un mensaje de error y sugiere reintentar. |
+
+---
+
+### CDU-005.3: Editar Sucursal de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.3 |
+| **Nombre** | Editar Sucursal de Cine |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador modificar los datos de una sucursal existente (dirección, teléfono, horarios, salas asociadas). |
+| **Precondiciones** | El administrador tiene una sesión activa. La sucursal existe en el sistema. |
+| **Postcondiciones** | Los datos de la sucursal quedan actualizados en el sistema. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede al listado de sucursales y selecciona la sucursal a editar. |
+| 2 | Sistema | Muestra el formulario con la información actual de la sucursal. |
+| 3 | Administrador | Modifica los campos deseados y envía el formulario. |
+| 4 | Sistema | Valida los datos y actualiza la sucursal en la base de datos. |
+| 5 | Sistema | Muestra un mensaje de confirmación de actualización. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | No hay cambios realizados | El sistema no modifica la sucursal y mantiene la información actual. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Campos inválidos tras edición | El sistema resalta los campos inválidos y solicita corrección. |
+
+---
+
+### CDU-005.4: Eliminar Sucursal de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.4 |
+| **Nombre** | Eliminar Sucursal de Cine |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador eliminar una sucursal siempre que no exista actividad pendiente (funciones o reservas) asociada a sus salas. |
+| **Precondiciones** | El administrador tiene una sesión activa. La sucursal no debe tener funciones programadas ni reservas asociadas en sus salas. |
+| **Postcondiciones** | La sucursal queda eliminada del sistema y ya no aparece en búsquedas ni listados. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede al listado de sucursales y selecciona la sucursal a eliminar. |
+| 2 | Sistema | Solicita confirmación al administrador. |
+| 3 | Administrador | Confirma la eliminación. |
+| 4 | Sistema | Verifica que no existan funciones ni reservas asociadas. |
+| 5 | Sistema | Elimina la sucursal y muestra un mensaje de confirmación. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El administrador cancela la eliminación | El sistema descarta la acción y mantiene la sucursal. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Existen funciones o reservas asociadas | El sistema impide la eliminación e informa al administrador de las dependencias existentes. |
+
+---
+
+### CDU-005.5: Visualizar Salas de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.5 |
+| **Nombre** | Visualizar Salas de Cine |
+| **Actor** | Cliente |
+| **Descripción** | Permite al cliente consultar las salas disponibles en una sucursal, incluyendo capacidad, tipo (2D/3D) y mapa de asientos. |
+| **Precondiciones** | El cliente ha seleccionado una sucursal. |
+| **Postcondiciones** | El cliente visualiza las salas y puede seleccionar una para ver funciones o mapa de asientos. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Cliente | Desde la vista de sucursal, selecciona la opción de salas. |
+| 2 | Sistema | Recupera y muestra la lista de salas con su capacidad y características. |
+| 3 | Cliente | Selecciona una sala para ver el mapa de asientos y funciones disponibles. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | No hay salas registradas en la sucursal | El sistema muestra un mensaje indicando que no hay salas disponibles. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Error al recuperar información de salas | El sistema muestra un mensaje de error e invita a reintentar. |
+
+---
+
+### CDU-005.6: Añadir Sala de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.6 |
+| **Nombre** | Añadir Sala de Cine |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador crear una nueva sala dentro de una sucursal, definiendo su nombre, capacidad, tipo de proyección y mapa de asientos. |
+| **Precondiciones** | El administrador tiene una sesión activa y la sucursal existe. |
+| **Postcondiciones** | La sala queda registrada y disponible para asignar funciones. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede al panel de la sucursal y selecciona "Añadir sala". |
+| 2 | Administrador | Ingresa nombre, capacidad, tipo de proyección y configura el mapa de asientos. |
+| 3 | Sistema | Valida los datos y crea la sala en la sucursal. |
+| 4 | Sistema | Muestra confirmación y la nueva sala en el listado. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | Omite mapa de asientos | El sistema permite crear la sala con una configuración predeterminada y editarla luego. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Capacidad inválida | El sistema solicita un valor de capacidad válido. |
+
+---
+
+### CDU-005.7: Editar Sala de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.7 |
+| **Nombre** | Editar Sala de Cine |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador modificar la configuración de una sala (capacidad, disposición de asientos, tipo de proyección). |
+| **Precondiciones** | El administrador tiene una sesión activa y la sala existe. No debe tener funciones activas si el cambio afecta mapa o capacidad. |
+| **Postcondiciones** | La sala queda actualizada con la nueva configuración. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Selecciona la sala a editar desde el panel de la sucursal. |
+| 2 | Sistema | Muestra el formulario con la configuración actual de la sala. |
+| 3 | Administrador | Realiza cambios y guarda. |
+| 4 | Sistema | Valida cambios y actualiza la sala en la base de datos. |
+| 5 | Sistema | Muestra confirmación de actualización. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El administrador cancela edición | No se realizan cambios y se mantiene la configuración actual. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | La sala tiene funciones activas que impiden cambiar el mapa | El sistema impide el cambio y sugiere desprogramar o mover funciones primero. |
+
+---
+
+### CDU-005.8: Eliminar Sala de Cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-005.8 |
+| **Nombre** | Eliminar Sala de Cine |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador eliminar una sala siempre que no existan funciones ni reservas asociadas a la misma. |
+| **Precondiciones** | El administrador tiene una sesión activa. La sala no debe tener funciones programadas ni reservas asociadas. |
+| **Postcondiciones** | La sala queda eliminada y ya no puede ser usada para programar funciones. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Selecciona la sala a eliminar desde la sucursal. |
+| 2 | Sistema | Solicita confirmación y verifica dependencias (funciones, reservas). |
+| 3 | Administrador | Confirma la eliminación. |
+| 4 | Sistema | Elimina la sala y muestra confirmación. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El administrador cancela | El sistema mantiene la sala sin cambios. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Existen funciones o reservas asociadas | El sistema impide la eliminación e informa de las dependencias a resolver. |
 
 [Volver a Documentacion](../Documentación.md)
