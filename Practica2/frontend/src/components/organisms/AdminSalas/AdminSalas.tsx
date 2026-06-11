@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FaCouch, FaEdit, FaPlus, FaSearch, FaTheaterMasks, FaTrash } from 'react-icons/fa';
+import { FaCouch, FaEdit, FaPlus, FaSearch, FaTheaterMasks, FaTrash, FaEye, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
 import Toast from '../../atoms/Toast/Toast';
 import type { CreateSalaForm, Localidad, Sala } from '../../../types/admin.types';
 
@@ -28,7 +28,9 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
   onEliminar,
 }) => {
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
+  const [selectedSala, setSelectedSala] = useState<Sala | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -63,6 +65,11 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
     setShowModal(false);
     setEditingSala(null);
     setFormData(initialForm);
+  };
+
+  const handleViewDetails = (sala: Sala) => {
+    setSelectedSala(sala);
+    setShowDetailsModal(true);
   };
 
   const handleEdit = (sala: Sala) => {
@@ -103,7 +110,7 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Deseas eliminar esta sala?')) {
+    if (!window.confirm('¿Estás seguro de eliminar esta sala?')) {
       return;
     }
 
@@ -120,11 +127,21 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
     return <FaTheaterMasks className="text-gray-400" />;
   };
 
+  const getTipoColor = (tipo: string) => {
+    if (tipo.toLowerCase().includes('vip') || tipo.toLowerCase().includes('premium')) {
+      return 'bg-cinema-gold-500/20 text-cinema-gold-500';
+    }
+    if (tipo.toLowerCase().includes('3d')) {
+      return 'bg-blue-500/20 text-blue-500';
+    }
+    return 'bg-gray-500/20 text-gray-300';
+  };
+
   return (
     <>
       <div className="cinema-card p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-white">Gestion de salas</h2>
+          <h2 className="text-xl font-bold text-white">Gestión de Salas</h2>
           <button
             onClick={() => setShowModal(true)}
             className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
@@ -157,6 +174,9 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
                   <h3 className="font-bold text-white">{sala.nombre}</h3>
                 </div>
                 <div className="flex gap-2">
+                  <button onClick={() => handleViewDetails(sala)} className="text-blue-500 hover:text-blue-400" title="Ver detalles">
+                    <FaEye />
+                  </button>
                   <button onClick={() => handleEdit(sala)} className="text-cinema-gold-500 hover:text-cinema-gold-400">
                     <FaEdit />
                   </button>
@@ -169,19 +189,107 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
               <div className="text-gray-500 text-sm">{sala.ciudad}</div>
               <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-700">
                 <span className="text-cinema-gold-500 font-bold">{sala.capacidad} asientos</span>
-                <span className="px-2 py-1 rounded-full text-xs bg-white/10 text-white">{sala.tipo || 'General'}</span>
+                <span className={`px-2 py-1 rounded-full text-xs ${getTipoColor(sala.tipo)}`}>
+                  {sala.tipo || 'General'}
+                </span>
               </div>
             </div>
           ))}
         </div>
 
+        {/* Modal de detalles */}
+        {showDetailsModal && selectedSala && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-cinema-dark-800 to-cinema-dark-900 rounded-2xl max-w-md w-full border border-cinema-gold-500/30 shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20 bg-cinema-dark-800/95">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FaInfoCircle className="text-cinema-gold-500" />
+                  Detalles de la Sala
+                </h2>
+                <button onClick={() => setShowDetailsModal(false)} className="text-gray-400 hover:text-white transition-colors text-2xl">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-cinema-gold-500/20 mb-3">
+                    {getTipoIcon(selectedSala.tipo)}
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">{selectedSala.nombre}</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaBuilding className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Cine</p>
+                      <p className="text-white font-medium">{selectedSala.localidadNombre}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaTheaterMasks className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Ciudad</p>
+                      <p className="text-white font-medium">{selectedSala.ciudad}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaUsers className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Capacidad</p>
+                      <p className="text-white font-medium">{selectedSala.capacidad} asientos</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaTag className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Tipo</p>
+                      <p className={`font-medium ${getTipoColor(selectedSala.tipo)}`}>
+                        {selectedSala.tipo || 'General'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-2">
+                  <p className="text-gray-500 text-xs">ID</p>
+                  <p className="text-gray-500 text-sm font-mono break-all">{selectedSala.id}</p>
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleEdit(selectedSala);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
+                >
+                  <FaEdit /> Editar
+                </button>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de agregar/editar sala */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-cinema-dark-800 rounded-2xl max-w-md w-full border border-cinema-gold-500/30">
               <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
                 <h2 className="text-xl font-bold text-white">{editingSala ? 'Editar sala' : 'Nueva sala'}</h2>
                 <button onClick={handleCloseModal} className="text-gray-400 hover:text-white">
-                  x
+                  ✕
                 </button>
               </div>
 
@@ -225,6 +333,7 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
                       value={formData.tipo}
                       onChange={handleChange}
                       className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                      placeholder="2D, 3D, VIP, etc."
                     />
                   </div>
                   <div>

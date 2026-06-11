@@ -295,6 +295,24 @@ const PanelAdmin = () => {
     }
   };
 
+  // ========== NUEVA FUNCIÓN PARA ELIMINAR FUNCIÓN ==========
+  const handleEliminarFuncion = async (id: string) => {
+    setSavingSection('funciones');
+    setError(null);
+
+    try {
+      await funcionesService.deleteFuncion(id);
+      await cargarDatos();
+      setToastMessage('Función eliminada exitosamente');
+    } catch (err) {
+      console.error('Error eliminando función:', err);
+      setError(extractErrorMessage(err, 'No se pudo eliminar la función.'));
+      throw err;
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
   const tabs = [
     { id: 'peliculas' as AdminTabType, label: 'Peliculas', icon: FaFilm },
     { id: 'localidades' as AdminTabType, label: 'Cines', icon: FaCity },
@@ -382,11 +400,12 @@ const PanelAdmin = () => {
             isSaving={savingSection === 'funciones'}
             onAgregar={handleAgregarFuncion}
             onEditar={handleEditarFuncion}
+            onEliminar={handleEliminarFuncion}
           />
         )}
       </div>
 
-      {toastMessage && <Toast message={toastMessage} type="info" onClose={() => setToastMessage(null)} />}
+      {toastMessage && <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />}
     </MainLayout>
   );
 };

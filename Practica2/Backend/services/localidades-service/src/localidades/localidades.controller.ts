@@ -50,6 +50,26 @@ export class LocalidadesController {
     return this.localidadesService.createCine(createCineDto);
   }
 
+
+
+
+  // Agrega estos métodos al LocalidadesController
+
+@Get('cines/:id')
+findCineById(@Param('id', ParseUUIDPipe) id: string) {
+  return this.localidadesService.findCineById(id);
+}
+
+@Get('salas')
+findSalas() {
+  return this.localidadesService.findSalas();
+}
+
+@Get('salas/:id')
+findSalaById(@Param('id', ParseUUIDPipe) id: string) {
+  return this.localidadesService.findSalaById(id);
+}
+
   @Post('salas')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMINISTRADOR')

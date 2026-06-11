@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { FaEdit, FaPlus, FaSearch } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSearch, FaTrash, FaEye } from 'react-icons/fa';
 import axios from 'axios';
 import Toast from '../../atoms/Toast/Toast';
+import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
 import type { CreateFuncionForm, Funcion, Pelicula, Sala } from '../../../types/admin.types';
 
 interface AdminFuncionesProps {
@@ -11,6 +12,7 @@ interface AdminFuncionesProps {
   isSaving?: boolean;
   onAgregar: (funcion: CreateFuncionForm) => Promise<void>;
   onEditar: (funcion: Funcion) => Promise<void>;
+  onEliminar: (id: string) => Promise<void>;
 }
 
 const initialForm: CreateFuncionForm = {
@@ -29,6 +31,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
   isSaving = false,
   onAgregar,
   onEditar,
+  onEliminar,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingFuncion, setEditingFuncion] = useState<Funcion | null>(null);
@@ -37,6 +40,9 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedFuncion, setSelectedFuncion] = useState<Funcion | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const funcionesFiltradas = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -84,6 +90,51 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
     setShowModal(true);
   };
 
+  const handleDeleteClick = (funcion: Funcion) => {
+    setSelectedFuncion(funcion);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedFuncion) return;
+    
+    setIsDeleting(true);
+    try {
+      await onEliminar(selectedFuncion.id);
+      setToastType('success');
+      setToastMessage('Función eliminada exitosamente');
+      setShowToast(true);
+      setShowDeleteConfirm(false);
+      setSelectedFuncion(null);
+    } catch (error) {
+      setToastType('error');
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message;
+        setToastMessage(Array.isArray(message) ? message.join(', ') : message || 'No se pudo eliminar la función');
+      } else {
+        setToastMessage('No se pudo eliminar la función');
+      }
+      setShowToast(true);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleViewDetails = (funcion: Funcion) => {
+    alert(`
+🎬 DETALLES DE LA FUNCIÓN
+
+📽️ Película: ${funcion.peliculaNombre}
+🏢 Cine: ${funcion.localidadNombre}
+🎪 Sala: ${funcion.salaNombre}
+📅 Fecha: ${funcion.fecha}
+⏰ Hora: ${funcion.horario}
+💰 Precio: Q${funcion.precio}
+📌 Estado: ${funcion.activa ? 'Activa' : 'Inactiva'}
+🆔 ID: ${funcion.id}
+    `);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -99,14 +150,14 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           activa: formData.activa,
         });
         setToastType('success');
-        setToastMessage('Funcion actualizada exitosamente');
+        setToastMessage('Función actualizada exitosamente');
       } catch (error) {
         setToastType('error');
         if (axios.isAxiosError(error)) {
           const message = error.response?.data?.message;
-          setToastMessage(Array.isArray(message) ? message.join(', ') : message || 'No se pudo actualizar la funcion');
+          setToastMessage(Array.isArray(message) ? message.join(', ') : message || 'No se pudo actualizar la función');
         } else {
-          setToastMessage('No se pudo actualizar la funcion');
+          setToastMessage('No se pudo actualizar la función');
         }
         setShowToast(true);
         return;
@@ -115,14 +166,14 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
       try {
         await onAgregar(formData);
         setToastType('success');
-        setToastMessage('Funcion creada exitosamente');
+        setToastMessage('Función creada exitosamente');
       } catch (error) {
         setToastType('error');
         if (axios.isAxiosError(error)) {
           const message = error.response?.data?.message;
-          setToastMessage(Array.isArray(message) ? message.join(', ') : message || 'No se pudo crear la funcion');
+          setToastMessage(Array.isArray(message) ? message.join(', ') : message || 'No se pudo crear la función');
         } else {
-          setToastMessage('No se pudo crear la funcion');
+          setToastMessage('No se pudo crear la función');
         }
         setShowToast(true);
         return;
@@ -138,15 +189,15 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
       <div className="cinema-card p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-bold text-white">Gestion de funciones</h2>
-            <p className="text-sm text-gray-400 mt-1">El backend actual permite crear y editar funciones.</p>
+            <h2 className="text-xl font-bold text-white">Gestión de funciones</h2>
+            <p className="text-sm text-gray-400 mt-1">Administra las funciones: crear, editar, eliminar y ver detalles.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
             className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
           >
             <FaPlus />
-            Agregar funcion
+            Agregar función
           </button>
         </div>
 
@@ -154,7 +205,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
-            placeholder="Buscar por pelicula, cine o sala..."
+            placeholder="Buscar por película, cine o sala..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
@@ -165,7 +216,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-700">
-                <th className="pb-3 text-gray-400 font-semibold">Pelicula</th>
+                <th className="pb-3 text-gray-400 font-semibold">Película</th>
                 <th className="pb-3 text-gray-400 font-semibold">Cine</th>
                 <th className="pb-3 text-gray-400 font-semibold">Sala</th>
                 <th className="pb-3 text-gray-400 font-semibold">Fecha</th>
@@ -190,9 +241,29 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                     </span>
                   </td>
                   <td className="py-3">
-                    <button onClick={() => handleEdit(funcion)} className="text-cinema-gold-500 hover:text-cinema-gold-400">
-                      <FaEdit />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewDetails(funcion)}
+                        className="text-blue-500 hover:text-blue-400 transition-colors"
+                        title="Ver detalles"
+                      >
+                        <FaEye />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(funcion)}
+                        className="text-cinema-gold-500 hover:text-cinema-gold-400 transition-colors"
+                        title="Editar"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(funcion)}
+                        className="text-red-500 hover:text-red-400 transition-colors"
+                        title="Eliminar"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -200,19 +271,26 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           </table>
         </div>
 
+        {funcionesFiltradas.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            No se encontraron funciones
+          </div>
+        )}
+
+        {/* Modal de creación/edición */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-cinema-dark-800 rounded-2xl max-w-md w-full border border-cinema-gold-500/30">
               <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
-                <h2 className="text-xl font-bold text-white">{editingFuncion ? 'Editar funcion' : 'Nueva funcion'}</h2>
+                <h2 className="text-xl font-bold text-white">{editingFuncion ? 'Editar función' : 'Nueva función'}</h2>
                 <button onClick={handleCloseModal} className="text-gray-400 hover:text-white">
-                  x
+                  ✕
                 </button>
               </div>
 
               <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-2">Pelicula</label>
+                  <label className="block text-gray-300 text-sm mb-2">Película</label>
                   <select
                     name="peliculaId"
                     required
@@ -220,7 +298,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                     onChange={handleChange}
                     className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
                   >
-                    <option value="">Seleccionar pelicula</option>
+                    <option value="">Seleccionar película</option>
                     {peliculas.map((pelicula) => (
                       <option key={pelicula.id_pelicula} value={pelicula.id_pelicula}>
                         {pelicula.titulo}
@@ -273,7 +351,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-2">Precio</label>
+                  <label className="block text-gray-300 text-sm mb-2">Precio (Q)</label>
                   <input
                     type="number"
                     name="precio"
@@ -312,6 +390,20 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
         )}
       </div>
 
+      {/* Diálogo de confirmación para eliminar */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setSelectedFuncion(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Función"
+        message={`¿Estás seguro que deseas eliminar la función de "${selectedFuncion?.peliculaNombre}" el ${selectedFuncion?.fecha} a las ${selectedFuncion?.horario}? Esta acción no se puede deshacer.`}
+        isLoading={isDeleting}
+      />
+
+      {/* Toast de notificación */}
       {showToast && <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />}
     </>
   );

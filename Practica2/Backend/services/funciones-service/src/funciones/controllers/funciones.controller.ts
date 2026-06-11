@@ -1,6 +1,9 @@
+// En Backend/services/funciones-service/src/controllers/funciones.controller.ts
+
 import {
   Body,
   Controller,
+  Delete,  // <-- Agrega este import
   Get,
   Param,
   ParseUUIDPipe,
@@ -58,5 +61,14 @@ export class FuncionesController {
   @Roles('ADMINISTRADOR')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateFuncionDto) {
     return this.funcionesService.update(id, dto);
+  }
+
+  // ========== NUEVO ENDPOINT DELETE ==========
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.funcionesService.remove(id);
+    return { message: `Función ${id} eliminada correctamente` };
   }
 }

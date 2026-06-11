@@ -1,76 +1,149 @@
-import { useMemo, useState } from 'react';
-import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks } from 'react-icons/fa';
-import Toast from '../../atoms/Toast/Toast';
-import type { CreateLocalidadForm, Localidad } from '../../../types/admin.types';
+// frontend/src/components/organisms/AdminLocalidades/AdminLocalidades.tsx
 
+import { useMemo, useState, useEffect } from 'react';
+import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
+import Toast from '../../../components/atoms/Toast/Toast';
+import CineModal from './CineModal';
+import ConfirmDialog from './ConfirmDialog';
+import type { Cine, Ciudad } from '../../../types/localidades.types';
+import { localidadesService } from '../../../services/localidades.service';
+
+// Props para mantener compatibilidad con PanelAdmin
 interface AdminLocalidadesProps {
-  localidades: Localidad[];
-  isSaving?: boolean;
-  onAgregar: (localidad: CreateLocalidadForm) => Promise<void>;
+  localidades?: any[];  // Se ignora, usamos nuestra propia data
+  isSaving?: boolean;   // Se ignora, usamos nuestro propio estado
+  onAgregar?: (data: any) => Promise<void>; // Se ignora, usamos nuestro propio método
 }
 
-const initialForm: CreateLocalidadForm = {
-  ciudad: '',
-  cine: '',
-  direccion: '',
-};
-
-const AdminLocalidades: React.FC<AdminLocalidadesProps> = ({ localidades, isSaving = false, onAgregar }) => {
-  const [showModal, setShowModal] = useState(false);
+const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
+  const [cines, setCines] = useState<Cine[]>([]);
+  const [ciudades, setCiudades] = useState<Ciudad[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedCine, setSelectedCine] = useState<Cine | null>(null);
   const [showToast, setShowToast] = useState(false);
-  const [formData, setFormData] = useState<CreateLocalidadForm>(initialForm);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  // Cargar datos
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const [cinesData, ciudadesData] = await Promise.all([
+        localidadesService.getCines(),
+        localidadesService.getCiudades(),
+      ]);
+      setCines(cinesData);
+      setCiudades(ciudadesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      showToastMessage('Error al cargar los datos', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const showToastMessage = (message: string, type: 'success' | 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
 
   const localidadesFiltradas = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return localidades;
-    }
-
-    return localidades.filter((localidad) =>
-      [localidad.ciudad, localidad.cine, localidad.direccion].join(' ').toLowerCase().includes(term),
+    if (!term) return cines;
+    return cines.filter((cine) =>
+      [cine.nombre, cine.direccion, cine.ciudad.nombre].join(' ').toLowerCase().includes(term)
     );
-  }, [localidades, searchTerm]);
+  }, [cines, searchTerm]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCloseModal = () => {
-    if (isSaving) {
-      return;
+  // ========== CREATE ==========
+  const handleCreate = async (data: { nombre: string; direccion: string; idCiudad: string }) => {
+    setIsSaving(true);
+    try {
+      await localidadesService.createCine(data);
+      await loadData();
+      showToastMessage('Cine creado exitosamente', 'success');
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error('Error creating cine:', error);
+      showToastMessage('Error al crear el cine', 'error');
+    } finally {
+      setIsSaving(false);
     }
-
-    setShowModal(false);
-    setFormData(initialForm);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onAgregar({
-      ciudad: formData.ciudad.trim(),
-      cine: formData.cine.trim(),
-      direccion: formData.direccion.trim(),
-    });
-    setShowModal(false);
-    setFormData(initialForm);
-    setShowToast(true);
+  // ========== EDIT ==========
+  const handleEdit = async (data: { nombre: string; direccion: string; idCiudad: string }) => {
+    if (!selectedCine) return;
+    setIsSaving(true);
+    try {
+      await localidadesService.updateCine(selectedCine.id, data);
+      await loadData();
+      showToastMessage('Cine actualizado exitosamente', 'success');
+      setShowEditModal(false);
+      setSelectedCine(null);
+    } catch (error) {
+      console.error('Error updating cine:', error);
+      showToastMessage('Error al actualizar el cine', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // ========== DELETE ==========
+  const handleDelete = async () => {
+    if (!selectedCine) return;
+    setIsSaving(true);
+    try {
+      await localidadesService.deleteCine(selectedCine.id);
+      await loadData();
+      showToastMessage('Cine eliminado exitosamente', 'success');
+      setShowDeleteConfirm(false);
+      setSelectedCine(null);
+    } catch (error) {
+      console.error('Error deleting cine:', error);
+      showToastMessage('Error al eliminar el cine', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ========== VIEW ==========
+  const handleViewDetails = (cine: Cine) => {
+    alert(`📽️ DETALLES DEL CINE\n\n🏷️ Nombre: ${cine.nombre}\n📍 Dirección: ${cine.direccion}\n🏙️ Ciudad: ${cine.ciudad.nombre}\n🆔 ID: ${cine.id}`);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="cinema-card p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-white">Cargando cines...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="cinema-card p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-bold text-white">Gestion de cines</h2>
+            <h2 className="text-xl font-bold text-white">Gestión de Cines</h2>
             <p className="text-sm text-gray-400 mt-1">
-              Esta vista crea ciudades y cines usando los endpoints disponibles del backend.
+              Administra los cines: crear, editar, eliminar y ver detalles.
             </p>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => setShowCreateModal(true)}
             className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
           >
             <FaPlus />
@@ -78,108 +151,120 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = ({ localidades, isSavi
           </button>
         </div>
 
+        {/* Buscador */}
         <div className="relative mb-6">
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
-            placeholder="Buscar por ciudad, cine o direccion..."
+            placeholder="Buscar por ciudad, cine o dirección..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
           />
         </div>
 
+        {/* Lista de cines */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {localidadesFiltradas.map((localidad) => (
+          {localidadesFiltradas.map((cine) => (
             <div
-              key={localidad.id}
-              className="bg-cinema-dark-900/50 rounded-lg p-4 border border-cinema-gold-500/20 hover:border-cinema-gold-500/50 transition-all"
+              key={cine.id}
+              className="bg-cinema-dark-900/50 rounded-lg p-4 border border-cinema-gold-500/20 hover:border-cinema-gold-500/50 transition-all group"
             >
               <div className="flex items-center gap-2 mb-3">
                 <FaCity className="text-cinema-gold-500" />
-                <h3 className="font-bold text-white">{localidad.ciudad}</h3>
+                <h3 className="font-bold text-white">{cine.ciudad.nombre}</h3>
               </div>
               <div className="flex items-center gap-2 text-gray-300 text-sm mb-2">
                 <FaTheaterMasks />
-                <span>{localidad.cine}</span>
+                <span className="font-semibold">{cine.nombre}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
                 <FaMapMarkerAlt />
-                <span>{localidad.direccion}</span>
+                <span>{cine.direccion}</span>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex gap-2 pt-2 border-t border-cinema-gold-500/20">
+                <button
+                  onClick={() => handleViewDetails(cine)}
+                  className="flex-1 py-1.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all flex items-center justify-center gap-1 text-sm"
+                >
+                  <FaEye size={12} />
+                  Ver
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCine(cine);
+                    setShowEditModal(true);
+                  }}
+                  className="flex-1 py-1.5 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-1 text-sm"
+                >
+                  <FaEdit size={12} />
+                  Editar
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCine(cine);
+                    setShowDeleteConfirm(true);
+                  }}
+                  className="flex-1 py-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all flex items-center justify-center gap-1 text-sm"
+                >
+                  <FaTrash size={12} />
+                  Eliminar
+                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-cinema-dark-800 rounded-2xl max-w-md w-full border border-cinema-gold-500/30">
-              <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
-                <h2 className="text-xl font-bold text-white">Nuevo cine</h2>
-                <button onClick={handleCloseModal} className="text-gray-400 hover:text-white">
-                  x
-                </button>
-              </div>
-              <form onSubmit={(e) => void handleSubmit(e)} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Ciudad</label>
-                  <input
-                    type="text"
-                    name="ciudad"
-                    required
-                    value={formData.ciudad}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Nombre del cine</label>
-                  <input
-                    type="text"
-                    name="cine"
-                    required
-                    value={formData.cine}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Direccion</label>
-                  <input
-                    type="text"
-                    name="direccion"
-                    required
-                    value={formData.direccion}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? 'Guardando...' : 'Crear'}
-                  </button>
-                </div>
-              </form>
-            </div>
+        {localidadesFiltradas.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            No se encontraron cines
           </div>
         )}
       </div>
 
-      {showToast && <Toast message="Cine creado exitosamente" type="success" onClose={() => setShowToast(false)} />}
+      {/* Modal de creación (CREATE) */}
+      <CineModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={handleCreate}
+        ciudades={ciudades}
+        isSaving={isSaving}
+        title="Nuevo Cine"
+      />
+
+      {/* Modal de edición (EDIT) */}
+      <CineModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedCine(null);
+        }}
+        onSave={handleEdit}
+        cine={selectedCine}
+        ciudades={ciudades}
+        isSaving={isSaving}
+        title="Editar Cine"
+      />
+
+      {/* Diálogo de confirmación para eliminar (DELETE) */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setSelectedCine(null);
+        }}
+        onConfirm={handleDelete}
+        title="Eliminar Cine"
+        message={`¿Estás seguro que deseas eliminar "${selectedCine?.nombre}"? Esta acción no se puede deshacer.`}
+        isLoading={isSaving}
+      />
+
+      {/* Toast de notificación */}
+      {showToast && (
+        <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />
+      )}
     </>
   );
 };
