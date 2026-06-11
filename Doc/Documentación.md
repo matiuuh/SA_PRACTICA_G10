@@ -39,6 +39,12 @@ Integrantes:
 - [Principios SOLID aplicados en Administrador](Solid/SolidAdmin.md)
 - [Despliegue](./Despligue/despliegue.md)
 
+### Pruebas
+- [Pruebas unitarias](./Pruebas/pruebas.md)
+
+### CI/CD
+- [Integracion y entrega continua](./CICD/cicd.md)
+
 
 ## Introduccion
 
