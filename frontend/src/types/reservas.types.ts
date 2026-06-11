@@ -4,6 +4,7 @@ export interface ReservaAsiento {
   numero: number;
   idFuncionExterna: string;
   ocupado?: boolean;
+  propio?: boolean;
 }
 
 export interface ReservaBoleto {

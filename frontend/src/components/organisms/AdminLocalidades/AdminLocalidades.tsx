@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaEdit, FaTrash, FaEye, FaInfoCircle, FaBuilding } from 'react-icons/fa';
+import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle } from 'react-icons/fa';
+import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
 import CineModal from './CineModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -63,33 +64,68 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     );
   }, [cines, searchTerm]);
 
-  const handleCreate = async (data: { nombre: string; direccion: string; idCiudad: string }) => {
+  const getOrCreateCiudadId = async (data: { idCiudad?: string; ciudad?: string }) => {
+    if (data.idCiudad) {
+      return data.idCiudad;
+    }
+
+    const ciudadNombre = data.ciudad?.trim();
+
+    if (!ciudadNombre) {
+      throw new Error('Ingresa una ciudad.');
+    }
+
+    const ciudadExistente = ciudades.find(
+      (ciudad) => ciudad.nombre.trim().toLowerCase() === ciudadNombre.toLowerCase(),
+    );
+
+    if (ciudadExistente) {
+      return ciudadExistente.id;
+    }
+
+    const nuevaCiudad = await localidadesService.createCiudad({ nombre: ciudadNombre });
+    return nuevaCiudad.id;
+  };
+
+  const handleCreate = async (data: { nombre: string; direccion: string; idCiudad?: string; ciudad?: string }) => {
     setIsSaving(true);
     try {
-      await localidadesService.createCine(data);
+      const idCiudad = await getOrCreateCiudadId(data);
+
+      await localidadesService.createCine({
+        nombre: data.nombre,
+        direccion: data.direccion,
+        idCiudad,
+      });
       await loadData();
       showToastMessage('Cine creado exitosamente', 'success');
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating cine:', error);
-      showToastMessage('Error al crear el cine', 'error');
+      showToastMessage(error instanceof Error ? error.message : 'Error al crear el cine', 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleEdit = async (data: { nombre: string; direccion: string; idCiudad: string }) => {
+  const handleEdit = async (data: { nombre: string; direccion: string; idCiudad?: string; ciudad?: string }) => {
     if (!selectedCine) return;
     setIsSaving(true);
     try {
-      await localidadesService.updateCine(selectedCine.id, data);
+      const idCiudad = await getOrCreateCiudadId(data);
+
+      await localidadesService.updateCine(selectedCine.id, {
+        nombre: data.nombre,
+        direccion: data.direccion,
+        idCiudad,
+      });
       await loadData();
       showToastMessage('Cine actualizado exitosamente', 'success');
       setShowEditModal(false);
       setSelectedCine(null);
     } catch (error) {
       console.error('Error updating cine:', error);
-      showToastMessage('Error al actualizar el cine', 'error');
+      showToastMessage(error instanceof Error ? error.message : 'Error al actualizar el cine', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -176,34 +212,19 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
                 <span>{cine.direccion}</span>
               </div>
 
-              <div className="flex gap-2 pt-2 border-t border-cinema-gold-500/20">
-                <button
-                  onClick={() => handleViewDetails(cine)}
-                  className="flex-1 py-1.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all flex items-center justify-center gap-1 text-sm"
-                >
-                  <FaEye size={12} />
-                  Ver
-                </button>
-                <button
-                  onClick={() => {
+              <div className="pt-2 border-t border-cinema-gold-500/20">
+                <AdminActionButtons
+                  onView={() => handleViewDetails(cine)}
+                  onEdit={() => {
                     setSelectedCine(cine);
                     setShowEditModal(true);
                   }}
-                  className="flex-1 py-1.5 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-1 text-sm"
-                >
-                  <FaEdit size={12} />
-                  Editar
-                </button>
-                <button
-                  onClick={() => {
+                  onDelete={() => {
                     setSelectedCine(cine);
                     setShowDeleteConfirm(true);
                   }}
-                  className="flex-1 py-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all flex items-center justify-center gap-1 text-sm"
-                >
-                  <FaTrash size={12} />
-                  Eliminar
-                </button>
+                  itemLabel={`"${cine.nombre}"`}
+                />
               </div>
             </div>
           ))}
@@ -254,33 +275,10 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
                     <p className="text-white font-medium">{selectedCine.direccion}</p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
-                  <FaBuilding className="text-cinema-gold-500 text-lg" />
-                  <div>
-                    <p className="text-gray-400 text-xs">ID del Cine</p>
-                    <p className="text-white font-mono text-sm">{selectedCine.id}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-gray-500 text-xs">ID de Ciudad</p>
-                <p className="text-gray-500 text-sm font-mono">{selectedCine.ciudad.id}</p>
               </div>
             </div>
             
             <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  setSelectedCine(selectedCine);
-                  setShowEditModal(true);
-                }}
-                className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
-              >
-                <FaEdit /> Editar
-              </button>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"

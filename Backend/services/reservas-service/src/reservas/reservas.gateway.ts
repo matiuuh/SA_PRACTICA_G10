@@ -134,6 +134,13 @@ export class ReservasGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.emitSeatState(funcionId);
   }
 
+  notifySeatAvailabilityChanged(funcionId: string) {
+    this.server.to(this.getRoom(funcionId)).emit('seats:availability-changed', {
+      funcionId,
+    });
+    this.emitSeatState(funcionId);
+  }
+
   private emitSeatState(funcionId: string, client?: Socket) {
     const payload = {
       funcionId,

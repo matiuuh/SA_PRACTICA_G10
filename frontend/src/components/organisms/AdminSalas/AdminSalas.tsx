@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { FaCouch, FaEdit, FaPlus, FaSearch, FaTheaterMasks, FaTrash, FaEye, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
+import { FaCouch, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
+import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
+import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
 import type { CreateSalaForm, Localidad, Sala } from '../../../types/admin.types';
 
 interface AdminSalasProps {
@@ -34,6 +36,9 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [salaToDelete, setSalaToDelete] = useState<Sala | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState<CreateSalaForm>(initialForm);
 
   const salasFiltradas = useMemo(() => {
@@ -105,18 +110,32 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
       setToastMessage('Sala creada exitosamente');
     }
 
+    setToastType('success');
     setShowToast(true);
     handleCloseModal();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta sala?')) {
+  const handleDelete = async () => {
+    if (!salaToDelete) {
       return;
     }
 
-    await onEliminar(id);
-    setToastMessage('Sala eliminada exitosamente');
-    setShowToast(true);
+    setIsDeleting(true);
+
+    try {
+      await onEliminar(salaToDelete.id);
+      setToastType('success');
+      setToastMessage('Sala eliminada exitosamente');
+      setShowToast(true);
+      setSalaToDelete(null);
+    } catch (error) {
+      console.error('Error eliminando sala:', error);
+      setToastType('error');
+      setToastMessage('No se pudo eliminar la sala');
+      setShowToast(true);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getTipoIcon = (tipo: string) => {
@@ -168,21 +187,10 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
               key={sala.id}
               className="bg-cinema-dark-900/50 rounded-lg p-4 border border-cinema-gold-500/20 hover:border-cinema-gold-500/50 transition-all"
             >
-              <div className="flex justify-between items-start mb-3">
+              <div className="mb-3">
                 <div className="flex items-center gap-2">
                   {getTipoIcon(sala.tipo)}
                   <h3 className="font-bold text-white">{sala.nombre}</h3>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleViewDetails(sala)} className="text-blue-500 hover:text-blue-400" title="Ver detalles">
-                    <FaEye />
-                  </button>
-                  <button onClick={() => handleEdit(sala)} className="text-cinema-gold-500 hover:text-cinema-gold-400">
-                    <FaEdit />
-                  </button>
-                  <button onClick={() => void handleDelete(sala.id)} className="text-cinema-red-500 hover:text-cinema-red-400">
-                    <FaTrash />
-                  </button>
                 </div>
               </div>
               <div className="text-gray-300 text-sm">{sala.localidadNombre}</div>
@@ -192,6 +200,14 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
                 <span className={`px-2 py-1 rounded-full text-xs ${getTipoColor(sala.tipo)}`}>
                   {sala.tipo || 'General'}
                 </span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-cinema-gold-500/20">
+                <AdminActionButtons
+                  onView={() => handleViewDetails(sala)}
+                  onEdit={() => handleEdit(sala)}
+                  onDelete={() => setSalaToDelete(sala)}
+                  itemLabel={`"${sala.nombre}"`}
+                />
               </div>
             </div>
           ))}
@@ -262,15 +278,6 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
               </div>
               
               <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    handleEdit(selectedSala);
-                  }}
-                  className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
-                >
-                  <FaEdit /> Editar
-                </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
@@ -372,7 +379,17 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
         )}
       </div>
 
-      {showToast && <Toast message={toastMessage} type="success" onClose={() => setShowToast(false)} />}
+      <ConfirmDialog
+        isOpen={salaToDelete !== null}
+        onClose={() => setSalaToDelete(null)}
+        onConfirm={() => void handleDelete()}
+        title="Eliminar Sala"
+        message={`Estas seguro que deseas eliminar "${salaToDelete?.nombre}"? Esta accion no se puede deshacer.`}
+        isLoading={isDeleting}
+        loadingLabel="Eliminando..."
+      />
+
+      {showToast && <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />}
     </>
   );
 };

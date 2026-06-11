@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaEnvelope, FaLock, FaArrowLeft, FaTicketAlt } from 'react-icons/fa'
+import { FaEnvelope, FaLock, FaArrowLeft, FaTicketAlt, FaExclamationCircle } from 'react-icons/fa'
 import Button from '../components/atoms/Button/Button'
 import MainLayout from '../components/templates/MainLayout/MainLayout'
 import Toast from '../components/atoms/Toast/Toast'
@@ -21,11 +21,15 @@ const Login = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    setErrorMessage('')
+    setShowErrorToast(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setErrorMessage('')
+    setShowErrorToast(false)
 
     try {
       const response = await authService.login({
@@ -54,14 +58,14 @@ const Login = () => {
       // Manejar diferentes tipos de errores
       let mensajeError = 'Error al iniciar sesión. Por favor, intenta de nuevo.'
       
-      if (err.response?.status === 400) {
+      if (err.response?.status === 400 || err.response?.status === 401) {
         mensajeError = 'Credenciales inválidas. Por favor, verifica tu correo y contraseña.'
-      } else if (err.response?.status === 401) {
-        mensajeError = 'Usuario o contraseña incorrectos.'
       } else if (err.message?.includes('Network Error')) {
         mensajeError = 'Error de conexión. Verifica que el servidor esté funcionando.'
       } else if (err.response?.data?.message) {
-        mensajeError = err.response.data.message
+        mensajeError = Array.isArray(err.response.data.message)
+          ? err.response.data.message.join(' ')
+          : err.response.data.message
       }
       
       setErrorMessage(mensajeError)
@@ -151,6 +155,16 @@ const Login = () => {
                       className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"
                     />
                   </div>
+
+                  {errorMessage && (
+                    <div
+                      role="alert"
+                      className="flex items-center gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    >
+                      <FaExclamationCircle className="shrink-0 text-red-400" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
