@@ -12,5 +12,6 @@
 | RNF-08 | Procesamiento asincrónico de operaciones críticas | Ninguna operación crítica como validación de asientos o procesamiento de pago debe bloquear el hilo principal de la aplicación. Dichas operaciones deben encolarse en el bróker de mensajería y ser procesadas por consumidores independientes. | Rendimiento |
 | RNF-09 | Contenedores e infraestructura | Cada servicio debe contener su propio `Dockerfile`. El sistema debe poder desplegarse localmente y en la nube mediante dos archivos `docker-compose` diferenciados, sin modificaciones al código fuente. | Portabilidad |
 | RNF-11 | Punto de entrada único | Todos los servicios deben exponerse al cliente a través de un único API Gateway, que centralice el enrutamiento, la autenticación y el control de acceso. | Seguridad |
+| RNF-12 | Control de acceso basado en roles | El sistema debe implementar un sistema de control de acceso basado en roles  para diferenciar las funcionalidades disponibles para usuarios normales y administradores. | Seguridad |
 
 [Volver a Documentacion](../Documentación.md)
