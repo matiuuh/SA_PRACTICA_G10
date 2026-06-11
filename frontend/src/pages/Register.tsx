@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FaUser, FaEnvelope, FaLock, FaPhone, FaArrowLeft, FaTicketAlt } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaLock, FaArrowLeft, FaTicketAlt } from 'react-icons/fa'
 import Button from '../components/atoms/Button/Button'
 import MainLayout from '../components/templates/MainLayout/MainLayout'
 import Toast from '../components/atoms/Toast/Toast'
@@ -11,7 +11,6 @@ const Register = () => {
   const [formData, setFormData] = useState({
     nombre: '',
     correo: '',
-    telefono: '',
     password: ''
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -160,19 +159,6 @@ const Register = () => {
                       required
                       placeholder="Correo electrónico"
                       value={formData.correo}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                      className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input
-                      type="tel"
-                      name="telefono"
-                      placeholder="Número de teléfono (opcional)"
-                      value={formData.telefono}
                       onChange={handleChange}
                       disabled={isLoading}
                       className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"

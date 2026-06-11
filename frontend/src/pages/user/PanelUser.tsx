@@ -382,7 +382,7 @@ const PanelUser = () => {
       case 'mi-perfil':
         return (
           <MiPerfil
-            usuario={{ nombre: user?.nombre || '', correo: user?.correo || '', telefono: '' }}
+            usuario={{ nombre: user?.nombre || '', correo: user?.correo || '' }}
           />
         );
       default:

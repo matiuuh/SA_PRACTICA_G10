@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { FaUser, FaEnvelope, FaPhone, FaEdit, FaSave, FaTimes } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaEdit, FaSave, FaTimes } from 'react-icons/fa'
 import Button from '../../atoms/Button/Button'
 
 interface MiPerfilProps {
   usuario: {
     nombre: string
     correo: string
-    telefono?: string
   }
 }
 
@@ -14,8 +13,7 @@ const MiPerfil: React.FC<MiPerfilProps> = ({ usuario }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     nombre: usuario.nombre,
-    correo: usuario.correo,
-    telefono: usuario.telefono || ''
+    correo: usuario.correo
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,25 +82,6 @@ const MiPerfil: React.FC<MiPerfilProps> = ({ usuario }) => {
             <p className="text-white flex items-center gap-2">
               <FaEnvelope className="text-cinema-gold-500" />
               {formData.correo}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-gray-400 text-sm mb-1">Teléfono</label>
-          {isEditing ? (
-            <input
-              type="tel"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              placeholder="+502 1234 5678"
-              className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-            />
-          ) : (
-            <p className="text-white flex items-center gap-2">
-              <FaPhone className="text-cinema-gold-500" />
-              {formData.telefono || 'No especificado'}
             </p>
           )}
         </div>
