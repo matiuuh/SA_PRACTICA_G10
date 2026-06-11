@@ -1,55 +1,60 @@
-import { api, endpoints } from './api';
-import type {
-  Ciudad,
-  Cine,
-  Sala,
-  CreateCiudadRequest,
-  CreateCineRequest,
-  CreateSalaRequest,
-} from '../types/localidades.types';
+// frontend/src/services/localidades.service.ts
 
-const base = endpoints.localidades;
+import api from './api';
+import type { 
+  CineBackend, 
+  CiudadBackend, 
+  CreateCineRequest, 
+  UpdateCineRequest 
+} from '../types/admin.types';
 
-class LocalidadesService {
-  async getCiudades(): Promise<Ciudad[]> {
-    const response = await api.get<Ciudad[]>(`${base}/ciudades`);
+const BASE_URL = '/api/localidades';
+
+export const localidadesService = {
+  // Obtener todos los cines
+  async getCines(): Promise<CineBackend[]> {
+    const response = await api.get(`${BASE_URL}/cines`);
     return response.data;
-  }
+  },
 
-  async getCiudadById(id: string): Promise<Ciudad> {
-    const response = await api.get<Ciudad>(`${base}/ciudades/${id}`);
+  // Obtener un cine por ID
+  async getCineById(id: string): Promise<CineBackend> {
+    const response = await api.get(`${BASE_URL}/cines/${id}`);
     return response.data;
-  }
+  },
 
-  async getCines(): Promise<Cine[]> {
-    const response = await api.get<Cine[]>(`${base}/cines`);
+  // Obtener cines por ciudad (NECESARIO para PanelAdmin)
+  async getCinesByCiudad(idCiudad: string): Promise<CineBackend[]> {
+    const response = await api.get(`${BASE_URL}/ciudades/${idCiudad}/cines`);
     return response.data;
-  }
+  },
 
-  async getCinesByCiudad(idCiudad: string): Promise<Cine[]> {
-    const response = await api.get<Cine[]>(`${base}/ciudades/${idCiudad}/cines`);
+  // Obtener todas las ciudades
+  async getCiudades(): Promise<CiudadBackend[]> {
+    const response = await api.get(`${BASE_URL}/ciudades`);
     return response.data;
-  }
+  },
 
-  async getSalasByCine(idCine: string): Promise<Sala[]> {
-    const response = await api.get<Sala[]>(`${base}/cines/${idCine}/salas`);
+  // Crear nueva ciudad (NECESARIO para PanelAdmin)
+  async createCiudad(data: { nombre: string }): Promise<CiudadBackend> {
+    const response = await api.post(`${BASE_URL}/ciudades`, data);
     return response.data;
-  }
+  },
 
-  async createCiudad(data: CreateCiudadRequest): Promise<Ciudad> {
-    const response = await api.post<Ciudad>(`${base}/ciudades`, data);
+  // Crear nuevo cine
+  async createCine(data: CreateCineRequest): Promise<CineBackend> {
+    const response = await api.post(`${BASE_URL}/cines`, data);
     return response.data;
-  }
+  },
 
-  async createCine(data: CreateCineRequest): Promise<Cine> {
-    const response = await api.post<Cine>(`${base}/cines`, data);
+  // Actualizar cine
+  async updateCine(id: string, data: UpdateCineRequest): Promise<CineBackend> {
+    const response = await api.patch(`${BASE_URL}/admin/localidades/cines/${id}`, data);
     return response.data;
-  }
+  },
 
-  async createSala(data: CreateSalaRequest): Promise<Sala> {
-    const response = await api.post<Sala>(`${base}/salas`, data);
-    return response.data;
-  }
-}
-
-export const localidadesService = new LocalidadesService();
+  // Eliminar cine
+  async deleteCine(id: string): Promise<void> {
+    await api.delete(`${BASE_URL}/admin/localidades/cines/${id}`);
+  },
+};

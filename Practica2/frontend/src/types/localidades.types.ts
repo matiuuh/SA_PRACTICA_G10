@@ -34,3 +34,15 @@ export interface CreateSalaRequest {
   idCine: string;
   tipoSala?: string;
 }
+
+export interface UpdateCineRequest {
+  nombre?: string;
+  direccion?: string;
+  idCiudad?: string;
+}
+
+export interface CreateLocalidadForm {
+  ciudad: string;
+  cine: string;
+  direccion: string;
+}

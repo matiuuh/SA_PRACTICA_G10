@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaEye, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm } from 'react-icons/fa'
 import type { Pelicula, Categoria, TipoCartelera } from '../../../types/admin.types'
 import { peliculasService } from '../../../services/peliculas.service'
 import Toast from '../../atoms/Toast/Toast'
-
 interface AdminPeliculasProps {
   peliculas: Pelicula[]
   onAgregar: (pelicula: Pelicula) => void
@@ -13,7 +12,9 @@ interface AdminPeliculasProps {
 
 const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, onEditar, onEliminar }) => {
   const [showModal, setShowModal] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [editingPelicula, setEditingPelicula] = useState<Pelicula | null>(null)
+  const [selectedPelicula, setSelectedPelicula] = useState<Pelicula | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [tiposCartelera, setTiposCartelera] = useState<TipoCartelera[]>([])
@@ -87,6 +88,11 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       })
     }
   }, [categorias, tiposCartelera])
+
+  const handleViewDetails = (pelicula: Pelicula) => {
+    setSelectedPelicula(pelicula)
+    setShowDetailsModal(true)
+  }
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -225,7 +231,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
                 <th className="pb-3 text-gray-400 font-semibold">Tipo Cartelera</th>
                 <th className="pb-3 text-gray-400 font-semibold">Estado</th>
                 <th className="pb-3 text-gray-400 font-semibold">Acciones</th>
-              </tr>
+               </tr>
             </thead>
             <tbody>
               {peliculasFiltradas.map((pelicula) => (
@@ -246,6 +252,9 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
                   </td>
                   <td className="py-3">
                     <div className="flex space-x-2">
+                      <button onClick={() => handleViewDetails(pelicula)} className="text-blue-500 hover:text-blue-400" title="Ver detalles">
+                        <FaEye />
+                      </button>
                       <button onClick={() => handleEdit(pelicula)} className="text-cinema-gold-500 hover:text-cinema-gold-400">
                         <FaEdit />
                       </button>
@@ -259,6 +268,112 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
             </tbody>
           </table>
         </div>
+
+        {/* Modal de detalles */}
+        {showDetailsModal && selectedPelicula && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-cinema-dark-800 to-cinema-dark-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-cinema-gold-500/30 shadow-2xl">
+              <div className="sticky top-0 flex justify-between items-center p-6 border-b border-cinema-gold-500/20 bg-cinema-dark-800/95 backdrop-blur-sm">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FaInfoCircle className="text-cinema-gold-500" />
+                  Detalles de la Película
+                </h2>
+                <button onClick={() => setShowDetailsModal(false)} className="text-gray-400 hover:text-white transition-colors text-2xl">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Poster */}
+                  {selectedPelicula.poster_url ? (
+                    <img 
+                      src={selectedPelicula.poster_url} 
+                      alt={selectedPelicula.titulo}
+                      className="w-40 h-56 object-cover rounded-lg shadow-lg mx-auto md:mx-0"
+                    />
+                  ) : (
+                    <div className="w-40 h-56 bg-cinema-dark-700 rounded-lg flex items-center justify-center mx-auto md:mx-0">
+                      <FaFilm className="text-4xl text-gray-500" />
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">{selectedPelicula.titulo}</h3>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${getCategoriaColor(selectedPelicula.categoria?.nombre)}`}>
+                          {getCategoriaIcon(selectedPelicula.categoria?.nombre)}
+                          {selectedPelicula.categoria?.nombre || 'N/A'}
+                        </span>
+                        <span className="px-2 py-1 rounded-full text-xs bg-cinema-dark-700 text-gray-300">
+                          {selectedPelicula.tipoCartelera?.nombre || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2 text-gray-300">
+                        <FaClock className="text-cinema-gold-500" />
+                        <span>{selectedPelicula.duracion_minutos ? `${selectedPelicula.duracion_minutos} minutos` : 'Duración no especificada'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-300">
+                        <FaCalendarAlt className="text-cinema-gold-500" />
+                        <span className={selectedPelicula.activa ? 'text-green-500' : 'text-red-500'}>
+                          {selectedPelicula.activa ? 'Activa' : 'Inactiva'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-gray-400 text-sm block mb-2">Sinopsis</label>
+                      <p className="text-gray-300 leading-relaxed">
+                        {selectedPelicula.sinopsis || 'Sin sinopsis disponible'}
+                      </p>
+                    </div>
+                    
+                    {selectedPelicula.poster_url && (
+                      <div>
+                        <label className="text-gray-400 text-sm block mb-2">URL del Poster</label>
+                        <a 
+                          href={selectedPelicula.poster_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-cinema-gold-500 hover:underline text-sm break-all"
+                        >
+                          {selectedPelicula.poster_url}
+                        </a>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <label className="text-gray-400 text-sm block mb-2">ID</label>
+                      <p className="text-gray-500 text-sm font-mono">{selectedPelicula.id_pelicula}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="sticky bottom-0 p-6 border-t border-cinema-gold-500/20 bg-cinema-dark-800/95 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false)
+                    handleEdit(selectedPelicula)
+                  }}
+                  className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
+                >
+                  <FaEdit /> Editar
+                </button>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal de agregar/editar película */}
         {showModal && (

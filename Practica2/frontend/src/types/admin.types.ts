@@ -31,6 +31,19 @@ export interface CreatePeliculaDto {
   activa?: boolean;
 }
 
+// Tipos para localidades/ciudades/cines (desde el backend)
+export interface CiudadBackend {
+  id: string;
+  nombre: string;
+}
+
+export interface CineBackend {
+  id: string;
+  nombre: string;
+  direccion: string;
+  ciudad: CiudadBackend;
+}
+
 export interface Localidad {
   id: string;
   ciudadId: string;
@@ -43,6 +56,19 @@ export interface CreateLocalidadForm {
   ciudad: string;
   cine: string;
   direccion: string;
+}
+
+// Request/Response para el CRUD de cines
+export interface CreateCineRequest {
+  nombre: string;
+  direccion: string;
+  idCiudad: string;
+}
+
+export interface UpdateCineRequest {
+  nombre?: string;
+  direccion?: string;
+  idCiudad?: string;
 }
 
 export interface Sala {

@@ -72,6 +72,11 @@ export class FuncionesService {
     return this.repo.save(this.repo.create(funcionData));
   }
 
+  async remove(id: string): Promise<void> {
+    const funcion = await this.findOne(id);
+    await this.repo.remove(funcion);  // ✅ CORREGIDO: usar 'repo' en lugar de 'funcionesRepository'
+  }
+
   async update(id: string, dto: UpdateFuncionDto): Promise<Funcion> {
     const funcion = await this.findOne(id);
 
