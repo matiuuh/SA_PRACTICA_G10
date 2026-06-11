@@ -76,11 +76,11 @@ describe('ReservasController', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('debe lanzar UnauthorizedException si no hay usuario en el request', async () => {
+    it('debe lanzar ForbiddenException si no hay usuario en el request', async () => {
       mockService.findBoletoById.mockResolvedValue(mockBoleto);
       await expect(
         controller.findBoleto('bol-1', buildRequest(undefined)),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
