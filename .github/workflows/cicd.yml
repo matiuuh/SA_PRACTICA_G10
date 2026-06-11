@@ -224,23 +224,68 @@ jobs:
             VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST }}:3006
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
-  deploy:
-    name: Deploy (EC2)
+  deploy-vm3:
+    name: Deploy VM3 (Bases de datos)
     runs-on: ubuntu-latest
     needs: push-images
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Desplegar en EC2 via SSH
+      - name: Desplegar bases de datos en VM3
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_HOST_VM3 }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
+            docker compose -f docker-compose.vm3.yml up -d
+            docker image prune -f
+
+  deploy-vm2:
+    name: Deploy VM2 (Servicios)
+    runs-on: ubuntu-latest
+    needs: deploy-vm3
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Desplegar servicios en VM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST_VM2 }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-            echo "VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST }}:3006" >> .env
-            docker compose pull
-            docker compose up -d
+            echo "VM3_HOST=${{ secrets.VM3_HOST }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
+            echo "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            docker compose -f docker-compose.vm2.yml pull
+            docker compose -f docker-compose.vm2.yml up -d
+            docker image prune -f
+
+  deploy-vm1:
+    name: Deploy VM1 (Frontend + API Gateway)
+    runs-on: ubuntu-latest
+    needs: deploy-vm2
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Desplegar frontend y gateway en VM1
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST_VM1 }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+            echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
+            echo "VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> .env
+            docker compose -f docker-compose.vm1.yml pull
+            docker compose -f docker-compose.vm1.yml up -d
             docker image prune -f
