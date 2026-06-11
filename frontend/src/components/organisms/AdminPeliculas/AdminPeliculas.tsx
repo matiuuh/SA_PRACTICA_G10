@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaEye, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm } from 'react-icons/fa'
 import type { Pelicula, Categoria, TipoCartelera } from '../../../types/admin.types'
 import { peliculasService } from '../../../services/peliculas.service'
+import AdminActionButtons from '../../admin/AdminActionButtons'
 import Toast from '../../atoms/Toast/Toast'
 interface AdminPeliculasProps {
   peliculas: Pelicula[]
@@ -251,17 +252,11 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
                     </span>
                   </td>
                   <td className="py-3">
-                    <div className="flex space-x-2">
-                      <button onClick={() => handleViewDetails(pelicula)} className="text-blue-500 hover:text-blue-400" title="Ver detalles">
-                        <FaEye />
-                      </button>
-                      <button onClick={() => handleEdit(pelicula)} className="text-cinema-gold-500 hover:text-cinema-gold-400">
-                        <FaEdit />
-                      </button>
-                      <button onClick={() => handleDelete(pelicula.id_pelicula)} className="text-cinema-red-500 hover:text-cinema-red-400">
-                        <FaTrash />
-                      </button>
-                    </div>
+                    <AdminActionButtons
+                      onView={() => handleViewDetails(pelicula)}
+                      onEdit={() => handleEdit(pelicula)}
+                      onDelete={() => handleDelete(pelicula.id_pelicula)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -345,11 +340,6 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
                         </a>
                       </div>
                     )}
-                    
-                    <div>
-                      <label className="text-gray-400 text-sm block mb-2">ID</label>
-                      <p className="text-gray-500 text-sm font-mono">{selectedPelicula.id_pelicula}</p>
-                    </div>
                   </div>
                 </div>
               </div>

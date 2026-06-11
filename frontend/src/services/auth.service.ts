@@ -50,19 +50,10 @@ class AuthService {
       return null;
     }
 
-    const storedUser = localStorage.getItem('user');
-
-    if (storedUser) {
-      try {
-        return JSON.parse(storedUser) as User;
-      } catch {
-        localStorage.removeItem('user');
-      }
-    }
-
     const payload = parseTokenPayload(token);
 
     if (!payload) {
+      this.logout();
       return null;
     }
 
@@ -73,6 +64,7 @@ class AuthService {
       rol: payload.role,
     };
 
+    // El JWT es la fuente de verdad para rol e identidad; localStorage solo cachea la vista.
     localStorage.setItem('user', JSON.stringify(derivedUser));
     return derivedUser;
   }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { FaCouch, FaEdit, FaPlus, FaSearch, FaTheaterMasks, FaTrash, FaEye, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
+import { FaCouch, FaEdit, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
+import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
 import type { CreateSalaForm, Localidad, Sala } from '../../../types/admin.types';
 
@@ -168,21 +169,10 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
               key={sala.id}
               className="bg-cinema-dark-900/50 rounded-lg p-4 border border-cinema-gold-500/20 hover:border-cinema-gold-500/50 transition-all"
             >
-              <div className="flex justify-between items-start mb-3">
+              <div className="mb-3">
                 <div className="flex items-center gap-2">
                   {getTipoIcon(sala.tipo)}
                   <h3 className="font-bold text-white">{sala.nombre}</h3>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleViewDetails(sala)} className="text-blue-500 hover:text-blue-400" title="Ver detalles">
-                    <FaEye />
-                  </button>
-                  <button onClick={() => handleEdit(sala)} className="text-cinema-gold-500 hover:text-cinema-gold-400">
-                    <FaEdit />
-                  </button>
-                  <button onClick={() => void handleDelete(sala.id)} className="text-cinema-red-500 hover:text-cinema-red-400">
-                    <FaTrash />
-                  </button>
                 </div>
               </div>
               <div className="text-gray-300 text-sm">{sala.localidadNombre}</div>
@@ -192,6 +182,13 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
                 <span className={`px-2 py-1 rounded-full text-xs ${getTipoColor(sala.tipo)}`}>
                   {sala.tipo || 'General'}
                 </span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-cinema-gold-500/20">
+                <AdminActionButtons
+                  onView={() => handleViewDetails(sala)}
+                  onEdit={() => handleEdit(sala)}
+                  onDelete={() => void handleDelete(sala.id)}
+                />
               </div>
             </div>
           ))}

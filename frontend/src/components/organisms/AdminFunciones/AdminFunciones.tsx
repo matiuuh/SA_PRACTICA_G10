@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { FaEdit, FaPlus, FaSearch, FaTrash, FaEye, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaTheaterMasks, FaBuilding, FaTag, FaSpinner } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSearch, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaTheaterMasks, FaBuilding, FaTag, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
+import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
 import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
 import type { CreateFuncionForm, Funcion, Pelicula, Sala } from '../../../types/admin.types';
@@ -232,29 +233,11 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                     </span>
                   </td>
                   <td className="py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewDetails(funcion)}
-                        className="text-blue-500 hover:text-blue-400 transition-colors"
-                        title="Ver detalles"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(funcion)}
-                        className="text-cinema-gold-500 hover:text-cinema-gold-400 transition-colors"
-                        title="Editar"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(funcion)}
-                        className="text-red-500 hover:text-red-400 transition-colors"
-                        title="Eliminar"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
+                    <AdminActionButtons
+                      onView={() => handleViewDetails(funcion)}
+                      onEdit={() => handleEdit(funcion)}
+                      onDelete={() => handleDeleteClick(funcion)}
+                    />
                   </td>
                 </tr>
               ))}

@@ -27,6 +27,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
   selectedCinema,
 }) => {
   const [categoriaActiva, setCategoriaActiva] = useState<CategoriaFiltro>('todos');
+  const [peliculaDetalle, setPeliculaDetalle] = useState<CarteleraPelicula | null>(null);
 
   const categorias = [
     { id: 'todos' as CategoriaFiltro, label: 'Todos', icon: FaFilter, color: 'bg-gray-500' },
@@ -135,6 +136,11 @@ const Cartelera: React.FC<CarteleraProps> = ({
                   <FaFilm className="text-7xl text-white/30 group-hover:scale-110 transition-all" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 translate-y-full bg-black/85 p-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <p className="line-clamp-4 text-xs leading-relaxed text-gray-200">
+                    {pelicula.sinopsis || 'Sin sinopsis disponible.'}
+                  </p>
+                </div>
                 <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">
                   {pelicula.clasificacion}
                 </div>
@@ -157,6 +163,14 @@ const Cartelera: React.FC<CarteleraProps> = ({
                 <p className="text-gray-500 text-xs mb-4">{pelicula.duracion}</p>
 
                 <button
+                  onClick={() => setPeliculaDetalle(pelicula)}
+                  className="mb-2 w-full border border-cinema-gold-500/40 bg-cinema-dark-900/60 hover:bg-cinema-gold-500/10 text-cinema-gold-500 font-semibold py-2.5 px-3 rounded-lg transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <FaInfoCircle className="text-sm" />
+                  Ver Detalles
+                </button>
+
+                <button
                   onClick={() => onVerHorarios(pelicula)}
                   disabled={!selectedCinema || pelicula.horarios.length === 0}
                   className="w-full bg-cinema-gold-500/20 hover:bg-cinema-gold-500/30 text-cinema-gold-500 font-semibold py-2.5 px-3 rounded-lg transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -176,6 +190,93 @@ const Cartelera: React.FC<CarteleraProps> = ({
           <p className="text-gray-400 text-lg">
             {selectedCinema ? 'No hay peliculas disponibles para este cine' : 'Aun no hay cartelera para mostrar'}
           </p>
+        </div>
+      )}
+
+      {peliculaDetalle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-cinema-gold-500/30 bg-gradient-to-br from-cinema-dark-800 to-cinema-dark-900 shadow-2xl">
+            <div className="sticky top-0 flex items-center justify-between border-b border-cinema-gold-500/20 bg-cinema-dark-800/95 p-5">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-white">
+                <FaInfoCircle className="text-cinema-gold-500" />
+                Detalles de la Pelicula
+              </h2>
+              <button
+                onClick={() => setPeliculaDetalle(null)}
+                className="text-2xl text-gray-400 transition-colors hover:text-white"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="grid gap-6 p-6 md:grid-cols-[180px_1fr]">
+              {peliculaDetalle.imagen ? (
+                <img
+                  src={peliculaDetalle.imagen}
+                  alt={peliculaDetalle.titulo}
+                  className="mx-auto h-64 w-44 rounded-lg object-cover shadow-lg md:mx-0"
+                />
+              ) : (
+                <div className="mx-auto flex h-64 w-44 items-center justify-center rounded-lg bg-cinema-dark-700 md:mx-0">
+                  <FaFilm className="text-5xl text-gray-500" />
+                </div>
+              )}
+
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-2xl font-bold text-white">{peliculaDetalle.titulo}</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-cinema-gold-500/20 px-3 py-1 text-xs font-semibold text-cinema-gold-500">
+                      {peliculaDetalle.genero}
+                    </span>
+                    <span className="rounded-full bg-cinema-dark-700 px-3 py-1 text-xs text-gray-300">
+                      {peliculaDetalle.tipoCartelera}
+                    </span>
+                    <span className="rounded-full bg-cinema-dark-700 px-3 py-1 text-xs text-gray-300">
+                      {peliculaDetalle.clasificacion}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg bg-cinema-dark-900/60 p-3">
+                    <p className="text-xs text-gray-400">Duracion</p>
+                    <p className="font-medium text-white">{peliculaDetalle.duracion}</p>
+                  </div>
+                  <div className="rounded-lg bg-cinema-dark-900/60 p-3">
+                    <p className="text-xs text-gray-400">Horarios disponibles</p>
+                    <p className="font-medium text-white">{peliculaDetalle.horarios.length}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-sm text-gray-400">Sinopsis</p>
+                  <p className="leading-relaxed text-gray-300">
+                    {peliculaDetalle.sinopsis || 'Sin sinopsis disponible.'}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    onClick={() => {
+                      setPeliculaDetalle(null);
+                      onVerHorarios(peliculaDetalle);
+                    }}
+                    disabled={!selectedCinema || peliculaDetalle.horarios.length === 0}
+                    className="flex-1 rounded-lg bg-cinema-gold-500 px-4 py-2.5 font-semibold text-black transition-all hover:bg-cinema-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Ver Horarios Disponibles
+                  </button>
+                  <button
+                    onClick={() => setPeliculaDetalle(null)}
+                    className="flex-1 rounded-lg bg-gray-700 px-4 py-2.5 text-white transition-all hover:bg-gray-600"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

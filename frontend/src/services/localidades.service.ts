@@ -9,6 +9,7 @@ import type {
 } from '../types/admin.types';
 
 const BASE_URL = '/api/localidades';
+const ADMIN_BASE_URL = '/api/admin/localidades';
 
 export const localidadesService = {
   // Obtener todos los cines
@@ -49,12 +50,12 @@ export const localidadesService = {
 
   // Actualizar cine
   async updateCine(id: string, data: UpdateCineRequest): Promise<CineBackend> {
-    const response = await api.patch(`${BASE_URL}/admin/localidades/cines/${id}`, data);
+    const response = await api.patch(`${ADMIN_BASE_URL}/cines/${id}`, data);
     return response.data;
   },
 
   // Eliminar cine
   async deleteCine(id: string): Promise<void> {
-    await api.delete(`${BASE_URL}/admin/localidades/cines/${id}`);
+    await api.delete(`${ADMIN_BASE_URL}/cines/${id}`);
   },
 };

@@ -93,11 +93,13 @@ const mapFuncionesToCartelera = (funciones: Funcion[]): CarteleraPelicula[] => {
       grouped.set(peliculaId, {
         id: peliculaId,
         titulo: funcion.pelicula.titulo,
+        sinopsis: funcion.pelicula.sinopsis,
         genero: funcion.pelicula.categoria?.nombre || 'Cartelera general',
         duracion: formatDuration(funcion.pelicula.duracion_minutos),
         clasificacion: funcion.sala.tipo || 'General',
         imagen: normalizeImageUrl(funcion.pelicula.poster_url),
         categoria,
+        tipoCartelera: funcion.pelicula.tipoCartelera?.nombre || 'Cartelera general',
         horarios: [horario],
       });
       return;
