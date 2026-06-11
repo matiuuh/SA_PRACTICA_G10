@@ -223,7 +223,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
                     setSelectedCine(cine);
                     setShowDeleteConfirm(true);
                   }}
-                  itemLabel={`"${cine.nombre}"`}
                 />
               </div>
             </div>

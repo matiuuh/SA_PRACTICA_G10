@@ -41,6 +41,13 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState<CreateSalaForm>(initialForm);
 
+  const showSalaToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setShowToast(false);
+    setToastType(type);
+    setToastMessage(message);
+    window.setTimeout(() => setShowToast(true), 0);
+  };
+
   const salasFiltradas = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
@@ -91,28 +98,33 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingSala) {
-      await onEditar({
-        ...editingSala,
-        cineId: formData.cineId,
-        nombre: formData.nombre.trim(),
-        capacidad: formData.capacidad,
-        tipo: formData.tipo.trim(),
-      });
-      setToastMessage('Sala actualizada exitosamente');
-    } else {
-      await onAgregar({
-        cineId: formData.cineId,
-        nombre: formData.nombre.trim(),
-        capacidad: formData.capacidad,
-        tipo: formData.tipo.trim(),
-      });
-      setToastMessage('Sala creada exitosamente');
-    }
+    try {
+      if (editingSala) {
+        await onEditar({
+          ...editingSala,
+          cineId: formData.cineId,
+          nombre: formData.nombre.trim(),
+          capacidad: formData.capacidad,
+          tipo: formData.tipo.trim(),
+        });
+        showSalaToast('Sala actualizada exitosamente');
+      } else {
+        await onAgregar({
+          cineId: formData.cineId,
+          nombre: formData.nombre.trim(),
+          capacidad: formData.capacidad,
+          tipo: formData.tipo.trim(),
+        });
+        showSalaToast('Sala creada exitosamente');
+      }
 
-    setToastType('success');
-    setShowToast(true);
-    handleCloseModal();
+      setShowModal(false);
+      setEditingSala(null);
+      setFormData(initialForm);
+    } catch (error) {
+      console.error('Error guardando sala:', error);
+      showSalaToast(editingSala ? 'No se pudo actualizar la sala' : 'No se pudo crear la sala', 'error');
+    }
   };
 
   const handleDelete = async () => {
@@ -124,15 +136,11 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
 
     try {
       await onEliminar(salaToDelete.id);
-      setToastType('success');
-      setToastMessage('Sala eliminada exitosamente');
-      setShowToast(true);
       setSalaToDelete(null);
+      showSalaToast('Sala eliminada exitosamente');
     } catch (error) {
       console.error('Error eliminando sala:', error);
-      setToastType('error');
-      setToastMessage('No se pudo eliminar la sala');
-      setShowToast(true);
+      showSalaToast('No se pudo eliminar la sala', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -206,7 +214,6 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
                   onView={() => handleViewDetails(sala)}
                   onEdit={() => handleEdit(sala)}
                   onDelete={() => setSalaToDelete(sala)}
-                  itemLabel={`"${sala.nombre}"`}
                 />
               </div>
             </div>

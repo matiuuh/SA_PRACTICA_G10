@@ -237,7 +237,6 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                       onView={() => handleViewDetails(funcion)}
                       onEdit={() => handleEdit(funcion)}
                       onDelete={() => handleDeleteClick(funcion)}
-                      itemLabel={`"${funcion.peliculaNombre}" del ${funcion.fecha} a las ${funcion.horario}`}
                     />
                   </td>
                 </tr>
