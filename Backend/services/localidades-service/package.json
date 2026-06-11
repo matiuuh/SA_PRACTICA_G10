@@ -36,6 +36,9 @@
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["unrs-resolver", "@nestjs/core"]
+  },
   "jest": {
     "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": "src",
