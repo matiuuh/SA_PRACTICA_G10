@@ -61,6 +61,15 @@ export class LocalidadesService {
     });
   }
 
+  // En localidades.service.ts, agrega:
+
+findSalas(): Promise<Sala[]> {
+  return this.salasRepository.find({
+    relations: ['cine', 'cine.ciudad'],
+    order: { nombre: 'ASC' },
+  });
+}
+
   findCineById(id: string): Promise<Cine> {
     return this.ensureCineExists(id);
   }

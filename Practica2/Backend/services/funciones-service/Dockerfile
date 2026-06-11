@@ -1,26 +1,35 @@
-FROM node:20-alpine AS builder
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml .npmrc ./
-RUN pnpm install --frozen-lockfile
+RUN corepack enable
+RUN pnpm config set registry https://registry.npmmirror.com
+RUN pnpm config set fetch-timeout 120000
+RUN pnpm config set fetch-retries 5
 
-COPY . .
-RUN pnpm run build
+COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml* ./
+COPY tsconfig.json* ./
+COPY src ./src
 
-FROM node:20-alpine
+RUN pnpm install || npm install
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN pnpm build || npm run build
+
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml .npmrc ./
-RUN pnpm install --prod --frozen-lockfile
+RUN corepack enable
+RUN pnpm config set registry https://registry.npmmirror.com
+
+COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml* ./
+
+RUN pnpm install --prod || npm install --production
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 3003
+EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
