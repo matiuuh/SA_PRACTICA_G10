@@ -13,7 +13,7 @@ Integrantes:
 ## Indice
 
 
-### Requerimientos del sistemag
+### Requerimientos del sistema
 
 - [Requerimientos funcionales](./RF/RF.md)
 - [Requerimientos no funcionales](./RNF/RNF.md)
@@ -36,6 +36,7 @@ Integrantes:
 ### Justificacion de tecnologias y principios SOLID aplicados
 - [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
 - [Principios SOLID aplicados](./Solid/Solid.md)
+- [Principios SOLID aplicados en Administrador](Solid/SolidAdmin.md)
 - [Despliegue](./Despligue/despliegue.md)
 
 
