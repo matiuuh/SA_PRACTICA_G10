@@ -39,6 +39,11 @@ const extractErrorMessage = (error: unknown, fallback: string) => {
 
 const normalizeHora = (hora: string) => (hora.length === 5 ? `${hora}:00` : hora);
 
+type AdminToast = {
+  message: string;
+  type: 'success' | 'error';
+};
+
 const PanelAdmin = () => {
   const navigate = useNavigate();
   const user = authService.getUser();
@@ -50,7 +55,12 @@ const PanelAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState<AdminTabType | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<AdminToast | null>(null);
+
+  const showAdminToast = (message: string, type: AdminToast['type'] = 'success') => {
+    setToast(null);
+    window.setTimeout(() => setToast({ message, type }), 0);
+  };
 
   const mapSalas = useCallback((salasData: SalaFuncion[], localidadesData: Localidad[]): Sala[] => {
     const localidadesMap = new Map(localidadesData.map((localidad) => [localidad.id, localidad]));
@@ -200,9 +210,12 @@ const PanelAdmin = () => {
       });
 
       await cargarDatos();
+      showAdminToast('Sala creada exitosamente');
     } catch (err) {
       console.error('Error creando sala:', err);
-      setError(extractErrorMessage(err, 'No se pudo crear la sala.'));
+      const message = extractErrorMessage(err, 'No se pudo crear la sala.');
+      setError(message);
+      showAdminToast(message, 'error');
       throw err;
     } finally {
       setSavingSection(null);
@@ -222,9 +235,12 @@ const PanelAdmin = () => {
       });
 
       await cargarDatos();
+      showAdminToast('Sala actualizada exitosamente');
     } catch (err) {
       console.error('Error actualizando sala:', err);
-      setError(extractErrorMessage(err, 'No se pudo actualizar la sala.'));
+      const message = extractErrorMessage(err, 'No se pudo actualizar la sala.');
+      setError(message);
+      showAdminToast(message, 'error');
       throw err;
     } finally {
       setSavingSection(null);
@@ -238,9 +254,12 @@ const PanelAdmin = () => {
     try {
       await funcionesService.deleteSala(id);
       await cargarDatos();
+      showAdminToast('Sala eliminada exitosamente');
     } catch (err) {
       console.error('Error eliminando sala:', err);
-      setError(extractErrorMessage(err, 'No se pudo eliminar la sala.'));
+      const message = extractErrorMessage(err, 'No se pudo eliminar la sala.');
+      setError(message);
+      showAdminToast(message, 'error');
       throw err;
     } finally {
       setSavingSection(null);
@@ -262,9 +281,12 @@ const PanelAdmin = () => {
       });
 
       await cargarDatos();
+      showAdminToast('Funcion creada exitosamente');
     } catch (err) {
       console.error('Error creando funcion:', err);
-      setError(extractErrorMessage(err, 'No se pudo crear la funcion.'));
+      const message = extractErrorMessage(err, 'No se pudo crear la funcion.');
+      setError(message);
+      showAdminToast(message, 'error');
       throw err;
     } finally {
       setSavingSection(null);
@@ -286,16 +308,18 @@ const PanelAdmin = () => {
       });
 
       await cargarDatos();
+      showAdminToast('Funcion actualizada exitosamente');
     } catch (err) {
       console.error('Error actualizando funcion:', err);
-      setError(extractErrorMessage(err, 'No se pudo actualizar la funcion.'));
+      const message = extractErrorMessage(err, 'No se pudo actualizar la funcion.');
+      setError(message);
+      showAdminToast(message, 'error');
       throw err;
     } finally {
       setSavingSection(null);
     }
   };
 
-  // ========== NUEVA FUNCIÓN PARA ELIMINAR FUNCIÓN ==========
   const handleEliminarFuncion = async (id: string) => {
     setSavingSection('funciones');
     setError(null);
@@ -303,10 +327,12 @@ const PanelAdmin = () => {
     try {
       await funcionesService.deleteFuncion(id);
       await cargarDatos();
-      setToastMessage('Función eliminada exitosamente');
+      showAdminToast('Funcion eliminada exitosamente');
     } catch (err) {
       console.error('Error eliminando función:', err);
-      setError(extractErrorMessage(err, 'No se pudo eliminar la función.'));
+      const message = extractErrorMessage(err, 'No se pudo eliminar la funcion.');
+      setError(message);
+      showAdminToast(message, 'error');
       throw err;
     } finally {
       setSavingSection(null);
@@ -405,7 +431,7 @@ const PanelAdmin = () => {
         )}
       </div>
 
-      {toastMessage && <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </MainLayout>
   );
 };

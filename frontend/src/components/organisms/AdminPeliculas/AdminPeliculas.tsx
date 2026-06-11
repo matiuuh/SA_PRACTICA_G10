@@ -266,7 +266,6 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
                       onView={() => handleViewDetails(pelicula)}
                       onEdit={() => handleEdit(pelicula)}
                       onDelete={() => setPeliculaToDelete(pelicula)}
-                      itemLabel={`"${pelicula.titulo}"`}
                     />
                   </td>
                 </tr>
