@@ -77,11 +77,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
@@ -89,13 +84,11 @@ jobs:
 
       - name: Instalar dependencias
         working-directory: Backend/services/${{ matrix.service }}
-        run: |
-          echo "unsafe-perm=true" >> .npmrc
-          pnpm install --no-frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Build (compilacion TypeScript)
         working-directory: Backend/services/${{ matrix.service }}
-        run: pnpm build
+        run: npm run build
 
   test-services:
     name: Test ${{ matrix.service }}
@@ -111,11 +104,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
@@ -123,13 +111,11 @@ jobs:
 
       - name: Instalar dependencias
         working-directory: Backend/services/${{ matrix.service }}
-        run: |
-          echo "unsafe-perm=true" >> .npmrc
-          pnpm install --no-frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Ejecutar tests con cobertura
         working-directory: Backend/services/${{ matrix.service }}
-        run: pnpm test:cov
+        run: npm run test:cov
 
       - name: Subir reporte de cobertura
         if: always()
