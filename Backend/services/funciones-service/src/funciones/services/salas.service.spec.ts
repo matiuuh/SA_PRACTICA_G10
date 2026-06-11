@@ -42,7 +42,7 @@ describe('SalasService', () => {
 
   describe('create', () => {
     it('debe crear una sala nueva', async () => {
-      const result = await service.create({ nombre: 'Sala 2', capacidad: 80 });
+      const result = await service.create({ nombre: 'Sala 2', capacidad: 80, id_cine_externo: 'cine-uuid-1' });
       expect(result.nombre).toBe('Sala 2');
       expect(repo.save).toHaveBeenCalled();
     });
