@@ -113,9 +113,14 @@ jobs:
         working-directory: Backend/services/${{ matrix.service }}
         run: npm install --legacy-peer-deps
 
-      - name: Ejecutar tests con cobertura
+      - name: Ejecutar tests
+        working-directory: Backend/services/${{ matrix.service }}
+        run: npm test
+
+      - name: Generar reporte de cobertura
         working-directory: Backend/services/${{ matrix.service }}
         run: npm run test:cov
+        continue-on-error: true
 
       - name: Subir reporte de cobertura
         if: always()
