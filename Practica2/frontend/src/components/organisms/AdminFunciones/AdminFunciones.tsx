@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FaEdit, FaPlus, FaSearch, FaTrash, FaEye } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaSearch, FaTrash, FaEye, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaTheaterMasks, FaBuilding, FaTag, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 import Toast from '../../atoms/Toast/Toast';
 import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
@@ -34,14 +34,15 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
   onEliminar,
 }) => {
   const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingFuncion, setEditingFuncion] = useState<Funcion | null>(null);
+  const [selectedFuncion, setSelectedFuncion] = useState<Funcion | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<CreateFuncionForm>(initialForm);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedFuncion, setSelectedFuncion] = useState<Funcion | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const funcionesFiltradas = useMemo(() => {
@@ -90,6 +91,11 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
     setShowModal(true);
   };
 
+  const handleViewDetails = (funcion: Funcion) => {
+    setSelectedFuncion(funcion);
+    setShowDetailsModal(true);
+  };
+
   const handleDeleteClick = (funcion: Funcion) => {
     setSelectedFuncion(funcion);
     setShowDeleteConfirm(true);
@@ -118,21 +124,6 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const handleViewDetails = (funcion: Funcion) => {
-    alert(`
-🎬 DETALLES DE LA FUNCIÓN
-
-📽️ Película: ${funcion.peliculaNombre}
-🏢 Cine: ${funcion.localidadNombre}
-🎪 Sala: ${funcion.salaNombre}
-📅 Fecha: ${funcion.fecha}
-⏰ Hora: ${funcion.horario}
-💰 Precio: Q${funcion.precio}
-📌 Estado: ${funcion.activa ? 'Activa' : 'Inactiva'}
-🆔 ID: ${funcion.id}
-    `);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -277,6 +268,108 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           </div>
         )}
 
+        {/* Modal de detalles */}
+        {showDetailsModal && selectedFuncion && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-gradient-to-br from-cinema-dark-800 to-cinema-dark-900 rounded-2xl max-w-md w-full border border-cinema-gold-500/30 shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20 bg-cinema-dark-800/95">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <FaInfoCircle className="text-cinema-gold-500" />
+                  Detalles de la Función
+                </h2>
+                <button onClick={() => setShowDetailsModal(false)} className="text-gray-400 hover:text-white transition-colors text-2xl">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-cinema-gold-500/20 mb-3">
+                    <FaCalendarAlt className="text-3xl text-cinema-gold-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{selectedFuncion.peliculaNombre}</h3>
+                  <p className="text-gray-400">{selectedFuncion.fecha} - {selectedFuncion.horario}</p>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaFilm className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Película</p>
+                      <p className="text-white font-medium">{selectedFuncion.peliculaNombre}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaTheaterMasks className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Sala</p>
+                      <p className="text-white font-medium">{selectedFuncion.salaNombre}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaBuilding className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Cine</p>
+                      <p className="text-white font-medium">{selectedFuncion.localidadNombre}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaClock className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Fecha y Hora</p>
+                      <p className="text-white font-medium">{selectedFuncion.fecha} - {selectedFuncion.horario}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaTag className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Precio</p>
+                      <p className="text-cinema-gold-500 font-bold text-xl">Q{selectedFuncion.precio}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-cinema-dark-900/50 rounded-lg">
+                    <FaInfoCircle className="text-cinema-gold-500 text-lg" />
+                    <div>
+                      <p className="text-gray-400 text-xs">Estado</p>
+                      <p className={`font-medium ${selectedFuncion.activa ? 'text-green-500' : 'text-red-500'}`}>
+                        {selectedFuncion.activa ? 'Activa' : 'Inactiva'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-gray-500 text-xs">ID de la Función</p>
+                  <p className="text-gray-500 text-sm font-mono break-all">{selectedFuncion.id}</p>
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-cinema-gold-500/20 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleEdit(selectedFuncion);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-cinema-gold-500 text-black hover:bg-cinema-gold-400 transition-all flex items-center gap-2"
+                >
+                  <FaEdit /> Editar
+                </button>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modal de creación/edición */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -381,7 +474,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                     disabled={isSaving}
                     className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSaving ? 'Guardando...' : editingFuncion ? 'Actualizar' : 'Crear'}
+                    {isSaving ? <FaSpinner className="animate-spin mx-auto" /> : (editingFuncion ? 'Actualizar' : 'Crear')}
                   </button>
                 </div>
               </form>
