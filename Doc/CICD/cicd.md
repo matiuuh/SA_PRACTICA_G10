@@ -1,5 +1,10 @@
 # CI/CD — Integración y Entrega Continua
 
+
+## Diagrama de Flujo de CI/CD
+
+![Flujo CI/CD](img/FLUJOCI_CD.svg)
+
 ## Justificacion de herramientas
 
 ---
