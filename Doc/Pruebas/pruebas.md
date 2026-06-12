@@ -110,6 +110,59 @@ Todos los servicios tienen configurado un umbral minimo del **75%** en las sigui
 | Lines       | 75%    |
 | Statements  | 75%    |
 
+## Justificación de cobertura: por qué estas pruebas y no otras
+
+Las pruebas unitarias cubren exclusivamente la **capa de servicios** (lógica de negocio) y los **controladores** en los casos donde su lógica no es trivial. Se eligieron estas capas porque son donde reside el comportamiento observable del sistema: validaciones de negocio, manejo de errores, orquestación de dependencias y transformación de datos.
+
+### ¿Por qué solo servicios y controladores?
+
+- **Entidades / DTOs**: Son estructuras de datos sin lógica; probarlas no aporta valor.
+- **Módulos de NestJS** (`.module.ts`): Solo registran proveedores; no contienen lógica ejecutable.
+- **Estrategias de autenticación** (`JwtStrategy`, `LocalStrategy`): Delegan completamente en Passport; la lógica real está en `AuthService`, que sí se prueba.
+- **Controladores con delegación pura** (como `AuthController`): Se prueban para confirmar que la firma del endpoint delega correctamente al servicio, sin lógica adicional que podría quedar oculta.
+
+### ¿Por qué estas pruebas específicas y no otras?
+
+Cada caso de prueba fue seleccionado para cubrir **al menos un camino de código diferente** (branch coverage). La regla aplicada fue: si hay un `if`, un `throw`, o una bifurcación por resultado de base de datos, se escribe un test por cada rama posible. Esto explica por qué cada método tiene invariablemente un test del camino feliz y uno o más tests de camino de error.
+
+#### auth-service
+
+| Archivo | Qué cubre | Por qué estas pruebas |
+|---|---|---|
+| `auth.controller.spec.ts` | `register`, `login`, `health`, `profile` | Verifica que el controlador delega sin transformar la respuesta; detectaría si alguien agrega lógica accidental en el controlador |
+| `auth.service.spec.ts` | `register` (correo nuevo / correo duplicado), `login` (credenciales válidas / usuario inexistente / contraseña incorrecta), `validateUser` (válido / sin usuario / contraseña mala), `getJwtConfig` | Cada rama del `if` o del `findByEmail` que puede devolver `null` o un usuario genera un test separado; `bcrypt.hash` y `bcrypt.compare` se mockean para no depender de operaciones criptográficas reales |
+| `users.service.spec.ts` | `create` (rol existente / rol nuevo / rol del DTO), `findByEmail` (existe / no existe), `findById` (existe / no existe) | El método `create` tiene tres ramas según si el rol ya existe o no; `findById` lanza `NotFoundException` solo en el camino null, por eso hay dos tests |
+
+#### funciones-service
+
+| Archivo | Qué cubre | Por qué estas pruebas |
+|---|---|---|
+| `peliculas.service.spec.ts` | CRUD completo de películas + validación de título duplicado + integridad referencial con categoría y tipo de cartelera + bloqueo de eliminación con funciones activas | `remove` tiene dos ramas: sin funciones activas (se elimina) y con funciones activas (lanza `BadRequestException`); `create` y `update` verifican que los campos de texto se reciben con `trim()` antes de guardarse |
+| `categorias.service.spec.ts` | `findAll`, `findOne` (existe / no existe), `create` (nueva / duplicada) | Servicio simple de catálogo: solo se testean las dos ramas de `findOne` y las dos de `create` porque son los únicos puntos de fallo posibles |
+| `tipo-cartelera.service.spec.ts` | Idéntico a categorías, misma estructura | Ambos son catálogos con la misma lógica; se testean igual para mantener cobertura simétrica |
+| `salas.service.spec.ts` | `findAll`, `findOne`, `create`, `update`, `remove` | La sala en el contexto de funciones-service es más simple que en localidades-service (no tiene ciudad); el test de `update` verifica la actualización parcial de campos |
+| `funciones.service.spec.ts` | `findAll`, `findBySala`, `findByPelicula`, `findByCine`, `findOne`, `create` (sin conflicto / sala ya ocupada), `remove` (sin boletos / con boletos / no existe), `update` (campos simples / cambia película y sala / sin conflicto de horario / con conflicto) | `remove` consulta al reservas-service via `fetch` para verificar boletos; se mockea `global.fetch` para cubrir ambas respuestas sin depender de red. `update` tiene cuatro tests porque combina múltiples ramas independientes (campos opcionales + verificación de conflicto de horario) |
+
+#### localidades-service
+
+| Archivo | Qué cubre | Por qué estas pruebas |
+|---|---|---|
+| `localidades.service.spec.ts` | CRUD de ciudades, cines y salas; relaciones entre entidades (ciudad → cine → sala); campos opcionales (`tipoSala`) | Se prueba cada nivel jerárquico por separado porque cada uno tiene su propia `NotFoundException`. El caso de `tipoSala` undefined prueba el branch donde el valor es omitido vs proporcionado, ya que el servicio lo convierte en `null` explícitamente |
+
+#### pagos-service
+
+| Archivo | Qué cubre | Por qué estas pruebas |
+|---|---|---|
+| `pagos.service.spec.ts` | CRUD de métodos y estados, creación de pago con estado por defecto / estado específico / método inexistente / estado inexistente, `changeEstado`, `processPaymentRequest` para TARJETA (válida / terminada en 0000 / datos incompletos) y PAYPAL (con email / sin email / email con "fail") | `processPaymentRequest` es el método más complejo del sistema: contiene lógica de simulación de pagos con múltiples bifurcaciones. Cada test cubre una condición diferente del simulador. Sin estos tests, cambios en las reglas de validación de tarjetas o PayPal pasarían desapercibidos |
+
+#### reservas-service
+
+| Archivo | Qué cubre | Por qué estas pruebas |
+|---|---|---|
+| `reservas.service.spec.ts` | `findReservaById`, `findBoletoById`, `hasBoletosByFuncion` (existe / no existe), `createAsiento` (nuevo / duplicado), `createEstado` (nuevo / duplicado), `createReserva` (válida / asiento no existe / asiento ya reservado), `confirmReserva` (genera boleto / boleto ya existe), `rejectReserva` (con detalles / sin detalles), `findAsientosByFuncion` (libre / propio / de otro usuario), `createCheckout`, `findOrCreateEstado` | Este servicio orquesta asientos, estados y comunicación con RabbitMQ. Las pruebas de `createReserva` cubren las tres ramas del proceso de reserva: asientos válidos, asientos inexistentes y asientos ya ocupados. `findAsientosByFuncion` tiene tres casos porque cada uno prueba un valor distinto del par `{ocupado, propio}` |
+
+---
+
 ### Resumen de pruebas por servicio
 
 | Servicio            | Tests | Archivos de prueba |

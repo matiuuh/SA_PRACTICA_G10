@@ -84,7 +84,7 @@ export class LocalidadesController {
 
 
 
-  // Agrega estos métodos al LocalidadesController
+  // Métodos adicionales al LocalidadesController
 
 @Get('cines/:id')
 findCineById(@Param('id', ParseUUIDPipe) id: string) {
