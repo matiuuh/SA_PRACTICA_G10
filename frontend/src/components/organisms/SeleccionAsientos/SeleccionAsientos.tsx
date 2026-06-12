@@ -24,7 +24,33 @@ interface SeleccionAsientosProps {
 }
 
 const ROW_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const RESERVAS_WS_URL = import.meta.env.VITE_RESERVAS_WS_URL || 'http://localhost:3004';
+const RESERVAS_WS_URL = (() => {
+  const explicitWsUrl = import.meta.env.VITE_RESERVAS_WS_URL?.trim();
+
+  if (explicitWsUrl) {
+    return explicitWsUrl;
+  }
+
+  const apiGatewayUrl = import.meta.env.VITE_API_GATEWAY_URL?.trim();
+
+  if (apiGatewayUrl) {
+    try {
+      const parsedApiGatewayUrl = new URL(apiGatewayUrl);
+
+      if (['localhost', '127.0.0.1'].includes(parsedApiGatewayUrl.hostname)) {
+        return `${parsedApiGatewayUrl.protocol}//${parsedApiGatewayUrl.hostname}:3004`;
+      }
+    } catch {
+      // Ignore malformed env values and fall back to local defaults.
+    }
+  }
+
+  if (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+    return `${window.location.protocol}//${window.location.hostname}:3004`;
+  }
+
+  return 'http://localhost:3004';
+})();
 
 const createSeatBlueprint = (capacidadSala: number) => {
   const seatsPerRow = 12;
