@@ -7,8 +7,17 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Habilitar CORS para el frontend
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3006',
+    'http://localhost:3000',
+  ];
+
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl) allowedOrigins.push(frontendUrl);
+
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3006', 'http://localhost:3000'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Service-Name'],
