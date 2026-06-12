@@ -711,7 +711,7 @@
 | **ID** | CDU-005.3 |
 | **Nombre** | Editar Sucursal de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador modificar los datos de una sucursal existente (dirección,nombre, ciudad). |
+| **Descripción** | Permite al administrador modificar los datos de una sucursal existente dirección,nombre, ciudad. |
 | **Precondiciones** | El administrador tiene una sesión activa. La sucursal existe en el sistema. |
 | **Postcondiciones** | Los datos de la sucursal quedan actualizados en el sistema. |
 
@@ -729,13 +729,13 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | No hay cambios realizados | El sistema no modifica la sucursal y mantiene la información actual. |
+| FA-01 | Se cancela la edición | El sistema no modifica la sucursal y mantiene la información actual. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Campos inválidos tras edición | El sistema resalta los campos inválidos y solicita corrección. |
+| FE-01 | Campos sin llenar | El sistema resalta los campos vacíos y resalta para completarlos. |
 
 ---
 
@@ -746,8 +746,8 @@
 | **ID** | CDU-005.4 |
 | **Nombre** | Eliminar Sucursal de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador eliminar una sucursal siempre que no exista actividad pendiente (funciones o reservas) asociada a sus salas. |
-| **Precondiciones** | El administrador tiene una sesión activa. La sucursal no debe tener funciones programadas ni reservas asociadas en sus salas. |
+| **Descripción** | Permite al administrador eliminar una sucursal. |
+| **Precondiciones** | El administrador tiene una sesión activa. |
 | **Postcondiciones** | La sucursal queda eliminada del sistema y ya no aparece en búsquedas ni listados. |
 
 **Flujo principal:**
@@ -757,8 +757,7 @@
 | 1 | Administrador | Accede al listado de sucursales y selecciona la sucursal a eliminar. |
 | 2 | Sistema | Solicita confirmación al administrador. |
 | 3 | Administrador | Confirma la eliminación. |
-| 4 | Sistema | Verifica que no existan funciones ni reservas asociadas. |
-| 5 | Sistema | Elimina la sucursal y muestra un mensaje de confirmación. |
+| 4 | Sistema | Elimina la sucursal y muestra un mensaje de confirmación. |
 
 **Flujos alternativos:**
 
@@ -770,7 +769,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Existen funciones o reservas asociadas | El sistema impide la eliminación e informa al administrador de las dependencias existentes. |
+| FE-01 | No hay conexión a base de datos | El sistema muestra un mensaje de error. |
 
 ---
 
@@ -780,31 +779,29 @@
 |-------|-------------|
 | **ID** | CDU-005.5 |
 | **Nombre** | Visualizar Salas de Cine |
-| **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar las salas disponibles en una sucursal, incluyendo capacidad, tipo (2D/3D) y mapa de asientos. |
-| **Precondiciones** | El cliente ha seleccionado una sucursal. |
-| **Postcondiciones** | El cliente visualiza las salas y puede seleccionar una para ver funciones o mapa de asientos. |
+| **Actor** | Administrador |
+| **Descripción** | Permite al Administrador consultar las salas disponibles en una sucursal |
+| **Precondiciones** | El administrador está en la vista de salas. |
+| **Postcondiciones** | El administrador visualiza las salas y puede ver una vista detallada. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente |Selecciona el cine que desea visualizar |
-| 2 | Sistema | el sistema muestra las funciones disponibles |
-| 3 | Cliente | Selecciona una funcion para ver el mapa de asientos de dicha funcion. |
-| 4 | Sistema | Despliega el mapa de asientos con cada estado |
+| 1 | Administrador |Selecciona la sala de cine que desea visualizar detalladamente |
+| 2 | Sistema | el sistema muestra la información detallada |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | No hay funciones registradas en la sucursla | el sistema no muestra las funciones por ende no meustre las salas disponibles |
+| FA-01 | No hay sucursales de cine | el sistema no muestra las sucursales de cine por ende no meustre las salas disponibles |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Error al recuperar información de salas | El sistema muestra un mensaje de error e invita a reintentar. |
+| FE-01 | Error al recuperar información de salas | El sistema muestra un mensaje de error. |
 
 ---
 
@@ -815,7 +812,7 @@
 | **ID** | CDU-005.6 |
 | **Nombre** | Añadir Sala de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador crear una nueva sala dentro de una sucursal, definiendo su nombre, capacidad, tipo de proyección y mapa de asientos. |
+| **Descripción** | Permite al administrador crear una nueva sala dentro de una sucursal, definiendo su sucursal, nombre de la sala, tipo de proyección y capacidad. |
 | **Precondiciones** | El administrador tiene una sesión activa y la sucursal existe. |
 | **Postcondiciones** | La sala queda registrada y disponible para asignar funciones. |
 
@@ -823,8 +820,8 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Accede al panel de la sucursal y selecciona "Añadir sala". |
-| 2 | Administrador | Ingresa cine, capacidad,nombre de la sala, tipo de proyección  |
+| 1 | Administrador | Accede al panel de la sucursal y selecciona "Agregar sala". |
+| 2 | Administrador | Ingresa sucursal, nombre de la sala, tipo de proyección y capacidad |
 | 3 | Sistema | Valida los datos y crea la sala en la sucursal. |
 | 4 | Sistema | Muestra confirmación y la nueva sala en el listado. |
 
@@ -832,7 +829,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | Omite mapa de asientos | El sistema permite crear la sala con una configuración predeterminada y editarla luego. |
+| FA-01 | Cancela la agregación de sala | El sistema descarta la acción y vuelve al listado de salas. |
 
 **Flujos de excepción:**
 
@@ -849,8 +846,8 @@
 | **ID** | CDU-005.7 |
 | **Nombre** | Editar Sala de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador modificar la configuración de una sala (capacidad, disposición de asientos, tipo de proyección). |
-| **Precondiciones** | El administrador tiene una sesión activa y la sala existe. No debe tener funciones activas si el cambio afecta mapa o capacidad. |
+| **Descripción** | Permite al administrador modificar la configuración de una sala, por ejemplo su sucursal de cine, su nombre , su tipo y su capicidad. |
+| **Precondiciones** | El administrador tiene una sesión activa y la sala existe.|
 | **Postcondiciones** | La sala queda actualizada con la nueva configuración. |
 
 **Flujo principal:**
@@ -873,7 +870,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | La sala tiene funciones activas que impiden cambiar el mapa | El sistema impide el cambio y sugiere desprogramar o mover funciones primero. |
+| FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
 
 ---
 
@@ -884,8 +881,8 @@
 | **ID** | CDU-005.8 |
 | **Nombre** | Eliminar Sala de Cine |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador eliminar una sala siempre que no existan funciones ni reservas asociadas a la misma. |
-| **Precondiciones** | El administrador tiene una sesión activa. La sala no debe tener funciones programadas ni reservas asociadas. |
+| **Descripción** | Permite al administrador eliminar una sala. |
+| **Precondiciones** | El administrador tiene una sesión activa. Debe existir una sala |
 | **Postcondiciones** | La sala queda eliminada y ya no puede ser usada para programar funciones. |
 
 **Flujo principal:**
@@ -893,7 +890,7 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Selecciona la sala a eliminar desde la seccion de salas   . |
-| 2 | Sistema | Solicita confirmación y verifica dependencias (funciones, reservas). |
+| 2 | Sistema | Solicita confirmación. |
 | 3 | Administrador | Confirma la eliminación. |
 | 4 | Sistema | Elimina la sala y muestra confirmación. |
 
@@ -907,6 +904,6 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Existen funciones o reservas asociadas | El sistema impide la eliminación e informa de las dependencias a resolver. |
+| FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
 
 [Volver a Documentacion](../Documentación.md)
