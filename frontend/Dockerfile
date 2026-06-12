@@ -2,6 +2,12 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+ARG VITE_API_GATEWAY_URL=http://localhost:3006
+ARG VITE_RESERVAS_WS_URL=http://localhost:3004
+
+ENV VITE_API_GATEWAY_URL=$VITE_API_GATEWAY_URL
+ENV VITE_RESERVAS_WS_URL=$VITE_RESERVAS_WS_URL
+
 RUN corepack enable
 RUN pnpm config set registry https://registry.npmmirror.com
 

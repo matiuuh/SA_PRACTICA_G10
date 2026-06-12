@@ -224,6 +224,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST }}:3006
+            VITE_RESERVAS_WS_URL=${{ secrets.RESERVAS_WS_URL }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
   deploy:
