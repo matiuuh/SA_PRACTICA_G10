@@ -142,7 +142,7 @@
 | **ID** | CDU-002.1 |
 | **Nombre** | Modificar Cartelera |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador modificar o quitar películas de la cartelera activa, controlando qué títulos son visibles para los clientes según su tipo de proyección. |
+| **Descripción** | Permite al administrador modificar la cartelera películas activas. |
 | **Precondiciones** | El administrador tiene una sesión activa. Existen películas registradas en el sistema. |
 | **Postcondiciones** | La cartelera queda actualizada y los cambios son visibles para los clientes de forma inmediata. |
 
@@ -373,7 +373,7 @@
 | **ID** | CDU-003.1 |
 | **Nombre** | Registrar Función |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador programar una nueva función asignando una película a una sala, fecha, horario y precio en específicos por medio de un formulario. |
+| **Descripción** | Permite al administrador programar una nueva función asignando una película a una sala, fecha, horario y precio en específicos, si está activa o no por medio de un formulario. |
 | **Precondiciones** | El administrador tiene una sesión activa. Existen películas y salas registradas en el sistema. |
 | **Postcondiciones** | La función queda registrada y disponible para que los clientes consulten y compren boletos. |
 
@@ -434,6 +434,37 @@
 |----|-----------|--------|
 | FE-01 | No se establece conexión a la base de datos | El sistema muestra un mensaje de error |
 
+### CDU-003.3: Eliminar Función de cine
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-003.3 |
+| **Nombre** | Eliminar Función |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador eliminar una función existente, siempre que no tenga boletos vendidos. |
+| **Precondiciones** | El administrador tiene una sesión activa y la función existe en el sistema sin boletos vendidos. |
+| **Postcondiciones** | La función queda eliminada del sistema. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede al listado de funciones y selecciona la función a eliminar. |
+| 2 | Sistema | Verifica que no existan boletos vendidos para la función. |
+| 3 | Sistema | Elimina la función de la base de datos. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El administrador puede cancelar y el sistema descarta la eliminación. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No se establece conexión a la base de datos | El sistema muestra un mensaje de error |
+
 ## Reserva y Compra de Boletos
 
 ![CDU004](./img/Practica-CDU004.drawio.svg)
@@ -443,11 +474,11 @@
 | Campo | Descripción |
 |-------|-------------|
 | **ID** | CDU-004.1 |
-| **Nombre** | Seleccionar Ubicación |
+| **Nombre** | Seleccionar asientos |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente seleccionar su ciudad para visualizar dinámicamente los cines disponibles y sus funciones en dicha localidad. |
+| **Descripción** | Permite al cliente seleccionar su ciudad para visualizar dinámicamente los cines disponibles, selecciona una película de la cartelera y selecciona una función en dicha localidad, luego selecciona sus asientos. |
 | **Precondiciones** | Existe al menos un cine registrado con funciones disponibles en el sistema. |
-| **Postcondiciones** | El sistema muestra los cines disponibles en la ciudad seleccionada. |
+| **Postcondiciones** | El sistema reserva temporalmente esos asientos hasta que se confirme una compra o el cliente desista. |
 
 **Flujo principal:**
 
@@ -456,7 +487,12 @@
 | 1 | Cliente | Accede a la página principal de la plataforma. |
 | 2 | Cliente | Selecciona su ciudad desde el listado de ciudades disponibles. |
 | 3 | Sistema | Recupera y muestra los cines disponibles en la ciudad seleccionada. |
-| 4 | Cliente | Selecciona un cine para ver sus funciones disponibles. |
+| 4 | Sistema | Muestra la cartelera disponible para el cine seleccionado. |
+| 5 | Cliente | Selecciona una película de la cartelera |
+| 6 | Sistema | Muestra las funciones disponibles para la película seleccionada |
+| 7 | Cliente | Selecciona una función de la lista |
+| 8 | Sistema | Muestra el mapa de asientos disponible para la función seleccionada |
+| 9 | Cliente | Selecciona los asientos deseados |
 
 **Flujos alternativos:**
 
@@ -468,77 +504,69 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | No hay cines disponibles en la ciudad seleccionada | En el paso 3, el sistema muestra un mensaje indicando que no hay cines disponibles en esa localidad. |
+| FE-01 | El sistema no puede conectarse a la base de datos | El sistema muestra un mensaje de error |
 
 ---
 
-### CDU-004.2: Visualizar Funciones Disponibles
+### CDU-004.2: Mostrar asientos Disponibles
 
 | Campo | Descripción |
 |-------|-------------|
 | **ID** | CDU-004.2 |
-| **Nombre** | Visualizar Funciones Disponibles |
+| **Nombre** | Mostrar asientos Disponibles |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar las funciones disponibles en el cine seleccionado, con sus horarios, sala y disponibilidad de asientos. |
-| **Precondiciones** | El cliente ha seleccionado un cine. |
-| **Postcondiciones** | El cliente visualiza las funciones disponibles y puede seleccionar una para continuar con la compra. |
+| **Descripción** | Permite al cliente consultar los asientos disponibles para una función seleccionada. |
+| **Precondiciones** | El cliente ha seleccionado una función. |
+| **Postcondiciones** | El cliente visualiza los asientos disponibles y puede seleccionar uno para continuar con la compra. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Selecciona un cine. |
-| 2 | Sistema | Recupera y muestra las funciones disponibles en ese cine. |
-| 3 | Cliente | Filtra las funciones por tipo de cartelera |
-| 4 | Cliente | Selecciona una función específica para visualizar los horarios o ver detalles |
+| 1 | Sistema | Muestra el mapa de asientos disponible para la función seleccionada |
+| 2 | Sistema | Está constantemente actualizando el mapa de asientos para reflejar los asientos ocupados |
+| 3 | Cliente | selecciona sus asientos |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente aplica filtro por película | En el paso 3, el sistema muestra únicamente las funciones correspondientes a la película seleccionada. |
-| FA-02 | El cliente aplica filtro por categoria | En el paso 3, el sistema muestra únicamente las funciones programadas para esa categoria |
-| FA-03 | El cliente regresa a la selección de cine | En cualquier paso, el cliente puede volver al listado de cines sin seleccionar función. |
+| FA-01 | Decisión de cliente | El cliente puede cambiar de función y el sistema actualiza el mapa de asientos. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | No hay funciones disponibles en el cine seleccionado | En el paso 2, el sistema muestra un mensaje indicando que no hay funciones programadas. |
+| FE-01 | No hay funciones disponibles en el cine seleccionado | El sistema muestra un mensaje indicando que no hay funciones programadas. |
 
 ---
 
-### CDU-004.3: Seleccionar Asientos
+### CDU-004.3: Confirmar compra de asientos
 
 | Campo | Descripción |
 |-------|-------------|
 | **ID** | CDU-004.3 |
-| **Nombre** | Seleccionar Asientos |
+| **Nombre** | Confirmar compra de asientos |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente elegir sus asientos mediante un mapa interactivo de la sala. La disponibilidad se actualiza en tiempo real a través de WebSocket. |
-| **Precondiciones** | El cliente tiene una sesión activa y ha seleccionado una función. |
-| **Postcondiciones** | Los asientos seleccionados quedan marcados como no disponibles en tiempo real para el resto de usuarios. El cliente avanza al siguiente paso del flujo de compra. |
+| **Descripción** | Permite al cliente confirmar la compra de los asientos seleccionados. |
+| **Precondiciones** | El cliente tiene una sesión activa y ha seleccionado asientos para su función. |
+| **Postcondiciones** | Los asientos seleccionados quedan marcados como no disponibles para el resto de usuarios. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-
-| 1 | Cliente | selecciona el horario de una pelicula |
-| 2 | Cliente | Accede al mapa interactivo de la sala para la función seleccionada. |
-| 2 | Sistema | Establece una conexión WebSocket con el cliente para la sala correspondiente. |
-| 3 | Sistema | Muestra el estado actualizado de cada asiento: Disponible, Seleccionado, ocupado o tus asientos |
-| 4 | Cliente | Selecciona uno o más asientos disponibles. |
-| 5 | Sistema | Marca los asientos como Seleccionados y transmite el cambio de estado vía WebSocket a todos los clientes conectados a esa función. |
-| 6 | Sistema | Refleja visualmente en el mapa de todos los usuarios que los asientos ya no están disponibles. |
-| 7 | Cliente | Confirma su selección y avanza al siguiente paso. |
+| 1 | Cliente | Confirma la selección de asientos pulsando el botón confirmar a pago |
+| 2 | Sistema | Procesa la confirmación y marca los asientos como seleccionados |
+| 3 | Sistema | Redirige al cliente al formulario de pago |
+| 4 | Cliente | Llena el formulario de pago |
+| 5 | Cliente | Realiza el pago en el botón pagar visualizando la cantidad |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente deselecciona un asiento | En el paso 4, el sistema vuelve el asiento a estado Disponible y lo transmite vía WebSocket a todos los usuarios conectados. |
-| FA-02 | El cliente decide no continuar | El sistema libera los asientos seleccionados y notifica el cambio a todos los usuarios conectados vía WebSocket. |
+| FA-01 | El cliente cancela el pago | El sistema redirige al cliente a la página anterior sin procesar la compra, y dejando seleccionados los asientos que el cliente seleccionó anteriormente |
 
 **Flujos de excepción:**
 
@@ -548,45 +576,30 @@
 
 ---
 
-### CDU-004.4: Procesar Compra 
+### CDU-004.4: Confirmar transacción bancaria
 
 | Campo | Descripción |
 |-------|-------------|
 | **ID** | CDU-004.4 |
-| **Nombre** | Procesar Compra y Emitir Boleto |
+| **Nombre** | Confirmar transacción bancaria |
 | **Actor** | Cliente, Sistema de Pagos |
-| **Descripción** | Permite al cliente confirmar su selección de asientos, procesar el pago a través del sistema externo y recibir su boleto digital como resultado de una transacción exitosa. |
-| **Precondiciones** | El cliente tiene una sesión activa y tiene asientos seleccionados en el mapa interactivo. |
+| **Descripción** | Permite al cliente confirmar su selección de asientos y procesar el pago a través del sistema de pagos. |
+| **Precondiciones** | El cliente tiene una sesión activa y tiene asientos seleccionados en el mapa interactivo y confirma que desea pagar. |
 | **Postcondiciones** | El pago queda registrado, los asientos pasan a estado Ocupado y el cliente recibe su boleto digital. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-
-
-| 1 | Cliente | Revisa el resumen de su compra y confirma los detalles. |
-| 2 | Sistema | Envía la solicitud de compra a la cola de mensajería para su validación. |
-| 3 | Sistema | El consumidor de la cola valida que los asientos siguen bloqueados y disponibles. |
-| 4 | Cliente | Ingresa los datos de pago y confirma la transacción. |
-| 5 | Sistema | Envía la solicitud de cobro al Sistema de Pagos. |
-| 6 | Sistema de Pagos | Procesa la transacción y retorna el resultado al sistema. |
-| 7 | Sistema | Registra el pago, cambia el estado de los asientos a Ocupado y genera el boleto digital. |
-| 8 | Sistema | Muestra el boleto al cliente con los detalles de la función, asientos y número de boleta. |
-
-**Flujos alternativos:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FA-01 | El cliente cancela antes de pagar | En el paso 4, el sistema conserva los asientos seleccionados y regresa al mapa de asientos. |
+| 1 | Sistema | Envía la solicitud de cobro al Sistema de Pagos. |
+| 2 | Sistema de Pagos | Procesa la transacción y retorna el resultado al sistema. |
+| 3 | Sistema | Registra el pago, cambia el estado de los asientos a Ocupado.|
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-
-| FE-02 | El pago es rechazado por el Sistema de Pagos | En el paso 6, el sistema notifica el rechazo al cliente, mantiene el bloqueo temporal activo y permite reintentar. |
-| FE-03 | Error de conexión con el Sistema de Pagos | En el paso 5, el sistema encola el reintento de cobro y notifica al cliente que la transacción está en proceso. |
+| FE-01 | Error de conexión con el Sistema de Pagos | El sistema encola el reintento de cobro |
 
 ### CDU-004.5: Emitir Boleto
 
@@ -604,9 +617,9 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Sistema | Recibe la confirmación de pago exitoso del Sistema de Pagos. |
-| 2 | Sistema | Crea el boleto digital con los datos de la función (película, fecha, hora), asientos seleccionados,total y código de boleta. |
+| 2 | Sistema | Crea el boleto digital con los datos de la función película, fecha, hora, asientos seleccionados,total y numero de boleto, tarjeta de credito utilizada, y fecha de la transacción. |
 | 3 | Sistema | Registra la transacción completa en la base de datos asociándola al cliente. |
-| 4 | Cliente | Visualiza y/o descarga el boleto digital. |
+| 4 | Cliente | Visualiza, descarga o imprime el boleto digital. |
 
 **Flujos alternativos:**
 
@@ -618,8 +631,8 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Error al generar el código de confirmación | En el paso 2, el sistema reintenta la generación y si persiste el error |
-| FE-03 | Error de conexión con la base de datos | En el paso 4, el sistema encola el registro para procesarlo posteriormente y continúa con la emisión del boleto. |
+| FE-01 | Error al generar el código de confirmación | El sistema reintenta la generación y si persiste el error |
+| FE-03 | Error de conexión con la base de datos | El sistema encola el registro para procesarlo posteriormente y continúa con la emisión del boleto. |
 
 ---
 
@@ -633,25 +646,19 @@
 |-------|-------------|
 | **ID** | CDU-005.1 |
 | **Nombre** | Visualizar Sucursales de Cine |
-| **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar las sucursales de cine disponibles en una ciudad |
-| **Precondiciones** | Existe al menos una sucursal registrada en el sistema. |
-| **Postcondiciones** | El cliente visualiza la lista de sucursales y puede seleccionar una para ver sus salas y funciones disponibles. |
+| **Actor** | Administrador|
+| **Descripción** | Permite al administrador consultar las sucursales de cine disponibles en una ciudad |
+| **Precondiciones** | El administrador tiene una sesión activa. |
+| **Postcondiciones** | El administrador visualiza la lista de sucursales y puede seleccionar una para ver su vista detllada. |
 
 **Flujo principal:**
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Cliente | Accede a la sección de sucursales desde la página principal. |
-| 2 | Sistema | Recupera y muestra las sucursales filtradas por ciudad |
-| 3 | Cliente | el cliente visualiza las sucursales disponibles por ciudad |
-
-
-**Flujos alternativos:**
-
-| ID | Condición | Acción |
-|----|-----------|--------|
-| FA-01 | El cliente no selecciona ciudad | El sistema indica que se debe de seleccionar una ciudad y un cine |
+| 1 | Administrador | Accede a la sección de sucursales desde la página principal. |
+| 2 | Sistema | Recupera y muestra las sucursales |
+| 3 | Administrador | Visualiza las sucursales disponibles |
+|4 | Administrador | Selecciona una sucursal para ver su vista detallada |
 
 **Flujos de excepción:**
 
@@ -676,8 +683,8 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Accede al panel de administración y selecciona "Añadir Cine". |
-| 2 | Administrador | Ingresa nombre, dirección y ciudad. |
+| 1 | Administrador | Accede al panel de administración y selecciona "Agregar Cine". |
+| 2 | Administrador | Ingresa nombre, dirección y  una nueva ciudad. |
 | 3 | Sistema | Valida los campos obligatorios . |
 | 4 | Sistema | Crea la sucursal en la base de datos. |
 | 5 | Sistema | Muestra un mensaje de confirmación y lista la nueva sucursal. |
@@ -686,7 +693,7 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 |no se crea una nueva sucursal | el administrador decide no realizar algun cambio |
+| FA-01 | El administrador decide crear una nueva sucursal desde una ciudad existente | El sistema muestra la lista de ciudades disponibles y permite seleccionar una y continua con el formulario. |
 
 **Flujos de excepción:**
 

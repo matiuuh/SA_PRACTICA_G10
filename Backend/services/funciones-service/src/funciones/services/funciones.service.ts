@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { CreateFuncionDto } from '../dto/create-funcion.dto';
@@ -14,6 +20,7 @@ export class FuncionesService {
     private readonly repo: Repository<Funcion>,
     private readonly peliculasService: PeliculasService,
     private readonly salasService: SalasService,
+    private readonly configService: ConfigService,
   ) {}
 
   findAll(): Promise<Funcion[]> {
@@ -74,7 +81,32 @@ export class FuncionesService {
 
   async remove(id: string): Promise<void> {
     const funcion = await this.findOne(id);
-    await this.repo.remove(funcion);  // ✅ CORREGIDO: usar 'repo' en lugar de 'funcionesRepository'
+
+    if (await this.hasAssociatedBoletos(id)) {
+      throw new ConflictException(
+        'No se puede eliminar la funcion porque tiene boletos asociados.',
+      );
+    }
+
+    await this.repo.remove(funcion);
+  }
+
+  private async hasAssociatedBoletos(id: string): Promise<boolean> {
+    const reservasServiceUrl =
+      this.configService.get<string>('RESERVAS_SERVICE_URL') || 'http://reservas-service:3004';
+    const response = await fetch(
+      `${reservasServiceUrl}/reservas/internal/funciones/${id}/boletos`,
+    ).catch(() => null);
+
+    if (!response?.ok) {
+      throw new ServiceUnavailableException(
+        'No se pudo validar si la funcion tiene boletos asociados.',
+      );
+    }
+
+    const data = (await response.json()) as { hasBoletos?: boolean };
+
+    return data.hasBoletos === true;
   }
 
   async update(id: string, dto: UpdateFuncionDto): Promise<Funcion> {
