@@ -2,21 +2,21 @@
 
 El modelo de vistas 4+1 es una metodología de diseño de arquitectura de software, propuesta por Philippe Kruchten, que permite describir y comprender la arquitectura de un sistema de forma integral. Dado que un sistema de software es complejo y debe satisfacer los intereses de diversos actores como usuarios finales, desarrolladores, integradores, administradores de sistemas, este modelo utiliza perspectivas separadas pero complementarias, permitiendo abstraer detalles innecesarios en cada contexto.
 
-Las vistas contempladas son: Lógica, Procesos, Desarrollo (Componentes), Física (Despliegue) y la vista de Escenarios, que actúa como el hilo conductor que valida todas las demás.
+Las vistas contempladas son: Lógica, Procesos, Desarrollo, Física y la vista de Escenarios, que actúa como el hilo conductor que valida todas las demás.
 
 ![Diagrama de Vistas 4+1](./img/Vista_4_+_1.drawio.svg)
 
 ## 1. Vista Lógica
 La vista lógica está orientada principalmente a los **usuarios finales** y analistas del sistema. Se encarga de capturar y modelar cómo el sistema satisface los requerimientos funcionales también concido como lo que el sistema debe hacer. En esta vista, se identifican las abstracciones clave a través de clases, interfaces, módulos y objetos del dominio, estableciendo sus relaciones, asociaciones y dependencias fundamentales sin preocuparse por los detalles técnicos de bajo nivel o el despliegue físico.
 
-![Vista Lógica](./img/Practica1-Vista-Lógica.drawio.svg)
+![Vista Lógica](./img/Practica-Vista-Lógica.drawio.svg)
 
 En este caso se desarrolló una vista lógica basada en el modelo de dominio del sistema FilmStars, identificando los servicios principales como Usuario Función, Reservas, Localidad y Pago. Se establecen las relaciones entre estas entidades. Por ejemplo, un Usuario puede realizar Reservas para Funciones específicas, y cada Reserva está asociada a una Localidad y un Pago. Esta vista ayuda a entender la estructura conceptual del sistema y cómo los diferentes elementos interactúan a nivel de negocio.
 
 ## 2. Vista de Procesos
 La vista de procesos está dirigida a los **integradores de sistemas** y arquitectos. Esta vista enfatiza el comportamiento dinámico del sistema en tiempo de ejecución. Trata aspectos no funcionales cruciales como la concurrencia, distribución, tolerancia a fallos, carga, rendimiento y escalabilidad. Aquí se detalla cómo los elementos identificados en la vista lógica se mapean a hilos y procesos de ejecución, así como el flujo de comunicación, el paso de mensajes y la sincronización entre distintos componentes que operan simultáneamente.
 
-![Vista de Procesos](./img/Practica1-Vista-de-Procesos.drawio.svg)
+![Vista de Procesos](./img/Practica-Vista-de-Procesos.drawio.svg)
 
 En el caso de FilmStars, se modelaron los procesos relacionados con la autenticación, gestión de funciones, reservas y pagos. Se muestra cómo los usuarios interactúan con el sistema a través de solicitudes, cómo estas solicitudes son manejadas por el API Gateway y cómo se comunican los microservicios entre sí utilizando tanto comunicación síncrona como asíncrona. Esta vista es esencial para garantizar que el sistema pueda manejar múltiples usuarios y operaciones simultáneamente sin comprometer la integridad o el rendimiento.
 
