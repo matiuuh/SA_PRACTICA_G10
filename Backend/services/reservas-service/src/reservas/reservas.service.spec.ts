@@ -61,6 +61,7 @@ describe('ReservasService', () => {
 
     boletosRepo = {
       findOne: jest.fn(),
+      createQueryBuilder: jest.fn(),
       create: jest.fn().mockImplementation((d) => d),
       save: jest.fn().mockImplementation((d) => Promise.resolve(d)),
     };
@@ -109,6 +110,32 @@ describe('ReservasService', () => {
     it('debe lanzar NotFoundException si no existe', async () => {
       boletosRepo.findOne.mockResolvedValue(null);
       await expect(service.findBoletoById('no-existe')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('hasBoletosByFuncion', () => {
+    it('retorna true si existe un boleto asociado a la funcion', async () => {
+      const mockBoletosQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({ id: 'bol-1' }),
+      };
+
+      boletosRepo.createQueryBuilder.mockReturnValue(mockBoletosQueryBuilder);
+
+      await expect(service.hasBoletosByFuncion('funcion-1')).resolves.toBe(true);
+    });
+
+    it('retorna false si no existe un boleto asociado a la funcion', async () => {
+      const mockBoletosQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
+
+      boletosRepo.createQueryBuilder.mockReturnValue(mockBoletosQueryBuilder);
+
+      await expect(service.hasBoletosByFuncion('funcion-1')).resolves.toBe(false);
     });
   });
 
