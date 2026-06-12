@@ -286,6 +286,7 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+            echo "VM1_HOST=${{ secrets.EC2_HOST_VM1 }}" >> .env
             echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
             echo "VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> .env
             docker compose -f docker-compose.vm1.yml pull
