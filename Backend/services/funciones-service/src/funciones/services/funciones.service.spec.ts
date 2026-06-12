@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FuncionesService } from './funciones.service';
 import { PeliculasService } from './peliculas.service';
 import { SalasService } from './salas.service';
@@ -20,6 +21,7 @@ describe('FuncionesService', () => {
   let repo: Record<string, any>;
   let peliculasService: jest.Mocked<Partial<PeliculasService>>;
   let salasService: jest.Mocked<Partial<SalasService>>;
+  let configService: jest.Mocked<Partial<ConfigService>>;
 
   beforeEach(() => {
     const mockQueryBuilder = {
@@ -45,11 +47,15 @@ describe('FuncionesService', () => {
     salasService = {
       findOne: jest.fn().mockResolvedValue(mockSala),
     };
+    configService = {
+      get: jest.fn().mockReturnValue('http://reservas-service:3004'),
+    };
 
     service = new FuncionesService(
       repo as any,
       peliculasService as unknown as PeliculasService,
       salasService as unknown as SalasService,
+      configService as unknown as ConfigService,
     );
   });
 
@@ -128,9 +134,26 @@ describe('FuncionesService', () => {
 
   describe('remove', () => {
     it('debe eliminar una funcion existente', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ hasBoletos: false }),
+      } as never);
+
       repo.findOne.mockResolvedValue(mockFuncion);
       await service.remove('func-1');
       expect(repo.remove).toHaveBeenCalledWith(mockFuncion);
+    });
+
+    it('debe lanzar ConflictException si tiene boletos asociados', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ hasBoletos: true }),
+      } as never);
+
+      repo.findOne.mockResolvedValue(mockFuncion);
+
+      await expect(service.remove('func-1')).rejects.toThrow(ConflictException);
+      expect(repo.remove).not.toHaveBeenCalled();
     });
 
     it('debe lanzar NotFoundException si no existe', async () => {
