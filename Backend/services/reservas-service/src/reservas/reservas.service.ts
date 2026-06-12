@@ -90,6 +90,18 @@ export class ReservasService {
     return boleto;
   }
 
+  async hasBoletosByFuncion(idFuncionExterna: string): Promise<boolean> {
+    const boleto = await this.boletosRepository
+      .createQueryBuilder('boleto')
+      .innerJoin('boleto.reserva', 'reserva')
+      .innerJoin('reserva.detalles', 'detalle')
+      .innerJoin('detalle.asiento', 'asiento')
+      .where('asiento.id_funcion_externa = :idFuncionExterna', { idFuncionExterna })
+      .getOne();
+
+    return !!boleto;
+  }
+
   async createAsiento(createAsientoDto: CreateAsientoDto): Promise<Asiento> {
     const alreadyExists = await this.asientosRepository.findOne({
       where: {

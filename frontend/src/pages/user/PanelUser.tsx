@@ -5,7 +5,6 @@ import UserProfileHeader from '../../components/organisms/UserProfileHeader/User
 import UserSubHeader from '../../components/organisms/UserSubHeader/UserSubHeader';
 import Cartelera from '../../components/organisms/Cartelera/Cartelera';
 import SeleccionAsientos from '../../components/organisms/SeleccionAsientos/SeleccionAsientos';
-import MiPerfil from '../../components/organisms/MiPerfil/MiPerfil';
 import ModalHorarios from '../../components/organisms/ModalHorarios/ModalHorarios';
 import ModalPago, { type DatosPago } from '../../components/organisms/ModalPago/ModalPago';
 import ModalConfirmacion from '../../components/organisms/ModalConfirmacion/ModalConfirmacion';
@@ -155,6 +154,7 @@ const PanelUser = () => {
   const [totalPago, setTotalPago] = useState(0);
   const [boletaGenerada, setBoletaGenerada] = useState<BoletaGenerada | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const lockLocationSelection = activeTab === 'seleccion-asientos' && Boolean(compraData);
 
   useEffect(() => {
     document.title = 'Mi Panel | FilmStars';
@@ -381,12 +381,6 @@ const PanelUser = () => {
             </button>
           </div>
         );
-      case 'mi-perfil':
-        return (
-          <MiPerfil
-            usuario={{ nombre: user?.nombre || '', correo: user?.correo || '' }}
-          />
-        );
       default:
         return null;
     }
@@ -394,7 +388,7 @@ const PanelUser = () => {
 
   return (
     <>
-      <MainLayout>
+      <MainLayout lockLocationSelection={lockLocationSelection}>
         <div className="w-full">
           <UserProfileHeader />
           <UserSubHeader activeTab={activeTab} onTabChange={setActiveTab} />

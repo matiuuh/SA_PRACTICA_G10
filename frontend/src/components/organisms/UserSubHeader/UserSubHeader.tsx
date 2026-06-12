@@ -1,4 +1,4 @@
-import { FaFilm, FaChair, FaUser } from 'react-icons/fa'
+import { FaFilm, FaChair } from 'react-icons/fa'
 import { type TabType } from '../../../types/panel.types'
 
 interface UserSubHeaderProps {
@@ -10,7 +10,6 @@ const UserSubHeader: React.FC<UserSubHeaderProps> = ({ activeTab, onTabChange })
   const menuItems = [
     { id: 'cartelera' as TabType, label: 'Cartelera', icon: FaFilm },
     { id: 'seleccion-asientos' as TabType, label: 'Selección de Asientos', icon: FaChair },
-    { id: 'mi-perfil' as TabType, label: 'Mi Perfil', icon: FaUser },
   ]
 
   return (

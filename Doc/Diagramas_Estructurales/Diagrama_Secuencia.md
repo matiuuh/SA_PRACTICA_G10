@@ -11,7 +11,6 @@ Este diagrama permite entender como se coordina la comunicacion sincronica y asi
 ## Participantes representados
 
 Dentro del diagrama se observan los siguientes participantes:
-
 - Cliente
 - Frontend Web
 - API Gateway
