@@ -154,6 +154,7 @@ const PanelUser = () => {
   const [totalPago, setTotalPago] = useState(0);
   const [boletaGenerada, setBoletaGenerada] = useState<BoletaGenerada | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const lockLocationSelection = activeTab === 'seleccion-asientos' && Boolean(compraData);
 
   useEffect(() => {
     document.title = 'Mi Panel | FilmStars';
@@ -387,7 +388,7 @@ const PanelUser = () => {
 
   return (
     <>
-      <MainLayout>
+      <MainLayout lockLocationSelection={lockLocationSelection}>
         <div className="w-full">
           <UserProfileHeader />
           <UserSubHeader activeTab={activeTab} onTabChange={setActiveTab} />
