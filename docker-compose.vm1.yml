@@ -1,0 +1,31 @@
+services:
+
+  api-gateway:
+    image: ${DOCKERHUB_USERNAME}/filmstars-api-gateway:latest
+    container_name: api-gateway
+    environment:
+      PORT: 3006
+      FRONTEND_URL: http://${VM1_HOST}:5173
+      AUTH_SERVICE_URL: http://${VM2_HOST}:3001
+      LOCALIDADES_SERVICE_URL: http://${VM2_HOST}:3002
+      FUNCIONES_SERVICE_URL: http://${VM2_HOST}:3003
+      RESERVAS_SERVICE_URL: http://${VM2_HOST}:3004
+      PAGOS_SERVICE_URL: http://${VM2_HOST}:3005
+    ports:
+      - '3006:3006'
+    networks:
+      - filmstars-network
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/filmstars-frontend:latest
+    container_name: frontend
+    ports:
+      - '5173:80'
+    depends_on:
+      - api-gateway
+    networks:
+      - filmstars-network
+
+networks:
+  filmstars-network:
+    driver: bridge

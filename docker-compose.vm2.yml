@@ -1,0 +1,107 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - filmstars-network
+
+  auth-service:
+    image: ${DOCKERHUB_USERNAME}/filmstars-auth-service:latest
+    container_name: auth-service
+    environment:
+      PORT: 3001
+      DB_HOST: ${VM3_HOST}
+      DB_PORT: 5433
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: auth_service
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 1h
+      DEFAULT_ROLE: CLIENTE
+    ports:
+      - '3001:3001'
+    depends_on:
+      - rabbitmq
+    networks:
+      - filmstars-network
+
+  localidades-service:
+    image: ${DOCKERHUB_USERNAME}/filmstars-localidades-service:latest
+    container_name: localidades-service
+    environment:
+      PORT: 3002
+      DB_HOST: ${VM3_HOST}
+      DB_PORT: 5434
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: localidades_service
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - '3002:3002'
+    networks:
+      - filmstars-network
+
+  funciones-service:
+    image: ${DOCKERHUB_USERNAME}/filmstars-funciones-service:latest
+    container_name: funciones-service
+    environment:
+      PORT: 3003
+      DB_HOST: ${VM3_HOST}
+      DB_PORT: 5435
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: funciones_db
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - '3003:3003'
+    networks:
+      - filmstars-network
+
+  reservas-service:
+    image: ${DOCKERHUB_USERNAME}/filmstars-reservas-service:latest
+    container_name: reservas-service
+    environment:
+      PORT: 3004
+      DB_HOST: ${VM3_HOST}
+      DB_PORT: 5436
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: reservas_service
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - '3004:3004'
+    depends_on:
+      - rabbitmq
+    networks:
+      - filmstars-network
+
+  pagos-service:
+    image: ${DOCKERHUB_USERNAME}/filmstars-pagos-service:latest
+    container_name: pagos-service
+    environment:
+      PORT: 3005
+      DB_HOST: ${VM3_HOST}
+      DB_PORT: 5437
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: pagos_service
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - '3005:3005'
+    depends_on:
+      - rabbitmq
+    networks:
+      - filmstars-network
+
+networks:
+  filmstars-network:
+    driver: bridge

@@ -2,7 +2,7 @@
 
 El modelo de vistas 4+1 es una metodología de diseño de arquitectura de software, propuesta por Philippe Kruchten, que permite describir y comprender la arquitectura de un sistema de forma integral. Dado que un sistema de software es complejo y debe satisfacer los intereses de diversos actores como usuarios finales, desarrolladores, integradores, administradores de sistemas, este modelo utiliza perspectivas separadas pero complementarias, permitiendo abstraer detalles innecesarios en cada contexto.
 
-Las vistas contempladas son: Lógica, Procesos, Desarrollo (Componentes), Física (Despliegue) y la vista de Escenarios, que actúa como el hilo conductor que valida todas las demás.
+Las vistas contempladas son: Lógica, Procesos, Desarrollo, Física y la vista de Escenarios, que actúa como el hilo conductor que valida todas las demás.
 
 ![Diagrama de Vistas 4+1](./img/Vista_4_+_1.drawio.svg)
 
