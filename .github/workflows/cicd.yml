@@ -242,7 +242,7 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
-            docker compose -f docker-compose.vm3.yml up -d
+            docker compose -f docker-compose.vm3.yml up -d --force-recreate
             docker image prune -f
 
   deploy-vm2:
@@ -267,7 +267,7 @@ jobs:
             echo "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}" >> .env
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
             docker compose -f docker-compose.vm2.yml pull
-            docker compose -f docker-compose.vm2.yml up -d
+            docker compose -f docker-compose.vm2.yml up -d --force-recreate
             docker image prune -f
 
   deploy-vm1:
@@ -289,5 +289,5 @@ jobs:
             echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
             echo "VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> .env
             docker compose -f docker-compose.vm1.yml pull
-            docker compose -f docker-compose.vm1.yml up -d
+            docker compose -f docker-compose.vm1.yml up -d --force-recreate
             docker image prune -f
