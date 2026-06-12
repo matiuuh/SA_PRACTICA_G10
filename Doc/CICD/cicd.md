@@ -2,6 +2,12 @@
 
 ## Justificacion de herramientas
 
+
+![FLUJO](img/FLUJOCI_CD.svg)
+
+[Archivo Crudo](https://drive.google.com/file/d/1OnpyKdHNjzM5qycXqGAkj4g02MpnwTVN/view?usp=sharing)
+
+
 ---
 
 ### GitHub Actions
@@ -61,20 +67,6 @@ El pipeline se activa en dos eventos:
 - **push** a las ramas `main` o `develop`
 - **pull request** hacia `main` o `develop`
 
-```
-check-branch
-     │
-     ├──── build-frontend ────────────────────────────────┐
-     │                                                     │
-     ├──── build-services (5 servicios en paralelo) ──┐   │
-     │            │                                   │   │
-     │            └──── test-services (5 en paralelo) ┤   │
-     │                                                 │   │
-     └──── build-gateway ─────────────────────────────┘   │
-                                                           │
-                           deploy (solo push a main) ◄─────┘
-```
-
 ### Descripcion de cada job
 
 | Job | Depende de | Descripcion |
@@ -108,5 +100,27 @@ Para que el job de deploy funcione, deben estar configurados los siguientes secr
 | `DEPLOY_PATH` | Ruta absoluta del repositorio en el servidor EC2 |
 
 ---
+
+## Logs de las pruebas ya integradas en el CI/CD
+
+### Auth Service
+
+![Logs de las pruebas](./img/auth-service.png)
+
+### Funciones Service
+
+![Logs de las pruebas](./img/funciones-service.png)
+
+### Localidades Service
+
+![Logs de las pruebas](./img/localidades-service.png)
+
+### Pagos Service
+
+![Logs de las pruebas](./img/pagos-service.png)
+
+### Reservas Service
+
+![Logs de las pruebas](./img/reservas-service.png)
 
 [Volver a Documentación](../Documentación.md)

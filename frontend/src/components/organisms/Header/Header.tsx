@@ -20,7 +20,11 @@ const CITY_STORAGE_KEY = 'selectedCity';
 const CINEMA_STORAGE_KEY = 'selectedCinema';
 const SELECTION_EVENT = 'filmstars-selection-changed';
 
-const Header = () => {
+interface HeaderProps {
+  lockLocationSelection?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ lockLocationSelection = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -109,6 +113,10 @@ const Header = () => {
   };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (lockLocationSelection) {
+      return;
+    }
+
     const cityId = e.target.value;
     setSelectedCity(cityId);
     setSelectedCinema('');
@@ -118,6 +126,10 @@ const Header = () => {
   };
 
   const handleCinemaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (lockLocationSelection) {
+      return;
+    }
+
     const cinemaId = e.target.value;
     setSelectedCinema(cinemaId);
 
@@ -167,7 +179,9 @@ const Header = () => {
                 <select
                   value={selectedCity}
                   onChange={handleCityChange}
-                  className="pl-9 pr-3 py-1.5 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm focus:outline-none focus:border-cinema-gold-500 cursor-pointer"
+                  disabled={lockLocationSelection}
+                  title={lockLocationSelection ? 'No puedes cambiar la ciudad durante la reserva de asientos' : undefined}
+                  className="pl-9 pr-3 py-1.5 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm focus:outline-none focus:border-cinema-gold-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar ciudad</option>
                   {cities.map((city) => (
@@ -183,7 +197,8 @@ const Header = () => {
                 <select
                   value={selectedCinema}
                   onChange={handleCinemaChange}
-                  disabled={!selectedCity}
+                  disabled={!selectedCity || lockLocationSelection}
+                  title={lockLocationSelection ? 'No puedes cambiar el cine durante la reserva de asientos' : undefined}
                   className="pl-9 pr-3 py-1.5 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm focus:outline-none focus:border-cinema-gold-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">Seleccionar cine</option>
@@ -238,7 +253,9 @@ const Header = () => {
                   <select
                     value={selectedCity}
                     onChange={handleCityChange}
-                    className="w-full pl-9 pr-3 py-2 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm"
+                    disabled={lockLocationSelection}
+                    title={lockLocationSelection ? 'No puedes cambiar la ciudad durante la reserva de asientos' : undefined}
+                    className="w-full pl-9 pr-3 py-2 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">Seleccionar ciudad</option>
                     {cities.map((city) => (
@@ -254,8 +271,9 @@ const Header = () => {
                   <select
                     value={selectedCinema}
                     onChange={handleCinemaChange}
-                    disabled={!selectedCity}
-                    className="w-full pl-9 pr-3 py-2 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm disabled:opacity-50"
+                    disabled={!selectedCity || lockLocationSelection}
+                    title={lockLocationSelection ? 'No puedes cambiar el cine durante la reserva de asientos' : undefined}
+                    className="w-full pl-9 pr-3 py-2 bg-cinema-dark-800 border border-cinema-gold-500/30 rounded-lg text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">Seleccionar cine</option>
                     {cinemas.map((cinema) => (
