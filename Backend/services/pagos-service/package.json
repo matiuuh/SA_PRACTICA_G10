@@ -1,0 +1,53 @@
+{
+  "name": "pagos-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "build": "nest build",
+    "test": "jest",
+    "test:cov": "jest --coverage"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.7",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/typeorm": "^11.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@types/amqplib": "^0.10.7",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.1",
+    "@types/passport-jwt": "^4.0.1",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["unrs-resolver", "@nestjs/core"]
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": { "^.+\\.(t|j)s$": "ts-jest" },
+    "collectCoverageFrom": ["**/*.(t|j)s", "!main.ts", "!**/*.module.ts", "!**/*.dto.ts", "!**/*.entity.ts", "!**/*.interface.ts", "!**/*.constants.ts", "!**/*.guard.ts", "!**/*.strategy.ts", "!**/*.decorator.ts", "!**/rabbitmq.service.ts", "!**/pagos-queue.consumer.ts"],
+    "coverageDirectory": "../coverage",
+    "coverageThreshold": { "global": { "branches": 75, "functions": 75, "lines": 75, "statements": 75 } },
+    "testEnvironment": "node"
+  }
+}
