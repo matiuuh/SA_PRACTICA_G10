@@ -17,16 +17,36 @@ const Login = () => {
   const [showErrorToast, setShowErrorToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [emailError, setEmailError] = useState('')
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
     setErrorMessage('')
     setShowErrorToast(false)
+
+    if (name === 'correo') {
+      if (value && !validateEmail(value)) {
+        setEmailError('Por favor, ingresa un correo electrónico válido')
+      } else {
+        setEmailError('')
+      }
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateEmail(formData.correo)) {
+      setEmailError('Por favor, ingresa un correo electrónico válido')
+      return
+    }
+
     setIsLoading(true)
     setErrorMessage('')
     setShowErrorToast(false)
@@ -138,9 +158,17 @@ const Login = () => {
                       value={formData.correo}
                       onChange={handleChange}
                       disabled={isLoading}
-                      className="w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none transition"
+                      className={`w-full pl-10 pr-4 py-3 bg-cinema-dark-900/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition ${
+                        emailError ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-cinema-gold-500'
+                      }`}
                     />
                   </div>
+                  {emailError && (
+                    <div className="flex items-center gap-2 text-sm text-red-400 mt-1">
+                      <FaExclamationCircle className="shrink-0" />
+                      <span>{emailError}</span>
+                    </div>
+                  )}
 
                   <div className="relative">
                     <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />

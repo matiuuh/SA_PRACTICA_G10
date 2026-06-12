@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { FaUser, FaEnvelope, FaEdit, FaSave, FaTimes } from 'react-icons/fa'
-import Button from '../../atoms/Button/Button'
+import { FaUser, FaEnvelope } from 'react-icons/fa'
 
 interface MiPerfilProps {
   usuario: {
@@ -30,22 +29,28 @@ const MiPerfil: React.FC<MiPerfilProps> = ({ usuario }) => {
     <div className="cinema-card p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-white">Mi Perfil</h2>
-        {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-            <FaEdit className="inline mr-2" />
-            Editar Perfil
-          </Button>
-        ) : (
+        {isEditing ? (
           <div className="flex gap-2">
-            <Button onClick={handleSave} variant="primary" size="sm">
-              <FaSave className="inline mr-2" />
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 bg-cinema-gold-500 text-black text-sm font-semibold rounded-lg hover:bg-cinema-gold-400 transition-colors"
+            >
               Guardar
-            </Button>
-            <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
-              <FaTimes className="inline mr-2" />
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-3 py-1 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors"
+            >
               Cancelar
-            </Button>
+            </button>
           </div>
+        ) : (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="px-3 py-1 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Editar
+          </button>
         )}
       </div>
 

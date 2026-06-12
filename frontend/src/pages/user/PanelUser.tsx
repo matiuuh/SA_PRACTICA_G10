@@ -5,7 +5,6 @@ import UserProfileHeader from '../../components/organisms/UserProfileHeader/User
 import UserSubHeader from '../../components/organisms/UserSubHeader/UserSubHeader';
 import Cartelera from '../../components/organisms/Cartelera/Cartelera';
 import SeleccionAsientos from '../../components/organisms/SeleccionAsientos/SeleccionAsientos';
-import MiPerfil from '../../components/organisms/MiPerfil/MiPerfil';
 import ModalHorarios from '../../components/organisms/ModalHorarios/ModalHorarios';
 import ModalPago, { type DatosPago } from '../../components/organisms/ModalPago/ModalPago';
 import ModalConfirmacion from '../../components/organisms/ModalConfirmacion/ModalConfirmacion';
@@ -380,12 +379,6 @@ const PanelUser = () => {
               Ir a Cartelera
             </button>
           </div>
-        );
-      case 'mi-perfil':
-        return (
-          <MiPerfil
-            usuario={{ nombre: user?.nombre || '', correo: user?.correo || '' }}
-          />
         );
       default:
         return null;

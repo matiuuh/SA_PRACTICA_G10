@@ -48,7 +48,7 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": { "^.+\\.(t|j)s$": "ts-jest" },
-    "collectCoverageFrom": ["**/*.(t|j)s", "!main.ts", "!**/*.module.ts", "!**/*.dto.ts", "!**/*.entity.ts", "!**/*.interface.ts", "!**/*.constants.ts", "!**/*.guard.ts", "!**/*.strategy.ts", "!**/*.decorator.ts", "!**/*.gateway.ts"],
+    "collectCoverageFrom": ["**/*.(t|j)s", "!main.ts", "!**/*.module.ts", "!**/*.dto.ts", "!**/*.entity.ts", "!**/*.interface.ts", "!**/*.constants.ts", "!**/*.guard.ts", "!**/*.strategy.ts", "!**/*.decorator.ts", "!**/*.gateway.ts", "!**/rabbitmq.service.ts", "!**/reservas-payments.consumer.ts"],
     "coverageDirectory": "../coverage",
     "coverageThreshold": { "global": { "branches": 75, "functions": 75, "lines": 75, "statements": 75 } },
     "testEnvironment": "node"

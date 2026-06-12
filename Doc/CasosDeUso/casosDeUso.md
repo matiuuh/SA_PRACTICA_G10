@@ -55,7 +55,7 @@
 **Flujos de excepción:**
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Formato de correo inválido | El sistema muestra un mensaje de error indicando el formato correcto y solicita corrección. |
+| FE-01 | Formato de correo inválido | El sistema redirije al usuario al campo de correo incitando a corregir el formato. |
 | 
 | FE-03 | Error de conexión con la base de datos | el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
@@ -88,16 +88,15 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El usuario no tiene cuenta | En el paso, el sistema informa que el correo no está registrado y sugiere crear una cuenta. |
+| FA-01 | Contraseña incorrecta | El sistema muestra un mensaje de credenciales inválidas sin especificar cuál campo es incorrecto. |
 
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Contraseña incorrecta | En el paso 5, el sistema muestra un mensaje de credenciales inválidas sin especificar cuál campo es incorrecto. |
-| FE-02 | Formato de correo inválido | En el paso 4, el sistema muestra un error de formato y solicita corrección antes de continuar. |
-| FE-03 | Error de conexión con la base de datos | En el paso 5, el sistema muestra un mensaje de error genérico y solicita reintentar. |
+| FE-02 | Formato de correo inválido | El sistema muestra un error de formato y solicita corrección antes de continuar. |
+| FE-03 | Error de conexión con la base de datos | El sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ### CDU-001.3: Cierre de sesión
 
@@ -122,9 +121,13 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El usuario cancela el cierre de sesión | En el paso 1, el sistema no realiza ninguna acción y mantiene la sesión activa. |
+| FA-01 | El usuario presiona el salir sesión | El sistema no realiza ninguna acción y mantiene la sesión activa. |
 
+**Flujos de excepción:**
 
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | Error de conexión con la base de datos | El sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
 
@@ -147,7 +150,7 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Accede al panel de administración y selecciona la opción de gestión de cartelera. |
+| 1 | Administrador | Accede al panel de administración. |
 | 2 | Sistema | Muestra el listado de películas en cartelera y la opción para agregar. |
 | 3 | Administrador | puede editar o eliminar alguna pelicula de la cartelera|
 | 4 | Administrador | confirma su decision |
@@ -159,13 +162,13 @@
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El administrador cancela | En cualquier paso, el administrador puede cancelar y el sistema descarta los cambios. |
-| FA-02 | El administrador no realiza cambios | En el paso 4, el sistema no ejecuta ninguna operación y mantiene la cartelera actual. |
+| FA-02 | El administrador no realiza cambios |El sistema no ejecuta ninguna operación y mantiene la cartelera actual. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | La película seleccionada no tiene información completa | En el paso 5, el sistema notifica al administrador los campos obligatorios|
+| FE-01 | La película seleccionada no tiene información completa | El sistema notifica al administrador los campos obligatorios|
 | FE-02 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
@@ -177,7 +180,7 @@
 | **ID** | CDU-002.2 |
 | **Nombre** | Añadir Película |
 | **Actor** | Administrador |
-| **Descripción** | Permite al administrador registrar una nueva película en el sistema con toda su información, incluyendo título, género, duración, sinopsis, clasificación y tipo de proyección. |
+| **Descripción** | Permite al administrador registrar una nueva película en el sistema con toda su información, incluyendo título, categoría, duración, sinopsis, tipo de cartelera, poster, y si está activa o no. |
 | **Precondiciones** | El administrador tiene una sesión activa. |
 | **Postcondiciones** | La película queda registrada en el sistema y puede ser gestionada en la cartelera y en funciones. |
 
@@ -186,27 +189,26 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de añadir película. |
-| 2 | Administrador | Ingresa el título, género, duración, sinopsis, categoria y tipo de cartelera. |
+| 2 | Administrador | Ingresa el título, categoría, duración, sinopsis, tipo de cartelera, y si está activa o no. |
 | 3 | Administrador | Carga la imagen del póster de la película por medio de un url. |
 | 4 | Administrador | Envía el formulario. |
 | 5 | Sistema | Valida que todos los campos obligatorios estén completos |
-| 6 | Sistema | Verifica que no exista otra película con el mismo título registrada. |
-| 7 | Sistema | Almacena la película con toda su información en la base de datos. |
-| 8 | Sistema | Muestra un mensaje de confirmación de registro exitoso. |
+| 6 | Sistema | Almacena la película con toda su información en la base de datos. |
+| 7 | Sistema | Muestra un mensaje de confirmación de registro exitoso. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El administrador no carga imagen | En el paso 3, no se registra una imagen para la pelicula |
+| FA-01 | El administrador no carga imagen | No se registra una imagen para la pelicula |
 | FA-02 | El administrador cancela | En cualquier paso, el administrador puede cancelar y el sistema descarta los datos ingresados. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Campos obligatorios incompletos | En el paso 5, el sistema resalta los campos faltantes y solicita completarlos. |
-| FE-02 | Ya existe una película con el mismo título | En el paso 6, el sistema notifica la duplicidad y sugiere verificar el catálogo existente. |
+| FE-01 | Campos obligatorios incompletos | El sistema resalta los campos faltantes |
+| FE-02 | Ya existe una película con el mismo título | Enl sistema notifica la duplicidad. |
 
 
 ---
@@ -237,14 +239,14 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El administrador no modifica ningún campo | En el paso 3, el sistema no realiza ninguna operación y mantiene la información actual. |
+| FA-01 | El administrador cancela la edición | El sistema no realiza ninguna operación y mantiene la información actual. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Campo obligatorio vacío tras la edición | En el paso 4, el sistema resalta los campos inválidos y solicita corrección. |
-| FE-03 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
+| FE-01 | Campo obligatorio vacío tras la edición | El sistema resalta los campos inválidos y solicita corrección. |
+| FE-03 | Error de conexión con la base de datos | El sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
 
@@ -267,22 +269,21 @@
 | 2 | Administrador | Selecciona la opción de eliminar. |
 | 3 | Sistema | Solicita confirmación al administrador. |
 | 4 | Administrador | Confirma la eliminación. |
-| 5 | Sistema | Verifica que la película no tenga funciones activas |
-| 6 | Sistema | Elimina la película y su información de la base de datos. |
-| 7 | Sistema | Muestra un mensaje de confirmación de eliminación exitosa. |
+| 5 | Sistema | Elimina la película y su información de la base de datos. |
+| 6 | Sistema | Muestra un mensaje de confirmación de eliminación exitosa. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El administrador cancela la eliminación | En el paso 4, el sistema descarta la operación y mantiene la película en el catálogo. |
+| FA-01 | El administrador cancela la eliminación | El sistema descarta la operación y mantiene la película en el catálogo. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | La película tiene funciones activas asociadas | En el paso 5, el sistema impide la eliminación e informa que existen funciones programadas para ese título. |
-| FE-03 | Error de conexión con la base de datos | En el paso 6, el sistema muestra un mensaje de error genérico y solicita reintentar. |
+| FE-01 | La película tiene boletos vendidos asociados | El sistema impide la eliminación e informa que existen boletos vendidos para esa película. |
+| FE-03 | Error de conexión con la base de datos | El sistema muestra un mensaje de error genérico y solicita reintentar. |
 
 ---
 
@@ -293,7 +294,7 @@
 | **ID** | CDU-002.5 |
 | **Nombre** | Visualizar Cartelera |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar las películas actualmente en cartelera, incluyendo su título, género, clasificación, duración y tipos de proyección disponibles. |
+| **Descripción** | Permite al cliente consultar las películas actualmente en cartelera, incluyendo su título, género, duración. |
 | **Precondiciones** | Existe al menos una película en cartelera. |
 | **Postcondiciones** | El cliente visualiza la cartelera y puede seleccionar una película para ver su detalle. |
 
@@ -303,23 +304,23 @@
 |------|-------|--------|
 | 1 | Cliente | Accede a la sección de cartelera desde la página principal. |
 | 2 | Sistema | Recupera y muestra las películas actualmente en cartelera. |
-| 3 | Cliente | Aplica filtro por tipo de categoria |
-| 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con la categoria seleccionada|
+| 3 | Cliente | Aplica filtro por tipo de proyección |
+| 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con la proyección seleccionada|
 | 5 | Cliente | Visualiza las películas |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente no aplica filtros | En el paso 3, el sistema muestra todas las películas en cartelera sin filtrar. |
+| FA-01 | El cliente no aplica filtros | El sistema muestra todas las películas en cartelera sin filtrar. |
 | FA-02 | El cliente limpia los filtros | El sistema restaura la vista completa de la cartelera. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | No hay películas en cartelera | En el paso 2, el sistema muestra un mensaje indicando que no hay títulos disponibles en este momento. |
-| FE-02 | Ninguna película coincide con los filtros aplicados | En el paso 4, el sistema muestra un mensaje indicando que no hay resultados para los filtros seleccionados. |
+| FE-01 | No hay películas en cartelera | El sistema muestra un mensaje indicando que no hay títulos disponibles en este momento. |
+| FE-02 | Ninguna película coincide con los filtros aplicados | El sistema muestra un mensaje indicando que no hay resultados para los filtros seleccionados. |
 
 ---
 
@@ -330,9 +331,9 @@
 | **ID** | CDU-002.6 |
 | **Nombre** | Visualizar Detalle de Película |
 | **Actor** | Cliente |
-| **Descripción** | Permite al cliente consultar la información completa de una película seleccionada, incluyendo sinopsis, reparto, clasificación, duración y funciones disponibles. |
+| **Descripción** | Permite al cliente consultar la información completa de una película seleccionada, incluyendo, título de la película, sinopsis, clasificación, duración y numero de horarios disponibles. |
 | **Precondiciones** | La película existe en el sistema y está en cartelera. |
-| **Postcondiciones** | El cliente visualiza el detalle completo de la película y puede proceder a seleccionar una función. |
+| **Postcondiciones** | El cliente Puede proceder a seleccionar una función. |
 
 **Flujo principal:**
 
@@ -342,13 +343,13 @@
 | 2 | Sistema | Recupera y muestra las películas actualmente en cartelera. |
 | 3 | Cliente | Aplica filtro por categoria |
 | 4 | Sistema | Actualiza la vista mostrando únicamente las películas que coincidan con los filtros seleccionados. |
-| 5 | Cliente | Visualiza el detalle de las película en el que se refleja titulo de la pelicula, genero, duracion, sinopsis |
+| 5 | Cliente | Selecciona el visualizar el detalle de las película en el que se refleja título de la película, sinopsis, clasificación, duración y numero de horarios disponibles. |
 
 **Flujos alternativos:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El cliente regresa a la cartelera | En cualquier paso, el cliente puede volver al listado de cartelera sin seleccionar función. |
+| FA-01 | El cliente regresa a la cartelera | El cliente puede volver al listado de cartelera sin seleccionar función. |
 
 
 **Flujos de excepción:**
@@ -356,7 +357,7 @@
 | ID | Condición | Acción |
 |----|-----------|--------|
 
-| FE-02 | Error al recuperar la información de la película | En el paso 2, el sistema muestra un mensaje de error genérico y sugiere regresar a la cartelera. |
+| FE-02 | Error al recuperar la información de la película | El sistema muestra un mensaje de error genérico y sugiere regresar a la cartelera. |
 
 ---
 
@@ -381,7 +382,7 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de registrar función. |
-| 2 | Administrador | Selecciona la película, el cine, la sala, la fecha y el horario. |
+| 2 | Administrador | Selecciona la película, la sala, la fecha, el horario, el precio y si está activa o no. |
 | 4 | Sistema | Valida que todos los campos estén completos. |
 | 5 | Sistema | Verifica que no exista otra función programada en la misma sala, fecha y horario. |
 | 6 | Sistema | Registra la función y genera el mapa de asientos disponibles. |
@@ -390,14 +391,14 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El administrador cancela | En cualquier paso, el administrador puede cancelar y el sistema descarta los datos ingresados. |
+| FA-01 | El administrador cancela | El administrador puede cancelar y el sistema descarta los datos ingresados. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-01 | Campos obligatorios incompletos | En el paso 4, el sistema resalta los campos faltantes y solicita completarlos. |
-| FE-02 | Conflicto de sala y horario | En el paso 5, el sistema notifica que la sala ya tiene una función programada en ese horario. |
+| FE-01 | Campos obligatorios incompletos | El sistema resalta los campos faltantes y solicita completarlos. |
+| FE-02 | Conflicto de sala y horario | El sistema notifica que la sala ya tiene una función programada en ese horario. |
 
 ---
 
@@ -416,7 +417,7 @@
 
 | Paso | Actor | Acción |
 |------|-------|--------|
-| 1 | Administrador | Accede al listado de funciones y selecciona la función a modificar. |
+| 1 | Administrador | Accede al listado de funciones y selecciona la función a editar. |
 | 2 | Administrador | Modifica los campos deseados y envía el formulario. |
 | 3 | Sistema | Valida que los nuevos datos no generen conflicto de sala y horario. |
 | 4 | Sistema | Actualiza los datos de la función en la base de datos. |
@@ -425,14 +426,13 @@
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FA-01 | El administrador no modifica ningún campo | En el paso 2, el sistema no realiza ninguna operación y mantiene los datos actuales. |
-| FA-02 | El administrador cancela | En cualquier paso, el administrador puede cancelar y el sistema descarta los cambios. |
+| FA-01 | El administrador puede cancelar y el sistema descarta los cambios. |
 
 **Flujos de excepción:**
 
 | ID | Condición | Acción |
 |----|-----------|--------|
-| FE-02 | Conflicto de sala y horario | En el paso 4, el sistema notifica que la sala ya tiene una función en el nuevo horario solicitado. |
+| FE-01 | No se establece conexión a la base de datos | El sistema muestra un mensaje de error |
 
 ## Reserva y Compra de Boletos
 
