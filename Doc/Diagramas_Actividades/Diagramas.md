@@ -21,6 +21,7 @@ Adicionalmente, el diagrama incorpora puntos de decisión y control que permiten
 El objetivo principal del diagrama es proporcionar una representación visual del comportamiento del módulo administrativo y facilitar la comprensión de la interacción entre los distintos elementos que conforman la gestión interna de la plataforma.
 
 Diagrama de actividades crudo de administrador:
-`../../diagrama_actividades_admin.txt`
+
+![Actividades_Admin](./img/DIAGRAMA%20DE%20ACT%20ADMIN.drawio.png)
 
 [Volver a Documentacion](../Documentación.md)

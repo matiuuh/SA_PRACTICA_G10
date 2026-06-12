@@ -30,14 +30,16 @@ Integrantes:
 
 - [Diagrama de arquitectura general](./Diagramas_Estructurales/Diagrama_Arquitectura_General.md)
 - [Diagrama de actividades](./Diagramas_Actividades/Diagramas.md)
-- [Diagrama de secuencia](./Diagramas_Estructurales/Diagrama_Secuencia.md)
 - [Diagramas entidad relacion](./ER/DiagramasER.md)
 
 ### Justificacion de tecnologias y principios SOLID aplicados
 - [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
 - [Principios SOLID aplicados](./Solid/Solid.md)
 - [Principios SOLID aplicados en Administrador](Solid/SolidAdmin.md)
-- [Despliegue](./Despligue/despliegue.md)
+- [Despliegue Local](./Despligue/despliegue.md)
+
+### Levantamiento del proyecto
+- [Cómo levantar frontend, backend y Docker Compose](./Levantamiento/levantamiento.md)
 
 ### Pruebas
 - [Pruebas unitarias](./Pruebas/pruebas.md)
