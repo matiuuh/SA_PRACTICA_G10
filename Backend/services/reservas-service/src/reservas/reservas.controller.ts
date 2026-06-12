@@ -71,6 +71,11 @@ export class ReservasController {
     return boleto;
   }
 
+  @Get('internal/funciones/:id/boletos')
+  hasBoletosByFuncion(@Param('id', ParseUUIDPipe) id: string) {
+    return this.reservasService.hasBoletosByFuncion(id).then((hasBoletos) => ({ hasBoletos }));
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async findReserva(
