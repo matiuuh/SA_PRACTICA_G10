@@ -44,5 +44,18 @@ venv/
 tmp/
 temp/
 *.tmp
+*.pid
+*.seed
+
+# NestJS / Node
+.nestjs-cli.json
+logs/
+.nyc_output/
+junit.xml
+
+# Package manager artifacts
+.pnpm-store/
+.npm/
+.yarn/
 
 # practica2

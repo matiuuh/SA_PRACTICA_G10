@@ -1,0 +1,293 @@
+name: CI/CD FilmStars
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-branch:
+    name: Validar rama origen (solo release → main)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar rama de origen
+        if: github.base_ref == 'main'
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          echo "Rama origen: $SOURCE"
+          if [[ "$SOURCE" != "release" ]]; then
+            echo "ERROR: Solo la rama release puede hacer merge a main. Rama detectada: $SOURCE"
+            exit 1
+          fi
+          echo "Rama valida: $SOURCE"
+
+  build-frontend:
+    name: Build Frontend (React + Vite)
+    runs-on: ubuntu-latest
+    needs: check-branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
+
+      - name: Subir artefacto de build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  build-services:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: check-branch
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-service
+          - localidades-service
+          - funciones-service
+          - reservas-service
+          - pagos-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias
+        working-directory: Backend/services/${{ matrix.service }}
+        run: npm install --legacy-peer-deps
+
+      - name: Build (compilacion TypeScript)
+        working-directory: Backend/services/${{ matrix.service }}
+        run: npm run build
+
+  test-services:
+    name: Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: build-services
+    strategy:
+      fail-fast: true
+      matrix:
+        service:
+          - auth-service
+          - localidades-service
+          - funciones-service
+          - reservas-service
+          - pagos-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias
+        working-directory: Backend/services/${{ matrix.service }}
+        run: npm install --legacy-peer-deps
+
+      - name: Ejecutar tests
+        working-directory: Backend/services/${{ matrix.service }}
+        run: npm test
+
+      - name: Verificar cobertura minima (75%)
+        working-directory: Backend/services/${{ matrix.service }}
+        run: |
+          npm run test:cov -- --coverageThreshold='{"global":{"lines":75,"functions":75,"branches":75,"statements":75}}'
+
+      - name: Subir reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}
+          path: Backend/services/${{ matrix.service }}/coverage/
+          retention-days: 14
+
+  build-gateway:
+    name: Build API Gateway
+    runs-on: ubuntu-latest
+    needs: check-branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: api-gateway/pnpm-lock.yaml
+
+      - name: Instalar dependencias
+        working-directory: api-gateway
+        run: |
+          echo "unsafe-perm=true" >> .npmrc
+          pnpm install --no-frozen-lockfile
+
+      - name: Build (compilacion TypeScript)
+        working-directory: api-gateway
+        run: pnpm build
+
+  push-images:
+    name: Build y Push imagenes a DockerHub
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-services, test-services, build-gateway]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login a DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build y push auth-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend/services/auth-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-auth-service:latest
+
+      - name: Build y push localidades-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend/services/localidades-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-localidades-service:latest
+
+      - name: Build y push funciones-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend/services/funciones-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-funciones-service:latest
+
+      - name: Build y push reservas-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend/services/reservas-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-reservas-service:latest
+
+      - name: Build y push pagos-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend/services/pagos-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-pagos-service:latest
+
+      - name: Build y push api-gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api-gateway
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-api-gateway:latest
+
+      - name: Build y push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST }}:3006
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
+
+  deploy-vm3:
+    name: Deploy VM3 (Bases de datos)
+    runs-on: ubuntu-latest
+    needs: push-images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Desplegar bases de datos en VM3
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST_VM3 }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
+            docker compose -f docker-compose.vm3.yml up -d
+            docker image prune -f
+
+  deploy-vm2:
+    name: Deploy VM2 (Servicios)
+    runs-on: ubuntu-latest
+    needs: deploy-vm3
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Desplegar servicios en VM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST_VM2 }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+            echo "VM3_HOST=${{ secrets.VM3_HOST }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
+            echo "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            docker compose -f docker-compose.vm2.yml pull
+            docker compose -f docker-compose.vm2.yml up -d
+            docker image prune -f
+
+  deploy-vm1:
+    name: Deploy VM1 (Frontend + API Gateway)
+    runs-on: ubuntu-latest
+    needs: deploy-vm2
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Desplegar frontend y gateway en VM1
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST_VM1 }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+            echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
+            echo "VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> .env
+            docker compose -f docker-compose.vm1.yml pull
+            docker compose -f docker-compose.vm1.yml up -d
+            docker image prune -f
