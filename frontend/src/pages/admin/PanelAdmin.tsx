@@ -107,7 +107,7 @@ const PanelAdmin = () => {
       setError(null);
 
       const [peliculasData, ciudadesData, salasFuncionesData, funcionesData] = await Promise.all([
-        peliculasService.getPeliculas(),
+        peliculasService.getAllPeliculas(),
         localidadesService.getCiudades(),
         funcionesService.getSalas(),
         funcionesService.getFunciones(),
@@ -396,6 +396,7 @@ const PanelAdmin = () => {
             onAgregar={handleAgregarPelicula}
             onEditar={handleEditarPelicula}
             onEliminar={handleEliminarPelicula}
+            onImportar={cargarDatos}
           />
         )}
 

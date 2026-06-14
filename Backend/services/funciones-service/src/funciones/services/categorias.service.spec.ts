@@ -39,6 +39,20 @@ describe('CategoriasService', () => {
     });
   });
 
+  describe('findByNombre', () => {
+    it('debe retornar una categoria por nombre', async () => {
+      repo.findOne.mockResolvedValue(mockCategoria);
+      const result = await service.findByNombre('Accion');
+      expect(result).toEqual(mockCategoria);
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { nombre: 'Accion' } });
+    });
+
+    it('debe lanzar NotFoundException si no existe el nombre', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(service.findByNombre('No existe')).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('create', () => {
     it('debe crear una categoria nueva', async () => {
       repo.findOne.mockResolvedValue(null);

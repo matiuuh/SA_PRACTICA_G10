@@ -25,6 +25,17 @@ export class CategoriasService {
     return categoria;
   }
 
+  async findByNombre(nombre: string): Promise<Categoria> {
+    const normalizedName = nombre.trim();
+    const categoria = await this.repo.findOne({ where: { nombre: normalizedName } });
+
+    if (!categoria) {
+      throw new NotFoundException(`Categoria "${normalizedName}" no encontrada`);
+    }
+
+    return categoria;
+  }
+
   async create(dto: CreateCategoriaDto): Promise<Categoria> {
     const nombre = dto.nombre.trim();
     const existe = await this.repo.findOne({ where: { nombre } });
