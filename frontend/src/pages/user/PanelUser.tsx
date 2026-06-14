@@ -39,13 +39,18 @@ interface BoletaGenerada {
 }
 
 const normalizeCategoria = (nombre?: string | null): CarteleraCategoria => {
-  const value = (nombre || '').trim().toLowerCase();
+  const value = (nombre || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s_-]+/g, '');
 
-  if (value.includes('pre')) {
+  if (value === 'preventa') {
     return 'preventa';
   }
 
-  if (value.includes('re')) {
+  if (value === 'reestreno') {
     return 'reestreno';
   }
 

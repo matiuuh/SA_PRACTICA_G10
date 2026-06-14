@@ -39,6 +39,20 @@ describe('TipoCarteleraService', () => {
     });
   });
 
+  describe('findByNombre', () => {
+    it('debe retornar un tipo de cartelera por nombre', async () => {
+      repo.findOne.mockResolvedValue(mockTipo);
+      const result = await service.findByNombre('Estrenos');
+      expect(result).toEqual(mockTipo);
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { nombre: 'Estrenos' } });
+    });
+
+    it('debe lanzar NotFoundException si no existe el nombre', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(service.findByNombre('No existe')).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('create', () => {
     it('debe crear un tipo de cartelera nuevo', async () => {
       repo.findOne.mockResolvedValue(null);

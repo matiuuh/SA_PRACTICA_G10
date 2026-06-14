@@ -31,6 +31,37 @@ export interface CreatePeliculaDto {
   activa?: boolean;
 }
 
+export interface PeliculasPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedPeliculas {
+  data: Pelicula[];
+  meta: PeliculasPaginationMeta;
+}
+
+export interface PeliculasQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  id_categoria?: string;
+  id_tipo_cartelera?: string;
+  tipo_cartelera?: string;
+  activa?: boolean;
+}
+
+export interface PeliculasCsvImportResult {
+  insertadas: number;
+  fallidas: number;
+  errores: Array<{
+    fila: number;
+    error: string;
+  }>;
+}
+
 // Tipos para localidades/ciudades/cines (desde el backend)
 export interface CiudadBackend {
   id: string;

@@ -89,7 +89,5 @@ ON CONFLICT ("nombre") DO NOTHING;
 INSERT INTO "tipo_cartelera" ("id_tipo_cartelera", "nombre") VALUES
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Estreno'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Preventa'),
-  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'Reestreno'),
-  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'Festival'),
-  ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'Especial')
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'Reestreno')
 ON CONFLICT ("nombre") DO NOTHING;

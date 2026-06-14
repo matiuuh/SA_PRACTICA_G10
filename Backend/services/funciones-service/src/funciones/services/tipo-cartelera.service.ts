@@ -25,6 +25,17 @@ export class TipoCarteleraService {
     return tipo;
   }
 
+  async findByNombre(nombre: string): Promise<TipoCartelera> {
+    const normalizedName = nombre.trim();
+    const tipo = await this.repo.findOne({ where: { nombre: normalizedName } });
+
+    if (!tipo) {
+      throw new NotFoundException(`Tipo de cartelera "${normalizedName}" no encontrado`);
+    }
+
+    return tipo;
+  }
+
   async create(dto: CreateTipoCarteleraDto): Promise<TipoCartelera> {
     const nombre = dto.nombre.trim();
     const existe = await this.repo.findOne({ where: { nombre } });
