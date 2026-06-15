@@ -4,6 +4,9 @@ on:
   push:
     branches: [release, develop]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
 
   # ══════════════════════════════════════════════════════════════════════
@@ -80,49 +83,49 @@ jobs:
           fi
 
       - name: Build y push auth-service
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./Backend/services/auth-service
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-auth-service:latest
 
       - name: Build y push localidades-service
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./Backend/services/localidades-service
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-localidades-service:latest
 
       - name: Build y push funciones-service
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./Backend/services/funciones-service
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-funciones-service:latest
 
       - name: Build y push reservas-service
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./Backend/services/reservas-service
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-reservas-service:latest
 
       - name: Build y push pagos-service
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./Backend/services/pagos-service
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-pagos-service:latest
 
       - name: Build y push api-gateway
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./api-gateway
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-api-gateway:latest
 
       - name: Build y push frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
@@ -221,14 +224,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Crear archivo .env local
-        shell: bash
+        shell: pwsh
         run: |
-          printf "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}\n" > .env
-          printf "VITE_API_GATEWAY_URL=http://localhost:3006\n" >> .env
-          printf "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}\n" >> .env
-          printf "JWT_SECRET=${{ secrets.JWT_SECRET }}\n" >> .env
-          printf "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}\n" >> .env
-          printf "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}\n" >> .env
+          $utf8NoBOM = New-Object System.Text.UTF8Encoding $false
+          $lines = @(
+            "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
+            "VITE_API_GATEWAY_URL=http://localhost:3006",
+            "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}",
+            "JWT_SECRET=${{ secrets.JWT_SECRET }}",
+            "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}",
+            "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}"
+          )
+          [System.IO.File]::WriteAllLines(".env", $lines, $utf8NoBOM)
 
       - name: Pull imagenes desde DockerHub
         run: docker compose pull
