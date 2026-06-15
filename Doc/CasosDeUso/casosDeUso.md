@@ -362,7 +362,7 @@
 
 ---
 
-CDU-002.7: Carga masiva de películas
+### CDU-002.7: Carga masiva de películas
 
 | Campo | Descripción |
 |-------|-------------|
@@ -379,12 +379,13 @@ CDU-002.7: Carga masiva de películas
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de añadir película. |
 | 2 | Administrador | Selecciona el tipo de carga de película: Masiva |
-| 3 | Administrador | Ingresa los datos por medio de un csv: el título, categoría, duración, sinopsis, tipo de cartelera, y si está activa o no. |
+| 3 | Administrador | Tiene un archivo con los datos de un csv: el título, categoría, duración, sinopsis, tipo de cartelera, y si está activa o no. |
 | 4| | Administrador | Selecciona el archivo CSV desde su dispositivo. |
 | 5 | Sistema | Sube y procesa el archivo CSV  |
-| 6 | Sistema | Valida que cada registro del CSV tenga los campos obligatorios completos y con formato correcto. |
-| 7 | Sistema | Persiste las películas en la base de datos. |
-| 8 | Sistema | Muestra un mensaje de confirmación indicando cuántas películas se registraron exitosamente |
+| 6 | Sistema | Muestra un preview de las películas a cargar. |
+| 7 | Administrador | Confirma la carga de las películas |
+| 8 | Sistema | Persiste las películas en la base de datos. |
+| 9 | Sistema | Muestra un mensaje de confirmación |
 
 **Flujos alternativos:**
 | ID | Condición | Acción |
