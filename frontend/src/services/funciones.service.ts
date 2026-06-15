@@ -12,6 +12,8 @@ import type {
   UpdateFuncionRequest,
   CreateSalaFuncionRequest,
   FuncionesFilter,
+  PaginatedFunciones,
+  PaginatedSalas,
 } from '../types/funciones.types';
 
 const peliculasRoute = '/api/peliculas';
@@ -130,6 +132,27 @@ class FuncionesService {
 
   async getSalas(): Promise<SalaFuncion[]> {
     const response = await api.get<SalaFuncion[]>(salasRoute);
+    return response.data;
+  }
+
+  async getCartelera(cine: string, page = 1, limit = 10, tipoCartelera?: string): Promise<PaginatedFunciones> {
+    const response = await api.get<PaginatedFunciones>(`${endpoints.funciones}/cartelera`, {
+      params: { cine, page, limit, ...(tipoCartelera ? { tipo_cartelera: tipoCartelera } : {}) },
+    });
+    return response.data;
+  }
+
+  async getFuncionesPaginated(params: { page?: number; limit?: number; cine?: string; sala?: string; pelicula?: string } = {}): Promise<PaginatedFunciones> {
+    const response = await api.get<PaginatedFunciones>(`${endpoints.funciones}/paginated`, {
+      params,
+    });
+    return response.data;
+  }
+
+  async getSalasPaginated(params: { page?: number; limit?: number; cine?: string; search?: string } = {}): Promise<PaginatedSalas> {
+    const response = await api.get<PaginatedSalas>(`${salasRoute}/paginated`, {
+      params,
+    });
     return response.data;
   }
 
