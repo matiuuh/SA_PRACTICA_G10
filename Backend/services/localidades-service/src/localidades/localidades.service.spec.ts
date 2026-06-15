@@ -10,8 +10,18 @@ describe('LocalidadesService', () => {
   let ciudadesRepo: Record<string, jest.Mock>;
   let cinesRepo: Record<string, jest.Mock>;
   let salasRepo: Record<string, jest.Mock>;
+  let mockQueryBuilder: Record<string, jest.Mock>;
 
   beforeEach(() => {
+    mockQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[mockCine], 1]),
+    };
+
     ciudadesRepo = {
       find: jest.fn().mockResolvedValue([mockCiudad]),
       findOne: jest.fn(),
@@ -25,6 +35,7 @@ describe('LocalidadesService', () => {
       create: jest.fn().mockImplementation((data) => data),
       save: jest.fn().mockImplementation((data) => Promise.resolve(data)),
       remove: jest.fn().mockResolvedValue(undefined),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
     };
     salasRepo = {
       find: jest.fn().mockResolvedValue([mockSala]),
@@ -283,6 +294,113 @@ describe('LocalidadesService', () => {
     it('debe lanzar NotFoundException si la sala no existe', async () => {
       salasRepo.findOne.mockResolvedValue(null);
       await expect(service.removeSala('no-existe')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ─── Branch coverage additions ────────────────────────────────────
+
+  describe('findCinesPaginated', () => {
+    it('debe retornar cines paginados sin filtros', async () => {
+      const result = await service.findCinesPaginated({});
+      expect(result.data).toEqual([mockCine]);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('debe filtrar por busqueda', async () => {
+      const result = await service.findCinesPaginated({ search: 'Cine' });
+      expect(result.data).toEqual([mockCine]);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
+    });
+
+    it('debe filtrar por idCiudad', async () => {
+      const result = await service.findCinesPaginated({ idCiudad: 'ciudad-1' });
+      expect(result.data).toEqual([mockCine]);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('ciudad.id = :idCiudad', {
+        idCiudad: 'ciudad-1',
+      });
+    });
+
+    it('debe aplicar page y limit', async () => {
+      const result = await service.findCinesPaginated({ page: 2, limit: 5 });
+      expect(result.meta.page).toBe(2);
+      expect(result.meta.limit).toBe(5);
+    });
+  });
+
+  describe('updateCiudad - branch', () => {
+    it('debe no modificar nombre si no se envia', async () => {
+      ciudadesRepo.findOne.mockResolvedValue({ ...mockCiudad });
+      const result = await service.updateCiudad('ciudad-1', {});
+      expect(result.nombre).toBe('Guatemala');
+    });
+  });
+
+  describe('updateCine - partial branches', () => {
+    it('debe mantener campos si no se envian', async () => {
+      cinesRepo.findOne.mockResolvedValue({ ...mockCine });
+      const result = await service.updateCine('cine-1', {});
+      expect(result.nombre).toBe('Cinepolis Miraflores');
+      expect(result.direccion).toBe('Zona 11');
+    });
+
+    it('debe actualizar ciudad si se envia idCiudad', async () => {
+      cinesRepo.findOne.mockResolvedValue({ ...mockCine });
+      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
+      const result = await service.updateCine('cine-1', { idCiudad: 'ciudad-1' });
+      expect(result.ciudad).toEqual(mockCiudad);
+    });
+  });
+
+  describe('removeCine - not found branch', () => {
+    it('debe lanzar NotFoundException si el cine no existe', async () => {
+      cinesRepo.findOne.mockResolvedValue(null);
+      await expect(service.removeCine('no-existe')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createSala - tipoSala branch', () => {
+    it('debe crear sala con tipoSala null si no se envia', async () => {
+      cinesRepo.findOne.mockResolvedValue(mockCine);
+      const result = await service.createSala({
+        nombre: 'Sala Normal',
+        capacidad: 80,
+        idCine: 'cine-1',
+      });
+      expect(result.tipoSala).toBeNull();
+    });
+
+    it('debe crear sala con tipoSala trimmeado', async () => {
+      cinesRepo.findOne.mockResolvedValue(mockCine);
+      const result = await service.createSala({
+        nombre: 'Sala VIP',
+        capacidad: 50,
+        tipoSala: '  3D  ',
+        idCine: 'cine-1',
+      });
+      expect(result.tipoSala).toBe('3D');
+    });
+  });
+
+  describe('updateSala - partial branches', () => {
+    it('debe mantener campos si no se envian', async () => {
+      salasRepo.findOne.mockResolvedValue({ ...mockSala });
+      const result = await service.updateSala('sala-1', {});
+      expect(result.nombre).toBe('Sala 1');
+      expect(result.capacidad).toBe(100);
+      expect(result.tipoSala).toBe('IMAX');
+    });
+
+    it('debe setear tipoSala a null si se envia vacio', async () => {
+      salasRepo.findOne.mockResolvedValue({ ...mockSala });
+      const result = await service.updateSala('sala-1', { tipoSala: '' });
+      expect(result.tipoSala).toBeNull();
+    });
+
+    it('debe actualizar cine si se envia idCine', async () => {
+      salasRepo.findOne.mockResolvedValue({ ...mockSala });
+      cinesRepo.findOne.mockResolvedValue(mockCine);
+      const result = await service.updateSala('sala-1', { idCine: 'cine-1' });
+      expect(result.cine).toEqual(mockCine);
     });
   });
 });

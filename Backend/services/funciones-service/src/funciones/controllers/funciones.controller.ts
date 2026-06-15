@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { CreateFuncionDto } from '../dto/create-funcion.dto';
+import { PaginateFuncionesDto } from '../dto/paginate-funciones.dto';
 import { UpdateFuncionDto } from '../dto/update-funcion.dto';
 import { FuncionesService } from '../services/funciones.service';
 
@@ -30,6 +31,26 @@ export class FuncionesController {
       service: 'funciones-service',
       timestamp: new Date().toISOString(),
     };
+  }
+
+  @Get('paginated')
+  findPaginated(@Query() query: PaginateFuncionesDto) {
+    return this.funcionesService.findPaginated(query);
+  }
+
+  @Get('cartelera')
+  findCartelera(
+    @Query('cine') cine: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('tipo_cartelera') tipoCartelera?: string,
+  ) {
+    return this.funcionesService.findCarteleraPaginated(
+      cine,
+      page ? Math.max(1, Number(page)) : 1,
+      limit ? Math.min(50, Math.max(1, Number(limit))) : 10,
+      tipoCartelera,
+    );
   }
 
   @Get()

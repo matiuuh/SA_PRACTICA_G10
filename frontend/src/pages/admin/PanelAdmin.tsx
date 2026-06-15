@@ -169,6 +169,11 @@ const PanelAdmin = () => {
     setPeliculas((prev) => prev.filter((pelicula) => pelicula.id_pelicula !== id));
   };
 
+  const handleImportarPeliculas = useCallback(async () => {
+    const peliculasData = await peliculasService.getAllPeliculas();
+    setPeliculas(peliculasData);
+  }, []);
+
   const handleAgregarLocalidad = async (localidad: CreateLocalidadForm) => {
     setSavingSection('localidades');
     setError(null);
@@ -396,7 +401,7 @@ const PanelAdmin = () => {
             onAgregar={handleAgregarPelicula}
             onEditar={handleEditarPelicula}
             onEliminar={handleEliminarPelicula}
-            onImportar={cargarDatos}
+            onImportar={handleImportarPeliculas}
           />
         )}
 

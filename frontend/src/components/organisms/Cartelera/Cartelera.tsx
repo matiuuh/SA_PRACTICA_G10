@@ -15,27 +15,37 @@ import {
 } from 'react-icons/fa';
 import type { CarteleraCategoria, CarteleraPelicula } from '../../../types/user-panel.types';
 
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 interface CarteleraProps {
   peliculas: CarteleraPelicula[];
+  meta: PaginationMeta;
+  onPageChange: (page: number) => void;
   onVerHorarios: (pelicula: CarteleraPelicula) => void;
   selectedCity?: string;
   selectedCinema?: string;
+  categoriaActiva: CategoriaFiltro;
+  onCategoriaChange: (categoria: CategoriaFiltro) => void;
 }
 
 type CategoriaFiltro = 'todos' | CarteleraCategoria;
 
-// Configuración de paginación - 10 películas por página
-const ITEMS_PER_PAGE = 10;
-
 const Cartelera: React.FC<CarteleraProps> = ({
   peliculas,
+  meta,
+  onPageChange,
   onVerHorarios,
   selectedCity,
   selectedCinema,
+  categoriaActiva,
+  onCategoriaChange,
 }) => {
-  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaFiltro>('todos');
   const [peliculaDetalle, setPeliculaDetalle] = useState<CarteleraPelicula | null>(null);
-  const [paginaActual, setPaginaActual] = useState(1);
 
   const categorias = [
     { id: 'todos' as CategoriaFiltro, label: 'Todos', icon: FaFilter, color: 'bg-gray-500' },
@@ -44,29 +54,14 @@ const Cartelera: React.FC<CarteleraProps> = ({
     { id: 'reestreno' as CategoriaFiltro, label: 'Re-Estrenos', icon: FaRedo, color: 'bg-purple-500' },
   ];
 
-  // Filtrar películas por categoría
-  const peliculasFiltradas =
-    categoriaActiva === 'todos'
-      ? peliculas
-      : peliculas.filter((pelicula) => pelicula.categoria === categoriaActiva);
-
-  // Calcular paginación
-  const totalPaginas = Math.ceil(peliculasFiltradas.length / ITEMS_PER_PAGE);
-  const inicio = (paginaActual - 1) * ITEMS_PER_PAGE;
-  const fin = inicio + ITEMS_PER_PAGE;
-  const peliculasPaginadas = peliculasFiltradas.slice(inicio, fin);
-
-  // Reiniciar a la primera página cuando cambia la categoría
-  const handleCategoriaChange = (categoria: CategoriaFiltro) => {
-    setCategoriaActiva(categoria);
-    setPaginaActual(1);
-  };
+  const paginaActual = meta.page;
+  const totalPaginas = meta.totalPages;
 
   // Funciones de navegación
-  const goToFirstPage = () => setPaginaActual(1);
-  const goToLastPage = () => setPaginaActual(totalPaginas);
-  const goToNextPage = () => setPaginaActual(prev => Math.min(prev + 1, totalPaginas));
-  const goToPreviousPage = () => setPaginaActual(prev => Math.max(prev - 1, 1));
+  const goToFirstPage = () => onPageChange(1);
+  const goToLastPage = () => onPageChange(totalPaginas);
+  const goToNextPage = () => onPageChange(Math.min(paginaActual + 1, totalPaginas));
+  const goToPreviousPage = () => onPageChange(Math.max(paginaActual - 1, 1));
 
   // Generar números de página para mostrar
   const getPageNumbers = () => {
@@ -131,7 +126,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
           return (
             <button
               key={categoria.id}
-              onClick={() => handleCategoriaChange(categoria.id)}
+              onClick={() => onCategoriaChange(categoria.id)}
               className={`flex items-center gap-2 px-5 py-2 rounded-full transition-all transform hover:scale-105 ${
                 isActive
                   ? `${categoria.color} text-white shadow-lg`
@@ -142,7 +137,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
               <span className="font-medium">{categoria.label}</span>
               {isActive && (
                 <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                  {peliculasFiltradas.length}
+                  {peliculas.length}
                 </span>
               )}
             </button>
@@ -152,16 +147,16 @@ const Cartelera: React.FC<CarteleraProps> = ({
 
       <div className="text-center mb-6">
         <p className="text-gray-400 text-sm">
-          Mostrando <span className="text-cinema-gold-500 font-bold">{peliculasPaginadas.length}</span> de{' '}
-          <span className="text-cinema-gold-500 font-bold">{peliculasFiltradas.length}</span> peliculas
+          Mostrando <span className="text-cinema-gold-500 font-bold">{peliculas.length}</span> de{' '}
+          <span className="text-cinema-gold-500 font-bold">{meta.total}</span> peliculas
           {categoriaActiva !== 'todos' &&
             ` en ${categorias.find((categoria) => categoria.id === categoriaActiva)?.label}`}
         </p>
       </div>
 
       {/* Grid de películas - 5 columnas fijas */}
-      <div className="grid grid-cols-5 gap-5">
-        {peliculasPaginadas.map((pelicula) => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        {peliculas.map((pelicula) => {
           const badge = getCategoriaBadge(pelicula.categoria);
           const BadgeIcon = badge.icon;
 
@@ -242,7 +237,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
       </div>
 
       {/* Componente de Paginación */}
-      {peliculasFiltradas.length > ITEMS_PER_PAGE && (
+      {meta.total > 0 && (
         <div className="mt-12 mb-8">
           <div className="flex justify-center items-center gap-2 flex-wrap">
             {/* Botón Primera Página */}
@@ -270,7 +265,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
               {getPageNumbers().map((page, index) => (
                 <button
                   key={index}
-                  onClick={() => typeof page === 'number' && setPaginaActual(page)}
+                  onClick={() => typeof page === 'number' && onPageChange(page)}
                   className={`min-w-[40px] h-10 rounded-lg font-medium transition-all ${
                     paginaActual === page
                       ? 'bg-cinema-gold-500 text-black'
@@ -315,7 +310,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
         </div>
       )}
 
-      {peliculasFiltradas.length === 0 && (
+      {peliculas.length === 0 && (
         <div className="text-center py-16">
           <FaFilm className="text-6xl text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400 text-lg">

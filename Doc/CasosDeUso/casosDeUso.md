@@ -189,12 +189,13 @@
 | Paso | Actor | Acción |
 |------|-------|--------|
 | 1 | Administrador | Accede al panel de administración y selecciona la opción de añadir película. |
-| 2 | Administrador | Ingresa el título, categoría, duración, sinopsis, tipo de cartelera, y si está activa o no. |
-| 3 | Administrador | Carga la imagen del póster de la película por medio de un url. |
-| 4 | Administrador | Envía el formulario. |
-| 5 | Sistema | Valida que todos los campos obligatorios estén completos |
-| 6 | Sistema | Almacena la película con toda su información en la base de datos. |
-| 7 | Sistema | Muestra un mensaje de confirmación de registro exitoso. |
+| 2 | Administrador | Selecciona el tipo de carga de película: individual |
+| 3 | Administrador | Ingresa el título, categoría, duración, sinopsis, tipo de cartelera, y si está activa o no. |
+| 4| | Administrador | Carga la imagen del póster de la película por medio de un url. |
+| 5 | Administrador | Envía el formulario. |
+| 6 | Sistema | Valida que todos los campos obligatorios estén completos |
+| 7 | Sistema | Almacena la película con toda su información en la base de datos. |
+| 8 | Sistema | Muestra un mensaje de confirmación de registro exitoso. |
 
 **Flujos alternativos:**
 
@@ -360,6 +361,41 @@
 | FE-02 | Error al recuperar la información de la película | El sistema muestra un mensaje de error genérico y sugiere regresar a la cartelera. |
 
 ---
+
+### CDU-002.7: Carga masiva de películas
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-002.7 |
+| **Nombre** | Carga masiva de películas |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador cargar múltiples películas a través de un archivo CSV, procesando la información para crear registros en el sistema. |
+| **Precondiciones** | El administrador tiene una sesión activa. El archivo CSV contiene la información necesaria para crear las películas. |
+| **Postcondiciones** | Las películas se registran en el sistema con toda su información. |
+
+
+**Flujo principal:**
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede al panel de administración y selecciona la opción de añadir película. |
+| 2 | Administrador | Selecciona el tipo de carga de película: Masiva |
+| 3 | Administrador | Tiene un archivo con los datos de un csv: el título, categoría, duración, sinopsis, tipo de cartelera, y si está activa o no. |
+| 4| | Administrador | Selecciona el archivo CSV desde su dispositivo. |
+| 5 | Sistema | Sube y procesa el archivo CSV  |
+| 6 | Sistema | Muestra un preview de las películas a cargar. |
+| 7 | Administrador | Confirma la carga de las películas |
+| 8 | Sistema | Persiste las películas en la base de datos. |
+| 9 | Sistema | Muestra un mensaje de confirmación |
+
+**Flujos alternativos:**
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El administrador cancela la carga | En cualquier paso, el administrador puede cancelar y el sistema descarta los datos ingresados. |
+
+**Flujos de excepción:**
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | El archivo CSV tiene formato incorrecto | El sistema muestra un mensaje de error indicando que el formato del archivo no es válido. |
 
 ## Gestión de funciones
 

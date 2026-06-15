@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { FaCheckCircle, FaTimes, FaStar } from 'react-icons/fa'
 
 interface ToastProps {
@@ -14,13 +14,16 @@ const Toast: React.FC<ToastProps> = ({
   duration = 3000, 
   onClose 
 }) => {
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      onClose()
+      onCloseRef.current()
     }, duration)
 
     return () => clearTimeout(timer)
-  }, [duration, onClose])
+  }, [duration])
 
   const getStyles = () => {
     switch(type) {

@@ -12,5 +12,6 @@
 | RNF-08 | Contenedores e infraestructura | Cada servicio debe contener su propio `Dockerfile`. El sistema debe poder desplegarse localmente y en la nube mediante dos archivos `docker-compose` diferenciados, sin modificaciones al código fuente. | Portabilidad |
 | RNF-09 | Punto de entrada único | Todos los servicios deben exponerse al cliente a través de un único API Gateway, que centralice el enrutamiento, la autenticación y el control de acceso. | Seguridad |
 | RNF-10 | Control de acceso basado en roles | El sistema debe implementar un sistema de control de acceso basado en roles  para diferenciar las funcionalidades disponibles para usuarios normales y administradores. | Seguridad |
+| RNF-11 | Paginación de resultados | Las consultas que devuelvan listados de películas, funciones o sucursales deben implementar paginación para limitar la cantidad de resultados por página a un máximo de 10. | Rendimiento |
 
 [Volver a Documentacion](../Documentación.md)
