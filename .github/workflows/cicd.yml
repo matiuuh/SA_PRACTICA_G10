@@ -241,8 +241,18 @@ jobs:
         run: docker compose pull
 
       - name: Levantar servicios localmente
+        shell: powershell
         run: |
           docker compose down
+          $names = @(
+            "rabbitmq",
+            "auth-service", "localidades-service", "funciones-service", "reservas-service", "pagos-service",
+            "api-gateway", "frontend",
+            "postgres-auth", "postgres-localidades", "postgres-funciones", "postgres-reservas", "postgres-pagos"
+          )
+          foreach ($name in $names) {
+            docker rm -f $name 2>$null
+          }
           docker compose up -d
 
       - name: Limpiar imagenes antiguas
