@@ -243,6 +243,7 @@ jobs:
       - name: Levantar servicios localmente
         shell: powershell
         run: |
+          $ErrorActionPreference = 'Continue'
           docker compose down --volumes
           $names = @(
             "rabbitmq",
@@ -251,7 +252,7 @@ jobs:
             "postgres-auth", "postgres-localidades", "postgres-funciones", "postgres-reservas", "postgres-pagos"
           )
           foreach ($name in $names) {
-            docker rm -f $name 2>$null
+            docker rm -f $name 2>&1 | Out-Null
           }
           docker compose up -d
 
