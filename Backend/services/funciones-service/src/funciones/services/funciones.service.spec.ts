@@ -19,12 +19,13 @@ const mockFuncion = {
 describe('FuncionesService', () => {
   let service: FuncionesService;
   let repo: Record<string, any>;
+  let mockQueryBuilder: Record<string, jest.Mock>;
   let peliculasService: jest.Mocked<Partial<PeliculasService>>;
   let salasService: jest.Mocked<Partial<SalasService>>;
   let configService: jest.Mocked<Partial<ConfigService>>;
 
   beforeEach(() => {
-    const mockQueryBuilder = {
+    mockQueryBuilder = {
       innerJoinAndSelect: jest.fn().mockReturnThis(),
       innerJoin: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
