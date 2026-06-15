@@ -243,7 +243,7 @@ jobs:
       - name: Levantar servicios localmente
         shell: powershell
         run: |
-          docker compose down
+          docker compose down --volumes
           $names = @(
             "rabbitmq",
             "auth-service", "localidades-service", "funciones-service", "reservas-service", "pagos-service",
