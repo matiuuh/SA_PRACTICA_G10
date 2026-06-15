@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FaPlus, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm } from 'react-icons/fa'
-import type { Pelicula, Categoria, TipoCartelera } from '../../../types/admin.types'
+import { FaPlus, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaUpload, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import type { Pelicula, Categoria, TipoCartelera, PeliculasPaginationMeta } from '../../../types/admin.types'
 import { peliculasService } from '../../../services/peliculas.service'
 import AdminActionButtons from '../../admin/AdminActionButtons'
 import Toast from '../../atoms/Toast/Toast'
@@ -10,9 +10,10 @@ interface AdminPeliculasProps {
   onAgregar: (pelicula: Pelicula) => void
   onEditar: (pelicula: Pelicula) => void
   onEliminar: (id: string) => void
+  onImportar?: () => Promise<void>
 }
 
-const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, onEditar, onEliminar }) => {
+const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, onEditar, onEliminar, onImportar }) => {
   const [showModal, setShowModal] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [editingPelicula, setEditingPelicula] = useState<Pelicula | null>(null)
@@ -22,12 +23,23 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
   const [tiposCartelera, setTiposCartelera] = useState<TipoCartelera[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [loadingCatalogos, setLoadingCatalogos] = useState(true)
+  const [loadingPeliculas, setLoadingPeliculas] = useState(false)
+  const [isUploadingCsv, setIsUploadingCsv] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [showErrorToast, setShowErrorToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [peliculaToDelete, setPeliculaToDelete] = useState<Pelicula | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [peliculasPagina, setPeliculasPagina] = useState<Pelicula[]>([])
+  const [paginationMeta, setPaginationMeta] = useState<PeliculasPaginationMeta>({
+    page: 1,
+    limit: 10,
+    total: peliculas.length,
+    totalPages: Math.max(1, Math.ceil(peliculas.length / 10)),
+  })
   const [formData, setFormData] = useState({
     titulo: '',
     sinopsis: '',
@@ -68,6 +80,33 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     
     cargarCatalogos()
   }, [])
+
+  useEffect(() => {
+    const cargarPeliculasPaginadas = async () => {
+      try {
+        setLoadingPeliculas(true)
+        const response = await peliculasService.getPeliculasPaginated({
+          page: paginaActual,
+          limit: 10,
+          search: searchTerm.trim() || undefined,
+        })
+
+        setPeliculasPagina(response.data)
+        setPaginationMeta({
+          ...response.meta,
+          totalPages: Math.max(1, response.meta.totalPages),
+        })
+      } catch (error: any) {
+        console.error('Error cargando peliculas paginadas:', error)
+        setErrorMessage(error.response?.data?.message || 'Error al cargar peliculas')
+        setShowErrorToast(true)
+      } finally {
+        setLoadingPeliculas(false)
+      }
+    }
+
+    void cargarPeliculasPaginadas()
+  }, [paginaActual, searchTerm, reloadKey])
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -123,10 +162,12 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       if (editingPelicula) {
         const updated = await peliculasService.updatePelicula(editingPelicula.id_pelicula, data)
         onEditar(updated)
+        setReloadKey(prev => prev + 1)
         setSuccessMessage('Película actualizada exitosamente')
       } else {
         const created = await peliculasService.createPelicula(data)
         onAgregar(created)
+        setReloadKey(prev => prev + 1)
         setSuccessMessage('Película creada exitosamente')
       }
       setShowSuccessToast(true)
@@ -164,6 +205,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     try {
       await peliculasService.deletePelicula(peliculaToDelete.id_pelicula)
       onEliminar(peliculaToDelete.id_pelicula)
+      setReloadKey(prev => prev + 1)
       setSuccessMessage('Película eliminada exitosamente')
       setShowSuccessToast(true)
       setPeliculaToDelete(null)
@@ -174,6 +216,37 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       setIsDeleting(false)
     }
   }, [onEliminar, peliculaToDelete])
+
+  const handleCsvUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+
+    if (!file) {
+      return
+    }
+
+    setIsUploadingCsv(true)
+
+    try {
+      const result = await peliculasService.importCsv(file)
+      setPaginaActual(1)
+      setReloadKey(prev => prev + 1)
+      await onImportar?.()
+      setSuccessMessage(`Carga finalizada: ${result.insertadas} insertadas, ${result.fallidas} fallidas`)
+      setShowSuccessToast(true)
+
+      if (result.errores.length > 0) {
+        setErrorMessage(result.errores.map(error => `Fila ${error.fila}: ${error.error}`).join(' | '))
+        setShowErrorToast(true)
+      }
+    } catch (error: any) {
+      console.error('Error cargando CSV:', error)
+      setErrorMessage(error.response?.data?.message || 'Error al cargar el archivo CSV')
+      setShowErrorToast(true)
+    } finally {
+      setIsUploadingCsv(false)
+    }
+  }, [onImportar])
 
   const getCategoriaIcon = useCallback((categoriaNombre: string) => {
     switch(categoriaNombre?.toLowerCase()) {
@@ -203,22 +276,34 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     )
   }
 
-  const peliculasFiltradas = searchTerm 
-    ? peliculas.filter(p => p.titulo.toLowerCase().includes(searchTerm.toLowerCase()))
-    : peliculas
+  const peliculasFiltradas = peliculasPagina
+  const totalPaginas = paginationMeta.totalPages || 1
 
   return (
     <>
       <div className="cinema-card p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
           <h2 className="text-xl font-bold text-white">Gestión de Películas</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
-          >
-            <FaPlus />
-            Agregar Película
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <label className={`bg-cinema-dark-700 hover:bg-cinema-dark-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${isUploadingCsv ? 'opacity-60 cursor-not-allowed' : ''}`}>
+              {isUploadingCsv ? <FaSpinner className="animate-spin" /> : <FaUpload />}
+              Cargar CSV
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                disabled={isUploadingCsv}
+                onChange={handleCsvUpload}
+              />
+            </label>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+            >
+              <FaPlus />
+              Agregar Película
+            </button>
+          </div>
         </div>
 
         <div className="relative mb-6">
@@ -227,11 +312,25 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
             type="text"
             placeholder="Buscar por título..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setPaginaActual(1)
+              setSearchTerm(e.target.value)
+            }}
             className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
           />
         </div>
 
+        <div className="mb-4 text-sm text-gray-400">
+          Mostrando {peliculasFiltradas.length} de {paginationMeta.total} peliculas
+        </div>
+
+        {loadingPeliculas && (
+          <div className="flex justify-center items-center h-40">
+            <FaSpinner className="animate-spin text-cinema-gold-500 text-3xl" />
+          </div>
+        )}
+
+        {!loadingPeliculas && (
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -272,6 +371,37 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
               ))}
             </tbody>
           </table>
+        </div>
+        )}
+
+        {!loadingPeliculas && peliculasFiltradas.length === 0 && (
+          <div className="text-center py-8 text-gray-400">
+            No hay peliculas para mostrar.
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-gray-500">
+            Pagina {paginationMeta.page} de {totalPaginas}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPaginaActual(prev => Math.max(prev - 1, 1))}
+              disabled={paginaActual <= 1 || loadingPeliculas}
+              className="px-3 py-2 rounded-lg bg-cinema-dark-800 text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <FaChevronLeft />
+              Anterior
+            </button>
+            <button
+              onClick={() => setPaginaActual(prev => Math.min(prev + 1, totalPaginas))}
+              disabled={paginaActual >= totalPaginas || loadingPeliculas}
+              className="px-3 py-2 rounded-lg bg-cinema-dark-800 text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              Siguiente
+              <FaChevronRight />
+            </button>
+          </div>
         </div>
 
         {/* Modal de detalles */}

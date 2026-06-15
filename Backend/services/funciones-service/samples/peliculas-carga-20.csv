@@ -1,0 +1,21 @@
+titulo,sinopsis,duracion_minutos,poster_url,categoria,tipo_cartelera,activa
+Nebula 7,"Una tripulacion explora una senal perdida en los limites de la galaxia.",118,https://example.com/posters/nebula-7.jpg,Ciencia Ficcion,Estreno,true
+La Risa Final,"Comedia familiar sobre un teatro que intenta salvar su ultima funcion.",96,https://example.com/posters/la-risa-final.jpg,Comedia,Preventa,true
+Sombras del Lago,"Un grupo de amigos descubre una leyenda oscura durante sus vacaciones.",104,https://example.com/posters/sombras-del-lago.jpg,Terror,Estreno,true
+Corazon de Acero,"Drama de superacion sobre una atleta que regresa a competir.",122,https://example.com/posters/corazon-de-acero.jpg,Drama,Reestreno,true
+Guardianes del Bosque,"Aventura infantil donde dos hermanos protegen un bosque encantado.",89,https://example.com/posters/guardianes-del-bosque.jpg,Infantil,Reestreno,true
+Rutas del Desierto,"Dos desconocidos cruzan el desierto buscando una ciudad perdida.",111,https://example.com/posters/rutas-del-desierto.jpg,Aventura,Estreno,true
+Codigo Aurora,"Una hacker descubre un sistema capaz de alterar recuerdos humanos.",127,https://example.com/posters/codigo-aurora.jpg,Ciencia Ficcion,Preventa,true
+El Ultimo Aplauso,"Una actriz retirada vuelve al escenario para enfrentar su pasado.",109,https://example.com/posters/el-ultimo-aplauso.jpg,Drama,Reestreno,true
+Planeta Azul Oscuro,"Exploradores submarinos encuentran una especie inteligente desconocida.",116,https://example.com/posters/planeta-azul-oscuro.jpg,Aventura,Estreno,true
+Amor en Septiembre,"Dos amigos de infancia se reencuentran durante una feria local.",101,https://example.com/posters/amor-en-septiembre.jpg,Romance,Preventa,true
+Medianoche en Sala 4,"Un proyeccionista nota que una pelicula cambia cada noche.",98,https://example.com/posters/medianoche-sala-4.jpg,Suspenso,Estreno,true
+Los Inventores,"Un grupo de ninos construye una maquina para salvar su escuela.",92,https://example.com/posters/los-inventores.jpg,Infantil,Reestreno,true
+Operacion Volcan,"Un equipo de rescate entra a una isla antes de una erupcion.",120,https://example.com/posters/operacion-volcan.jpg,Accion,Estreno,true
+Fantasia de Cristal,"Una joven descubre que puede viajar entre mundos a traves de espejos.",113,https://example.com/posters/fantasia-cristal.jpg,Fantasia,Estreno,true
+La Casa del Eco,"Una familia se muda a una casa donde las paredes repiten secretos.",105,https://example.com/posters/la-casa-del-eco.jpg,Terror,Preventa,true
+Reyes del Arcade,"Tres amigos compiten en el torneo retro mas importante del pais.",94,https://example.com/posters/reyes-del-arcade.jpg,Comedia,Reestreno,true
+Huellas en la Nieve,"Una detective investiga una desaparicion en un pueblo aislado.",117,https://example.com/posters/huellas-nieve.jpg,Suspenso,Reestreno,true
+Viaje a Orión,"Una mision espacial escolar se vuelve real por accidente.",99,https://example.com/posters/viaje-orion.jpg,Ciencia Ficcion,Preventa,true
+El Tren de las 8,"Historias cruzadas se conectan durante un viaje nocturno.",108,https://example.com/posters/tren-de-las-8.jpg,Drama,Preventa,true
+Relampago Rojo,"Una piloto clandestina busca limpiar el nombre de su hermano.",124,https://example.com/posters/relampago-rojo.jpg,Accion,Estreno,true

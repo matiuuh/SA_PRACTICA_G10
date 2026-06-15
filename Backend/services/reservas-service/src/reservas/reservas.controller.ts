@@ -48,7 +48,6 @@ export class ReservasController {
 
   @Get('funciones/:id/asientos')
   @UseGuards(JwtAuthGuard)
-  // Lista los asientos asociados a una funcion externa.
   findAsientosByFuncion(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
@@ -72,8 +71,9 @@ export class ReservasController {
   }
 
   @Get('internal/funciones/:id/boletos')
-  hasBoletosByFuncion(@Param('id', ParseUUIDPipe) id: string) {
-    return this.reservasService.hasBoletosByFuncion(id).then((hasBoletos) => ({ hasBoletos }));
+  async hasBoletosByFuncion(@Param('id', ParseUUIDPipe) id: string) {
+    const hasBoletos = await this.reservasService.hasBoletosByFuncion(id);
+    return { hasBoletos };
   }
 
   @Get(':id')
@@ -106,7 +106,6 @@ export class ReservasController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  // Crea una reserva temporal usando asientos y usuario externo.
   createReserva(
     @Body() createReservaDto: CreateReservaDto,
     @Req() request: AuthenticatedRequest,
@@ -119,7 +118,6 @@ export class ReservasController {
 
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
-  // Crea la reserva temporal y envia la solicitud de pago a RabbitMQ.
   createCheckout(
     @Body() createCheckoutDto: CreateCheckoutDto,
     @Req() request: AuthenticatedRequest,
@@ -133,7 +131,6 @@ export class ReservasController {
   @Post(':id/confirmar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMINISTRADOR')
-  // Cambia la reserva a confirmada y genera el boleto si no existe.
   confirmReserva(@Param('id', ParseUUIDPipe) id: string) {
     return this.reservasService.confirmReserva(id);
   }

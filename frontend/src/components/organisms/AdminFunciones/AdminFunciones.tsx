@@ -65,7 +65,11 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : name === 'precio' ? Number(value) : value,
+      [name]: type === 'checkbox' 
+        ? (e.target as HTMLInputElement).checked 
+        : name === 'precio' 
+          ? parseInt(value) || 0
+          : value,
     }));
   };
 
@@ -86,7 +90,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
       salaId: funcion.salaId,
       fecha: funcion.fecha,
       horario: funcion.horario,
-      precio: funcion.precio,
+      precio: Math.floor(funcion.precio),
       activa: funcion.activa,
     });
     setShowModal(true);
@@ -426,6 +430,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                     required
                     value={formData.precio}
                     onChange={handleChange}
+                    step="1"
                     className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
                   />
                 </div>

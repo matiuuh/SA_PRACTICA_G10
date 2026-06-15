@@ -57,15 +57,21 @@ export class GatewayController {
     delete forwardHeaders['content-length'];
 
     try {
+      const contentType = headers['content-type'] || '';
+      const isMultipart =
+        typeof contentType === 'string' && contentType.includes('multipart/form-data');
+
       // Reenviar petición al servicio
       const response = await firstValueFrom(
         this.httpService.request({
           method,
           url: targetUrl,
-          data: body,
+          data: isMultipart ? req : body,
           headers: forwardHeaders,
           params: query,
           timeout: 30000,
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
         })
       );
 
