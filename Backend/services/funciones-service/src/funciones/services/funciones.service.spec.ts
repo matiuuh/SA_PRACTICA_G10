@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FuncionesService } from './funciones.service';
 import { PeliculasService } from './peliculas.service';
@@ -27,9 +27,23 @@ describe('FuncionesService', () => {
     const mockQueryBuilder = {
       innerJoinAndSelect: jest.fn().mockReturnThis(),
       innerJoin: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      offset: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      distinct: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([mockFuncion]),
       getOne: jest.fn().mockResolvedValue(null),
+      getManyAndCount: jest.fn().mockResolvedValue([[mockFuncion], 1]),
+      getRawMany: jest.fn().mockResolvedValue([{ peliculaId: 'peli-1' }]),
+      getRawOne: jest.fn().mockResolvedValue({ total: '1' }),
     };
 
     repo = {
@@ -203,6 +217,88 @@ describe('FuncionesService', () => {
       await expect(
         service.update('func-1', { fecha: '2025-06-20' }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('debe actualizar sin verificar conflictos si no cambia fecha/hora/sala', async () => {
+      repo.findOne.mockResolvedValue({ ...mockFuncion, sala: { ...mockSala } });
+      const result = await service.update('func-1', { precio: 99 });
+      expect(result.precio).toBe(99);
+      expect(repo.createQueryBuilder).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findPaginated', () => {
+    it('debe retornar funciones paginadas sin filtros', async () => {
+      const result = await service.findPaginated({});
+      expect(result.data).toEqual([mockFuncion]);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('debe aplicar filtros de cine, sala y pelicula', async () => {
+      const result = await service.findPaginated({
+        cine: 'cine-1',
+        sala: 'sala-1',
+        pelicula: 'peli-1',
+      });
+      expect(result.data).toEqual([mockFuncion]);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('findCarteleraPaginated', () => {
+    it('debe retornar cartelera sin filtro de tipo', async () => {
+      const result = await service.findCarteleraPaginated('cine-1', 1, 10);
+      expect(result.data).toEqual([mockFuncion]);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('debe filtrar por tipo de cartelera', async () => {
+      const result = await service.findCarteleraPaginated('cine-1', 1, 10, 'Estrenos');
+      expect(result.data).toEqual([mockFuncion]);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'LOWER(tc.nombre) = :tipoNorm',
+        { tipoNorm: 'estrenos' },
+      );
+    });
+
+    it('debe retornar vacio si no hay peliculas', async () => {
+      mockQueryBuilder.getRawMany.mockResolvedValueOnce([]);
+      mockQueryBuilder.getRawOne.mockResolvedValueOnce({ total: '0' });
+      const result = await service.findCarteleraPaginated('cine-1', 1, 10);
+      expect(result.data).toEqual([]);
+      expect(result.meta.total).toBe(0);
+    });
+  });
+
+  describe('create - extra branches', () => {
+    it('debe crear funcion inactiva si se envia activa=false', async () => {
+      repo.findOne.mockResolvedValue(null);
+      const result = await service.create({
+        id_pelicula: 'peli-1',
+        id_sala: 'sala-1',
+        fecha: '2025-06-15',
+        hora: '18:00',
+        precio: 50,
+        activa: false,
+      });
+      expect(result.activa).toBe(false);
+    });
+  });
+
+  describe('remove - boleto service branches', () => {
+    it('debe lanzar ServiceUnavailableException si falla la consulta de boletos', async () => {
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+      repo.findOne.mockResolvedValue(mockFuncion);
+      await expect(service.remove('func-1')).rejects.toThrow(ServiceUnavailableException);
+    });
+
+    it('debe lanzar ServiceUnavailableException si el servicio de boletos responde no ok', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        json: jest.fn(),
+      } as never);
+      repo.findOne.mockResolvedValue(mockFuncion);
+      await expect(service.remove('func-1')).rejects.toThrow(ServiceUnavailableException);
     });
   });
 });
