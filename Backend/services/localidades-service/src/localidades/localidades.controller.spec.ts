@@ -11,6 +11,7 @@ describe('LocalidadesController', () => {
       findCiudadById: jest.fn(),
       findCinesByCiudad: jest.fn(),
       findCines: jest.fn(),
+      findCinesPaginated: jest.fn(),
       createCiudad: jest.fn(),
       createCine: jest.fn(),
       updateCine: jest.fn(),
