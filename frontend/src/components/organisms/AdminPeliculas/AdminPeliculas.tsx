@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { FaPlus, FaSearch, FaStar, FaFire, FaRocket, FaRedo, FaSpinner, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaUpload, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import type { Pelicula, Categoria, TipoCartelera, PeliculasPaginationMeta } from '../../../types/admin.types'
 import { peliculasService } from '../../../services/peliculas.service'
@@ -15,6 +15,7 @@ interface AdminPeliculasProps {
 
 const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, onEditar, onEliminar, onImportar }) => {
   const [showModal, setShowModal] = useState(false)
+  const [modalTab, setModalTab] = useState<'individual' | 'masiva'>('individual')
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [editingPelicula, setEditingPelicula] = useState<Pelicula | null>(null)
   const [selectedPelicula, setSelectedPelicula] = useState<Pelicula | null>(null)
@@ -25,6 +26,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
   const [loadingCatalogos, setLoadingCatalogos] = useState(true)
   const [loadingPeliculas, setLoadingPeliculas] = useState(false)
   const [isUploadingCsv, setIsUploadingCsv] = useState(false)
+  const [csvDragOver, setCsvDragOver] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [showErrorToast, setShowErrorToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -119,6 +121,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
   const handleCloseModal = useCallback(() => {
     setShowModal(false)
     setEditingPelicula(null)
+    setModalTab('individual')
     if (categorias.length > 0 && tiposCartelera.length > 0) {
       setFormData({
         titulo: '',
@@ -217,26 +220,25 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     }
   }, [onEliminar, peliculaToDelete])
 
-  const handleCsvUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-
-    if (!file) {
-      return
-    }
-
+  const processCsvFile = useCallback(async (file: File) => {
     setIsUploadingCsv(true)
-
     try {
       const result = await peliculasService.importCsv(file)
       setPaginaActual(1)
       setReloadKey(prev => prev + 1)
       await onImportar?.()
-      setSuccessMessage(`Carga finalizada: ${result.insertadas} insertadas, ${result.fallidas} fallidas`)
+      setSuccessMessage(
+        `Carga finalizada: ${result.insertadas} insertada${result.insertadas !== 1 ? 's' : ''}, ${result.fallidas} fallida${result.fallidas !== 1 ? 's' : ''}` +
+        (result.errores.length > 0 ? ` — ver detalle de errores abajo` : '')
+      )
       setShowSuccessToast(true)
+      handleCloseModal()
 
       if (result.errores.length > 0) {
-        setErrorMessage(result.errores.map(error => `Fila ${error.fila}: ${error.error}`).join(' | '))
+        const detalles = result.errores
+          .map(e => `• Fila ${e.fila}: ${e.error}`)
+          .join('\n')
+        setErrorMessage(`Errores en ${result.errores.length} fila${result.errores.length !== 1 ? 's' : ''}:\n${detalles}`)
         setShowErrorToast(true)
       }
     } catch (error: any) {
@@ -246,7 +248,32 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
     } finally {
       setIsUploadingCsv(false)
     }
-  }, [onImportar])
+  }, [onImportar, handleCloseModal])
+
+  const handleCsvUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+      setErrorMessage('Solo se aceptan archivos .csv')
+      setShowErrorToast(true)
+      return
+    }
+    await processCsvFile(file)
+  }, [processCsvFile])
+
+  const handleCsvDrop = useCallback(async (event: React.DragEvent<HTMLLabelElement>) => {
+    event.preventDefault()
+    setCsvDragOver(false)
+    const file = event.dataTransfer.files?.[0]
+    if (!file) return
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+      setErrorMessage('Solo se aceptan archivos .csv')
+      setShowErrorToast(true)
+      return
+    }
+    await processCsvFile(file)
+  }, [processCsvFile])
 
   const getCategoriaIcon = useCallback((categoriaNombre: string) => {
     switch(categoriaNombre?.toLowerCase()) {
@@ -284,26 +311,13 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
       <div className="cinema-card p-6">
         <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
           <h2 className="text-xl font-bold text-white">Gestión de Películas</h2>
-          <div className="flex flex-wrap gap-2">
-            <label className={`bg-cinema-dark-700 hover:bg-cinema-dark-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all cursor-pointer ${isUploadingCsv ? 'opacity-60 cursor-not-allowed' : ''}`}>
-              {isUploadingCsv ? <FaSpinner className="animate-spin" /> : <FaUpload />}
-              Cargar CSV
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                disabled={isUploadingCsv}
-                onChange={handleCsvUpload}
-              />
-            </label>
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
-            >
-              <FaPlus />
-              Agregar Película
-            </button>
-          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+          >
+            <FaPlus />
+            Agregar Película
+          </button>
         </div>
 
         <div className="relative mb-6">
@@ -500,125 +514,254 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-cinema-dark-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-cinema-gold-500/30">
+
+              {/* Header */}
               <div className="flex justify-between items-center p-6 border-b border-cinema-gold-500/20">
                 <h2 className="text-xl font-bold text-white">
-                  {editingPelicula ? 'Editar Película' : 'Nueva Película'}
+                  {editingPelicula ? 'Editar Película' : 'Agregar Película'}
                 </h2>
-                <button onClick={handleCloseModal} className="text-gray-400 hover:text-white">
+                <button onClick={handleCloseModal} className="text-gray-400 hover:text-white text-2xl leading-none">
                   ✕
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Título *</label>
-                  <input
-                    type="text"
-                    name="titulo"
-                    required
-                    value={formData.titulo}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
+              {/* Tabs — only show when adding, not editing */}
+              {!editingPelicula && (
+                <div className="flex border-b border-gray-700 px-6">
+                  <button
+                    onClick={() => setModalTab('individual')}
+                    className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
+                      modalTab === 'individual'
+                        ? 'border-cinema-gold-500 text-cinema-gold-500'
+                        : 'border-transparent text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    Película individual
+                  </button>
+                  <button
+                    onClick={() => setModalTab('masiva')}
+                    className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
+                      modalTab === 'masiva'
+                        ? 'border-cinema-gold-500 text-cinema-gold-500'
+                        : 'border-transparent text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    Carga masiva (CSV)
+                  </button>
                 </div>
+              )}
 
-                <div className="grid grid-cols-2 gap-4">
+              {/* Tab: Individual */}
+              {(modalTab === 'individual' || editingPelicula) && (
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
                   <div>
-                    <label className="block text-gray-300 text-sm mb-2">Duración (minutos)</label>
-                    <input
-                      type="number"
-                      name="duracion_minutos"
-                      value={formData.duracion_minutos}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-2">URL del Poster</label>
+                    <label className="block text-gray-300 text-sm mb-2">Título *</label>
                     <input
                       type="text"
-                      name="poster_url"
-                      value={formData.poster_url}
+                      name="titulo"
+                      required
+                      value={formData.titulo}
                       onChange={handleChange}
                       className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">Duración (minutos)</label>
+                      <input
+                        type="number"
+                        name="duracion_minutos"
+                        value={formData.duracion_minutos}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">URL del Poster</label>
+                      <input
+                        type="text"
+                        name="poster_url"
+                        value={formData.poster_url}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">Categoría *</label>
+                      <select
+                        name="id_categoria"
+                        required
+                        value={formData.id_categoria}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                      >
+                        {categorias.map(cat => (
+                          <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm mb-2">Tipo Cartelera *</label>
+                      <select
+                        name="id_tipo_cartelera"
+                        required
+                        value={formData.id_tipo_cartelera}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
+                      >
+                        {tiposCartelera.map(tipo => (
+                          <option key={tipo.id_tipo_cartelera} value={tipo.id_tipo_cartelera}>{tipo.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-gray-300 text-sm mb-2">Categoría *</label>
-                    <select
-                      name="id_categoria"
-                      required
-                      value={formData.id_categoria}
+                    <label className="block text-gray-300 text-sm mb-2">Sinopsis</label>
+                    <textarea
+                      name="sinopsis"
+                      rows={4}
+                      value={formData.sinopsis}
                       onChange={handleChange}
                       className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                    >
-                      {categorias.map(cat => (
-                        <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-2">Tipo Cartelera *</label>
-                    <select
-                      name="id_tipo_cartelera"
-                      required
-                      value={formData.id_tipo_cartelera}
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="activa"
+                      checked={formData.activa}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                    >
-                      {tiposCartelera.map(tipo => (
-                        <option key={tipo.id_tipo_cartelera} value={tipo.id_tipo_cartelera}>{tipo.nombre}</option>
-                      ))}
-                    </select>
+                      className="w-4 h-4 rounded border-gray-700 bg-cinema-dark-900/50"
+                    />
+                    <label className="text-gray-300 text-sm">Activa</label>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-gray-300 text-sm mb-2">Sinopsis</label>
-                  <textarea
-                    name="sinopsis"
-                    rows={4}
-                    value={formData.sinopsis}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
-                  />
-                </div>
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <FaSpinner className="animate-spin mx-auto" />
+                      ) : (
+                        editingPelicula ? 'Actualizar' : 'Crear'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="activa"
-                    checked={formData.activa}
-                    onChange={handleChange}
-                    className="w-4 h-4 rounded border-gray-700 bg-cinema-dark-900/50"
-                  />
-                  <label className="text-gray-300 text-sm">Activa</label>
-                </div>
+              {/* Tab: Carga masiva */}
+              {modalTab === 'masiva' && !editingPelicula && (
+                <div className="p-6 space-y-6">
 
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700"
+                  {/* Instructions */}
+                  <div className="bg-cinema-dark-900/60 border border-cinema-gold-500/20 rounded-xl p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FaInfoCircle className="text-cinema-gold-500 flex-shrink-0" />
+                      <span className="text-cinema-gold-500 font-semibold text-sm">Formato del archivo CSV</span>
+                    </div>
+                    <p className="text-gray-400 text-sm mb-3">
+                      El archivo debe ser <strong className="text-gray-200">.csv</strong> con codificación UTF-8
+                      y las siguientes columnas en la primera fila:
+                    </p>
+                    <div className="bg-cinema-dark-900 rounded-lg px-4 py-3 font-mono text-xs text-cinema-gold-500 overflow-x-auto whitespace-nowrap border border-gray-700">
+                      titulo,sinopsis,duracion_minutos,poster_url,categoria,tipo_cartelera,activa
+                    </div>
+                    <ul className="mt-3 space-y-1 text-xs text-gray-400 list-disc list-inside">
+                      <li><strong className="text-gray-300">titulo</strong> — obligatorio, texto libre</li>
+                      <li><strong className="text-gray-300">sinopsis</strong> — opcional</li>
+                      <li><strong className="text-gray-300">duracion_minutos</strong> — opcional, número entero positivo</li>
+                      <li><strong className="text-gray-300">poster_url</strong> — opcional, URL de imagen</li>
+                      <li>
+                        <strong className="text-gray-300">categoria</strong> — nombre exacto disponible en la plataforma:
+                        {categorias.length > 0
+                          ? <span className="text-cinema-gold-400"> {categorias.map(c => c.nombre).join(', ')}</span>
+                          : <em> (cargando...)</em>}
+                      </li>
+                      <li>
+                        <strong className="text-gray-300">tipo_cartelera</strong> — nombre exacto disponible:
+                        {tiposCartelera.length > 0
+                          ? <span className="text-cinema-gold-400"> {tiposCartelera.map(t => t.nombre).join(', ')}</span>
+                          : <em> (cargando...)</em>}
+                      </li>
+                      <li><strong className="text-gray-300">activa</strong> — <em>true</em> o <em>false</em></li>
+                    </ul>
+                    <p className="mt-3 text-xs text-gray-500">Ejemplo de fila:</p>
+                    <div className="bg-cinema-dark-900 rounded-lg px-4 py-3 font-mono text-xs text-gray-400 overflow-x-auto whitespace-nowrap border border-gray-700 mt-1">
+                      {`Mi Pelicula,"Sinopsis de ejemplo.",120,https://ejemplo.com/poster.jpg,${
+                        categorias[0]?.nombre ?? 'Categoria'
+                      },${tiposCartelera[0]?.nombre ?? 'TipoCartelera'},true`}
+                    </div>
+                  </div>
+
+                  {/* Drop zone */}
+                  <label
+                    htmlFor="csv-upload"
+                    onDragOver={(e) => { e.preventDefault(); setCsvDragOver(true) }}
+                    onDragLeave={() => setCsvDragOver(false)}
+                    onDrop={(e) => void handleCsvDrop(e)}
+                    className={`flex flex-col items-center justify-center gap-3 w-full rounded-2xl border-2 border-dashed p-10 cursor-pointer transition-all ${
+                      csvDragOver
+                        ? 'border-cinema-gold-500 bg-cinema-gold-500/10'
+                        : 'border-gray-600 hover:border-cinema-gold-500/60 hover:bg-cinema-dark-900/40'
+                    } ${isUploadingCsv ? 'pointer-events-none opacity-60' : ''}`}
                   >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex-1 py-2 rounded-lg bg-cinema-red-500 text-white hover:bg-cinema-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <FaSpinner className="animate-spin mx-auto" />
+                    {isUploadingCsv ? (
+                      <>
+                        <FaSpinner className="animate-spin text-cinema-gold-500 text-3xl" />
+                        <p className="text-gray-300 font-medium">Procesando archivo...</p>
+                      </>
                     ) : (
-                      editingPelicula ? 'Actualizar' : 'Crear'
+                      <>
+                        <div className="w-14 h-14 rounded-full bg-cinema-dark-900 border border-gray-600 flex items-center justify-center">
+                          <FaUpload className="text-cinema-gold-500 text-xl" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-white font-semibold">Arrastra tu archivo aquí</p>
+                          <p className="text-gray-400 text-sm mt-1">o haz clic para seleccionarlo</p>
+                        </div>
+                        <span className="text-xs text-gray-500 bg-cinema-dark-900 border border-gray-700 rounded-full px-3 py-1">
+                          Solo archivos .csv
+                        </span>
+                      </>
                     )}
-                  </button>
+                    <input
+                      id="csv-upload"
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="hidden"
+                      disabled={isUploadingCsv}
+                      onChange={handleCsvUpload}
+                    />
+                  </label>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="px-6 py-2 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-700 transition-all"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
-              </form>
+              )}
+
             </div>
           </div>
         )}

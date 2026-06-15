@@ -12,6 +12,23 @@ import { Cine } from './entities/cine.entity';
 import { Ciudad } from './entities/ciudad.entity';
 import { Sala } from './entities/sala.entity';
 
+export interface PaginatedCines {
+  data: Cine[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface PaginateCinesQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  idCiudad?: string;
+}
+
 @Injectable()
 export class LocalidadesService {
   constructor(
@@ -59,6 +76,41 @@ export class LocalidadesService {
       relations: ['ciudad'],
       order: { nombre: 'ASC' },
     });
+  }
+
+  async findCinesPaginated(query: PaginateCinesQuery): Promise<PaginatedCines> {
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 10, 50);
+
+    const qb = this.cinesRepository
+      .createQueryBuilder('cine')
+      .leftJoinAndSelect('cine.ciudad', 'ciudad')
+      .orderBy('cine.nombre', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (query.search?.trim()) {
+      qb.andWhere(
+        '(LOWER(cine.nombre) LIKE :search OR LOWER(cine.direccion) LIKE :search OR LOWER(ciudad.nombre) LIKE :search)',
+        { search: `%${query.search.trim().toLowerCase()}%` },
+      );
+    }
+
+    if (query.idCiudad) {
+      qb.andWhere('ciudad.id = :idCiudad', { idCiudad: query.idCiudad });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // En localidades.service.ts, agrega:

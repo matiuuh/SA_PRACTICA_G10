@@ -7,6 +7,7 @@ import type {
   CreateCineRequest, 
   UpdateCineRequest 
 } from '../types/admin.types';
+import type { PaginatedCines } from '../types/localidades.types';
 
 const BASE_URL = '/api/localidades';
 
@@ -56,5 +57,11 @@ export const localidadesService = {
   // Eliminar cine
   async deleteCine(id: string): Promise<void> {
     await api.delete(`${BASE_URL}/cines/${id}`);
+  },
+
+  // Obtener cines paginados
+  async getCinesPaginated(params: { page?: number; limit?: number; search?: string; idCiudad?: string } = {}): Promise<PaginatedCines> {
+    const response = await api.get(`${BASE_URL}/cines/paginated`, { params });
+    return response.data;
   },
 };
