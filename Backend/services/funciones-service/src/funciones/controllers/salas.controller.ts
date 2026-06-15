@@ -7,18 +7,25 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { CreateSalaDto } from '../dto/create-sala.dto';
+import { PaginateSalasDto } from '../dto/paginate-salas.dto';
 import { UpdateSalaDto } from '../dto/update-sala.dto';
 import { SalasService } from '../services/salas.service';
 
 @Controller('salas')
 export class SalasController {
   constructor(private readonly salasService: SalasService) {}
+
+  @Get('paginated')
+  findPaginated(@Query() query: PaginateSalasDto) {
+    return this.salasService.findPaginated(query);
+  }
 
   @Get()
   findAll() {

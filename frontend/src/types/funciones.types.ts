@@ -87,3 +87,20 @@ export interface FuncionesFilter {
   pelicula?: string;
   cine?: string;
 }
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedFunciones {
+  data: Funcion[];
+  meta: PaginationMeta;
+}
+
+export interface PaginatedSalas {
+  data: SalaFuncion[];
+  meta: PaginationMeta;
+}

@@ -1,10 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
+import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const logger = new Logger('Bootstrap');
+
+  // Re-add body parsers only for non-multipart requests so that multipart
+  // streams (CSV uploads) pass through raw and can be piped to the backend.
+  app.use((req: any, res: any, next: any) => {
+    const ct: string = req.headers['content-type'] || '';
+    if (ct.includes('multipart/form-data')) {
+      return next();
+    }
+    express.json({ limit: '10mb' })(req, res, () =>
+      express.urlencoded({ extended: true, limit: '10mb' })(req, res, next),
+    );
+  });
 
   // Habilitar CORS para el frontend
   const allowedOrigins = [

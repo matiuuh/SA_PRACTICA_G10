@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { FaPlus, FaSearch, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaTheaterMasks, FaBuilding, FaTag, FaSpinner } from 'react-icons/fa';
+import { useState, useEffect, useCallback } from 'react';
+import { FaPlus, FaSearch, FaClock, FaCalendarAlt, FaInfoCircle, FaFilm, FaTheaterMasks, FaBuilding, FaTag, FaSpinner, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { funcionesService } from '../../../services/funciones.service';
 import axios from 'axios';
 import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
@@ -7,7 +8,7 @@ import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
 import type { CreateFuncionForm, Funcion, Pelicula, Sala } from '../../../types/admin.types';
 
 interface AdminFuncionesProps {
-  funciones: Funcion[];
+  funciones?: Funcion[];
   peliculas: Pelicula[];
   salas: Sala[];
   isSaving?: boolean;
@@ -26,7 +27,6 @@ const initialForm: CreateFuncionForm = {
 };
 
 const AdminFunciones: React.FC<AdminFuncionesProps> = ({
-  funciones,
   peliculas,
   salas,
   isSaving = false,
@@ -34,10 +34,16 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
   onEditar,
   onEliminar,
 }) => {
+  const [funciones, setFunciones] = useState<Funcion[]>([]);
+  const [isLoadingFunciones, setIsLoadingFunciones] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalFunciones, setTotalFunciones] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingFuncion, setEditingFuncion] = useState<Funcion | null>(null);
   const [selectedFuncion, setSelectedFuncion] = useState<Funcion | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<CreateFuncionForm>(initialForm);
   const [showToast, setShowToast] = useState(false);
@@ -46,26 +52,59 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const funcionesFiltradas = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-
-    if (!term) {
-      return funciones;
+  const loadFunciones = useCallback(async (page: number) => {
+    setIsLoadingFunciones(true);
+    try {
+      const salasById = new Map(salas.map((s) => [s.id, s]));
+      const result = await funcionesService.getFuncionesPaginated({ page, limit: 10 });
+      const mapped: Funcion[] = result.data.map((f: any) => {
+        const sala = salasById.get(f.sala?.id as string);
+        return {
+          id: f.id,
+          peliculaId: f.pelicula.id,
+          peliculaNombre: f.pelicula.titulo,
+          salaId: f.sala?.id,
+          salaNombre: f.sala?.nombre,
+          localidadNombre: sala?.localidadNombre ?? 'Cine no encontrado',
+          fecha: f.fecha,
+          horario: f.hora,
+          precio: f.precio,
+          activa: f.activa,
+        };
+      });
+      setFunciones(mapped);
+      setPaginaActual(result.meta.page);
+      setTotalPaginas(result.meta.totalPages);
+      setTotalFunciones(result.meta.total);
+    } catch (error) {
+      console.error('Error loading funciones:', error);
+    } finally {
+      setIsLoadingFunciones(false);
     }
+  }, [salas]);
 
-    return funciones.filter((funcion) =>
-      [funcion.peliculaNombre, funcion.localidadNombre, funcion.salaNombre, funcion.fecha]
-        .join(' ')
-        .toLowerCase()
-        .includes(term),
-    );
-  }, [funciones, searchTerm]);
+  useEffect(() => {
+    void loadFunciones(paginaActual);
+  }, [paginaActual, loadFunciones]);
+
+  const funcionesFiltradas = searchTerm.trim()
+    ? funciones.filter((f) =>
+        [f.peliculaNombre, f.localidadNombre, f.salaNombre, f.fecha]
+          .join(' ')
+          .toLowerCase()
+          .includes(searchTerm.trim().toLowerCase()),
+      )
+    : funciones;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : name === 'precio' ? Number(value) : value,
+      [name]: type === 'checkbox' 
+        ? (e.target as HTMLInputElement).checked 
+        : name === 'precio' 
+          ? parseInt(value) || 0
+          : value,
     }));
   };
 
@@ -86,7 +125,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
       salaId: funcion.salaId,
       fecha: funcion.fecha,
       horario: funcion.horario,
-      precio: funcion.precio,
+      precio: Math.floor(funcion.precio),
       activa: funcion.activa,
     });
     setShowModal(true);
@@ -108,6 +147,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
     setIsDeleting(true);
     try {
       await onEliminar(selectedFuncion.id);
+      await loadFunciones(paginaActual);
       setToastType('success');
       setToastMessage('Función eliminada exitosamente');
       setShowToast(true);
@@ -172,6 +212,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
       }
     }
 
+    await loadFunciones(paginaActual);
     setShowToast(true);
     handleCloseModal();
   };
@@ -198,11 +239,14 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           <input
             type="text"
             placeholder="Buscar por película, cine o sala..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setPaginaActual(1); setSearchTerm(searchInput); } }}
+            onBlur={() => setSearchTerm(searchInput)}
             className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
           />
         </div>
+        {isLoadingFunciones && <div className="text-center text-gray-400 py-4">Cargando funciones...</div>}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -245,9 +289,32 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           </table>
         </div>
 
-        {funcionesFiltradas.length === 0 && (
+        {funcionesFiltradas.length === 0 && !isLoadingFunciones && (
           <div className="text-center py-12 text-gray-400">
             No se encontraron funciones
+          </div>
+        )}
+
+        {totalPaginas > 1 && (
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+            <p className="text-gray-400 text-sm">Mostrando {funciones.length} de {totalFunciones} funciones</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="px-3 py-1.5 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                <FaChevronLeft className="text-xs" /> Anterior
+              </button>
+              <span className="text-gray-400 text-sm px-2">Página {paginaActual} de {totalPaginas}</span>
+              <button
+                onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="px-3 py-1.5 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                Siguiente <FaChevronRight className="text-xs" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -426,6 +493,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                     required
                     value={formData.precio}
                     onChange={handleChange}
+                    step="1"
                     className="w-full px-3 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white focus:border-cinema-gold-500 focus:outline-none"
                   />
                 </div>

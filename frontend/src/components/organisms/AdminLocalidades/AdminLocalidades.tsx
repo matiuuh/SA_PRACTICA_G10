@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
-import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle } from 'react-icons/fa';
+import { useState, useEffect, useCallback } from 'react';
+import { FaCity, FaMapMarkerAlt, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
 import CineModal from './CineModal';
@@ -19,6 +19,10 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalCines, setTotalCines] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -28,26 +32,28 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
-  // Cargar datos
-  const loadData = async () => {
+  const loadCines = useCallback(async (page: number, search: string) => {
     try {
       setIsLoading(true);
-      const [cinesData, ciudadesData] = await Promise.all([
-        localidadesService.getCines(),
-        localidadesService.getCiudades(),
-      ]);
-      setCines(cinesData);
-      setCiudades(ciudadesData);
+      const result = await localidadesService.getCinesPaginated({ page, limit: 10, search: search || undefined });
+      setCines(result.data);
+      setPaginaActual(result.meta.page);
+      setTotalPaginas(result.meta.totalPages);
+      setTotalCines(result.meta.total);
     } catch (error) {
-      console.error('Error loading data:', error);
-      showToastMessage('Error al cargar los datos', 'error');
+      console.error('Error loading cines:', error);
+      showToastMessage('Error al cargar los cines', 'error');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadData();
+    void loadCines(paginaActual, searchTerm);
+  }, [paginaActual, searchTerm, loadCines]);
+
+  useEffect(() => {
+    localidadesService.getCiudades().then(setCiudades).catch(console.error);
   }, []);
 
   const showToastMessage = (message: string, type: 'success' | 'error') => {
@@ -56,13 +62,6 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     setShowToast(true);
   };
 
-  const localidadesFiltradas = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return cines;
-    return cines.filter((cine) =>
-      [cine.nombre, cine.direccion, cine.ciudad.nombre].join(' ').toLowerCase().includes(term)
-    );
-  }, [cines, searchTerm]);
 
   const getOrCreateCiudadId = async (data: { idCiudad?: string; ciudad?: string }) => {
     if (data.idCiudad) {
@@ -97,7 +96,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
         direccion: data.direccion,
         idCiudad,
       });
-      await loadData();
+      await loadCines(paginaActual, searchTerm);
       showToastMessage('Cine creado exitosamente', 'success');
       setShowCreateModal(false);
     } catch (error) {
@@ -119,7 +118,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
         direccion: data.direccion,
         idCiudad,
       });
-      await loadData();
+      await loadCines(paginaActual, searchTerm);
       showToastMessage('Cine actualizado exitosamente', 'success');
       setShowEditModal(false);
       setSelectedCine(null);
@@ -136,7 +135,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
     setIsSaving(true);
     try {
       await localidadesService.deleteCine(selectedCine.id);
-      await loadData();
+      await loadCines(paginaActual, searchTerm);
       showToastMessage('Cine eliminado exitosamente', 'success');
       setShowDeleteConfirm(false);
       setSelectedCine(null);
@@ -187,14 +186,16 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
           <input
             type="text"
             placeholder="Buscar por ciudad, cine o dirección..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setPaginaActual(1); setSearchTerm(searchInput); } }}
+            onBlur={() => { setPaginaActual(1); setSearchTerm(searchInput); }}
             className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {localidadesFiltradas.map((cine) => (
+          {cines.map((cine) => (
             <div
               key={cine.id}
               className="bg-cinema-dark-900/50 rounded-lg p-4 border border-cinema-gold-500/20 hover:border-cinema-gold-500/50 transition-all group"
@@ -229,9 +230,32 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
           ))}
         </div>
 
-        {localidadesFiltradas.length === 0 && (
+        {cines.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             No se encontraron cines
+          </div>
+        )}
+
+        {totalPaginas > 1 && (
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+            <p className="text-gray-400 text-sm">Mostrando {cines.length} de {totalCines} cines</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="px-3 py-1.5 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                <FaChevronLeft className="text-xs" /> Anterior
+              </button>
+              <span className="text-gray-400 text-sm px-2">Página {paginaActual} de {totalPaginas}</span>
+              <button
+                onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="px-3 py-1.5 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                Siguiente <FaChevronRight className="text-xs" />
+              </button>
+            </div>
           </div>
         )}
       </div>

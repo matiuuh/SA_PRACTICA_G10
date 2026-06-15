@@ -1,0 +1,31 @@
+titulo,sinopsis,duracion_minutos,poster_url,categoria,tipo_cartelera,activa
+Inception,"Un ladrón que roba secretos del subconsciente durante el sueño",148,https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg,Ciencia Ficcion,Estreno,true
+The Matrix,"Un programador descubre que la realidad es una simulación",136,https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg,Ciencia Ficcion,Estreno,true
+Avatar,"Un marine parapléjico es enviado a Pandora",162,https://image.tmdb.org/t/p/w500/jRXYjXNq0Cs2TcJjLkki24MLp7u.jpg,Aventura,Reestreno,true
+Barbie,"Una muñeca vive en Barbieland y viaja al mundo real",114,https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg,Comedia,Preventa,true
+Oppenheimer,"La historia del padre de la bomba atómica",180,https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg,Drama,Estreno,true
+Interestelar,"Un grupo de astronautas viaja a través de un agujero de gusano",169,https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg,Ciencia Ficcion,Reestreno,true
+El Padrino,"La historia de la familia Corleone",175,https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg,Drama,Reestreno,true
+Titanic,"Dos jóvenes de distintas clases sociales se enamoran en el Titanic",194,https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg,Romance,Estreno,true
+Jurassic Park,"Clonación de dinosaurios en una isla",127,https://image.tmdb.org/t/p/w500/oU7Oq2kFAAlGqbU4VoAE36g4hoI.jpg,Aventura,Reestreno,true
+Gladiador,"Un general romano es traicionado y busca venganza",155,https://m.media-amazon.com/images/M/MV5BYWJjYWJhZmMtOGM1My00YWQzLWFlNWEtZTQ3ZjM5NzAxZDNkXkEyXkFqcGc@._V1_.jpg,Accion,Estreno,true
+El Caballero de la Noche,"Batman enfrenta al Joker",152,https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg,Accion,Estreno,true
+Pulp Fiction,"Historias entrelazadas de criminales en Los Ángeles",154,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqbyVhBV9ydF60ujFz6-w5E3VA7CnmuWB3Jg&s,Drama,Reestreno,true
+Forrest Gump,"La vida de un hombre con discapacidad intelectual",142,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRN_76EybIyj6iIRPGoLg-VPRDJLX74ydCKbQ&s,Drama,Reestreno,true
+El Señor de los Anillos: La Comunidad del Anillo,"Un hobbit debe destruir un anillo maléfico",178,https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg,Fantasia,Estreno,true
+Harry Potter y la Piedra Filosofal,"Un niño descubre que es mago",152,https://tienda.sophosenlinea.com/imagenes/9788418/978841817300.webp,Fantasia,Preventa,true
+Deadpool,"Un mercenario mutante busca venganza",108,https://es.web.img3.acsta.net/pictures/15/12/04/10/48/099822.jpg,Accion,Estreno,true
+Joker,"La historia del origen del icónico villano",122,https://es.web.img3.acsta.net/pictures/19/09/17/17/03/5442885.jpg,Drama,Preventa,true
+Parásitos,"Dos familias de diferentes clases sociales se entrelazan",132,https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg,Drama,Estreno,true
+1917,"Dos soldados deben entregar un mensaje crucial",119,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoLDiwQGnXy4ZD7lPsKlRzxzBpqTL1kh4-Og&s,Accion,Estreno,true
+Dune,"Un joven noble debe proteger su planeta",155,https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg,Ciencia Ficcion,Preventa,true
+Top Gun: Maverick,"Pilotos de élite enfrentan una misión peligrosa",131,https://image.tmdb.org/t/p/w500/62HCnUTziyWcpZ1pWwqp5OcdPeb.jpg,Accion,Estreno,true
+Spider-Man: Sin Camino a Casa,"Peter Parker enfrenta las consecuencias de su identidad secreta",148,https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1ZMTI4yX5tQcO3.jpg,Accion,Reestreno,true
+John Wick: Capítulo 4,"El legendario asesino busca libertad",169,https://m.media-amazon.com/images/I/81J1DaRKzUL._AC_UF894,1000_QL80_.jpg,Accion,Estreno,true
+La La Land,"Dos artistas luchan por sus sueños en Los Ángeles",128,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJNRTsPltgfLPwQEFnf78f7xQrjRZsSNuGeg&s,Romance,Reestreno,true
+Whiplash,"Un joven baterista es brutalmente entrenado por su instructor",107,https://image.tmdb.org/t/p/w500/7dzEGjwD1XfFhNUX37Zt2K2s8mJ.jpg,Drama,Estreno,true
+El Irlandés,"Un veterano de la Segunda Guerra Mundial recuerda su pasado mafioso",209,https://m.media-amazon.com/images/M/MV5BM2JhOGFkNDItMjdmYS00ZTUxLWJkYWQtNGQ1NDM0ZTljODhhXkEyXkFqcGc@._V1_.jpg,Drama,Reestreno,true
+Rápido y Furioso 10,"La familia Toretto enfrenta su enemigo más peligroso",141,https://m.media-amazon.com/images/M/MV5BODQ4MGRiMDEtZTViZS00M2Y3LThkZjctMmM4YmEwNmZkMDQxXkEyXkFqcGc@._V1_.jpg,Accion,Estreno,true
+Misión Imposible: Sentencia Mortal,"Ethan Hunt debe detener una amenaza global",163,https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCG9hAcICjUJlrKw4SIVaVqp_kwMpYfGKEyA&s,Accion,Preventa,true
+Indiana Jones y el Dial del Destino,"El arqueólogo regresa para una última aventura",154,https://m.media-amazon.com/images/M/MV5BYTdlNGNmZTYtYTVkOS00MGE4LWFiZjktZGRkYTljNWZhYzA2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg,Aventura,Estreno,true
+Wonka,"El joven Willy Wonka y sus inicios en la chocolatería",116,https://image.tmdb.org/t/p/w500/p2vWe16sTIfAAlE7X2uA1t21AFI.jpg,Fantasia,Preventa,true
