@@ -149,7 +149,7 @@ Los servicios y workers actualizan estas bases mediante `TCP`, registrando reser
 
 ## Arquitectura Asincrona en Localhost
 
-![Diagrama de Arquitectura General - Asincrona Localhost](<img/Diagrama de Arquitectura Sincrono LOCAL.png>)
+![Diagrama de Arquitectura General - Asincrona Localhost](<img/Diagrama de Arquitectura ASincrono LOCAL.png>)
 
 ### Descripcion
 
