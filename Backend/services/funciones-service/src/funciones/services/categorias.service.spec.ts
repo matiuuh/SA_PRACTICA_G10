@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ILike } from 'typeorm';
 import { CategoriasService } from './categorias.service';
 
 const mockCategoria = { id: 'cat-1', nombre: 'Accion' };
@@ -44,7 +45,7 @@ describe('CategoriasService', () => {
       repo.findOne.mockResolvedValue(mockCategoria);
       const result = await service.findByNombre('Accion');
       expect(result).toEqual(mockCategoria);
-      expect(repo.findOne).toHaveBeenCalledWith({ where: { nombre: 'Accion' } });
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { nombre: ILike('Accion') } });
     });
 
     it('debe lanzar NotFoundException si no existe el nombre', async () => {
