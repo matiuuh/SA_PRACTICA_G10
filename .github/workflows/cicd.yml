@@ -241,7 +241,9 @@ jobs:
         run: docker compose pull
 
       - name: Levantar servicios localmente
-        run: docker compose up -d --force-recreate
+        run: |
+          docker compose down
+          docker compose up -d
 
       - name: Limpiar imagenes antiguas
         run: docker image prune -f
