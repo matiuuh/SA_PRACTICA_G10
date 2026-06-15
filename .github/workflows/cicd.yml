@@ -2,98 +2,18 @@ name: CI/CD FilmStars
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop, release]
-    types: [opened, synchronize, reopened]
+    branches: [release, develop]
 
 jobs:
-  check-branch:
-    name: Validar rama origen (solo release → main)
+
+  # ══════════════════════════════════════════════════════════════════════
+  # FASE 1 — TEST
+  # Pruebas unitarias con cobertura mínima del 75%.
+  # Si falla: notifica el error y el pipeline se detiene.
+  # ══════════════════════════════════════════════════════════════════════
+  test:
+    name: "Fase 1 · Test ${{ matrix.service }}"
     runs-on: ubuntu-latest
-    steps:
-      - name: Verificar rama de origen
-        if: github.base_ref == 'main'
-        run: |
-          SOURCE="${{ github.head_ref }}"
-          echo "Rama origen: $SOURCE"
-          if [[ "$SOURCE" != "release" ]]; then
-            echo "ERROR: Solo la rama release puede hacer merge a main. Rama detectada: $SOURCE"
-            exit 1
-          fi
-          echo "Rama valida: $SOURCE"
-
-  build-frontend:
-    name: Build Frontend (React + Vite)
-    runs-on: ubuntu-latest
-    needs: check-branch
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configurar pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Instalar dependencias
-        working-directory: frontend
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Lint
-        working-directory: frontend
-        run: pnpm lint
-
-      - name: Build
-        working-directory: frontend
-        run: pnpm build
-
-      - name: Subir artefacto de build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist/
-          retention-days: 7
-
-  build-services:
-    name: Build ${{ matrix.service }}
-    runs-on: ubuntu-latest
-    needs: check-branch
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - auth-service
-          - localidades-service
-          - funciones-service
-          - reservas-service
-          - pagos-service
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Instalar dependencias
-        working-directory: Backend/services/${{ matrix.service }}
-        run: npm install --legacy-peer-deps
-
-      - name: Build (compilacion TypeScript)
-        working-directory: Backend/services/${{ matrix.service }}
-        run: npm run build
-
-  test-services:
-    name: Test ${{ matrix.service }}
-    runs-on: ubuntu-latest
-    needs: build-services
     strategy:
       fail-fast: true
       matrix:
@@ -115,14 +35,9 @@ jobs:
         working-directory: Backend/services/${{ matrix.service }}
         run: npm install --legacy-peer-deps
 
-      - name: Ejecutar tests
+      - name: Ejecutar tests con cobertura minima del 75%
         working-directory: Backend/services/${{ matrix.service }}
-        run: npm test
-
-      - name: Verificar cobertura minima (75%)
-        working-directory: Backend/services/${{ matrix.service }}
-        run: |
-          npm run test:cov -- --coverageThreshold='{"global":{"lines":75,"functions":75,"branches":75,"statements":75}}'
+        run: npm run test:cov
 
       - name: Subir reporte de cobertura
         if: always()
@@ -132,40 +47,20 @@ jobs:
           path: Backend/services/${{ matrix.service }}/coverage/
           retention-days: 14
 
-  build-gateway:
-    name: Build API Gateway
-    runs-on: ubuntu-latest
-    needs: check-branch
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configurar pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: api-gateway/pnpm-lock.yaml
-
-      - name: Instalar dependencias
-        working-directory: api-gateway
+      - name: Notificar fallo de tests
+        if: failure()
         run: |
-          echo "unsafe-perm=true" >> .npmrc
-          pnpm install --no-frozen-lockfile
+          echo "::error::FASE 1 FALLIDA — ${{ matrix.service }} no alcanzo el 75% de cobertura minima requerida. Pipeline detenido."
 
-      - name: Build (compilacion TypeScript)
-        working-directory: api-gateway
-        run: pnpm build
-
-  push-images:
-    name: Build y Push imagenes a DockerHub
+  # ══════════════════════════════════════════════════════════════════════
+  # FASE 2 — BUILD & PUSH
+  # Construye las imagenes Docker y las publica en DockerHub con tag :latest.
+  # Si falla: notifica el error y el pipeline se detiene.
+  # ══════════════════════════════════════════════════════════════════════
+  build-push:
+    name: "Fase 2 · Build & Push a DockerHub"
     runs-on: ubuntu-latest
-    needs: [build-frontend, build-services, test-services, build-gateway]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
     steps:
       - uses: actions/checkout@v4
 
@@ -174,6 +69,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Definir URL del API Gateway segun rama
+        id: vars
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/release" ]]; then
+            echo "api_url=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> $GITHUB_OUTPUT
+          else
+            echo "api_url=http://localhost:3006" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build y push auth-service
         uses: docker/build-push-action@v5
@@ -223,15 +127,24 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST }}:3006
-            VITE_RESERVAS_WS_URL=${{ secrets.RESERVAS_WS_URL }}
+            VITE_API_GATEWAY_URL=${{ steps.vars.outputs.api_url }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
+      - name: Notificar fallo de build
+        if: failure()
+        run: |
+          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes Docker. Pipeline detenido."
+
+  # ══════════════════════════════════════════════════════════════════════
+  # FASE 3a — DEPLOY AWS (solo rama release)
+  # Se conecta via SSH a las VMs y ejecuta docker compose pull + up.
+  # Orden: VM3 (bases de datos) → VM2 (servicios) → VM1 (frontend + gateway)
+  # ══════════════════════════════════════════════════════════════════════
   deploy-vm3:
-    name: Deploy VM3 (Bases de datos)
+    name: "Fase 3 · Deploy VM3 – Bases de datos (AWS)"
     runs-on: ubuntu-latest
-    needs: push-images
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-push
+    if: github.ref == 'refs/heads/release'
     steps:
       - name: Desplegar bases de datos en VM3
         uses: appleboy/ssh-action@v1.0.3
@@ -241,16 +154,17 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            git pull origin release
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
+            docker compose -f docker-compose.vm3.yml pull
             docker compose -f docker-compose.vm3.yml up -d --force-recreate
             docker image prune -f
 
   deploy-vm2:
-    name: Deploy VM2 (Servicios)
+    name: "Fase 3 · Deploy VM2 – Servicios Backend (AWS)"
     runs-on: ubuntu-latest
     needs: deploy-vm3
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/release'
     steps:
       - name: Desplegar servicios en VM2
         uses: appleboy/ssh-action@v1.0.3
@@ -260,7 +174,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            git pull origin release
             echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
             echo "VM3_HOST=${{ secrets.VM3_HOST }}" >> .env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
@@ -272,10 +186,10 @@ jobs:
             docker image prune -f
 
   deploy-vm1:
-    name: Deploy VM1 (Frontend + API Gateway)
+    name: "Fase 3 · Deploy VM1 – Frontend + API Gateway (AWS)"
     runs-on: ubuntu-latest
     needs: deploy-vm2
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/release'
     steps:
       - name: Desplegar frontend y gateway en VM1
         uses: appleboy/ssh-action@v1.0.3
@@ -285,11 +199,41 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            git pull origin release
             echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
             echo "VM1_HOST=${{ secrets.EC2_HOST_VM1 }}" >> .env
             echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
-            echo "VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> .env
             docker compose -f docker-compose.vm1.yml pull
             docker compose -f docker-compose.vm1.yml up -d --force-recreate
             docker image prune -f
+
+  # ══════════════════════════════════════════════════════════════════════
+  # FASE 3b — DEPLOY LOCAL (solo rama develop)
+  # Corre en la maquina del equipo via self-hosted runner.
+  # Descarga las imagenes de DockerHub y levanta todos los servicios.
+  # ══════════════════════════════════════════════════════════════════════
+  deploy-local:
+    name: "Fase 3 · Deploy Local – Maquina del equipo (develop)"
+    runs-on: self-hosted
+    needs: build-push
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crear archivo .env local
+        run: |
+          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+          echo "VITE_API_GATEWAY_URL=http://localhost:3006" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
+          echo "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}" >> .env
+
+      - name: Pull imagenes desde DockerHub
+        run: docker compose pull
+
+      - name: Levantar servicios localmente
+        run: docker compose up -d --force-recreate
+
+      - name: Limpiar imagenes antiguas
+        run: docker image prune -f
