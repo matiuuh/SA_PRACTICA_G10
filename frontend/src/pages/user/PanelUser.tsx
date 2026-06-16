@@ -39,13 +39,18 @@ interface BoletaGenerada {
 }
 
 const normalizeCategoria = (nombre?: string | null): CarteleraCategoria => {
-  const value = (nombre || '').trim().toLowerCase();
+  const value = (nombre || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s_-]+/g, '');
 
-  if (value.includes('pre')) {
+  if (value === 'preventa') {
     return 'preventa';
   }
 
-  if (value.includes('re')) {
+  if (value === 'reestreno') {
     return 'reestreno';
   }
 
@@ -143,8 +148,11 @@ const PanelUser = () => {
   const [modalPagoOpen, setModalPagoOpen] = useState(false);
   const [modalConfirmacionOpen, setModalConfirmacionOpen] = useState(false);
   const [peliculas, setPeliculas] = useState<CarteleraPelicula[]>([]);
+  const [carteleraMeta, setCarteleraMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [carteleraPage, setCarteleraPage] = useState(1);
   const [carteleraLoading, setCarteleraLoading] = useState(false);
   const [carteleraError, setCarteleraError] = useState<string | null>(null);
+  const [categoriaActiva, setCategoriaActiva] = useState<CarteleraCategoria | 'todos'>('todos');
   const [selectedPelicula, setSelectedPelicula] = useState<CarteleraPelicula | null>(null);
   const [compraData, setCompraData] = useState<{
     pelicula: CarteleraPelicula;
@@ -178,8 +186,14 @@ const PanelUser = () => {
   }, [navigate]);
 
   useEffect(() => {
+    setCarteleraPage(1);
+    setCategoriaActiva('todos');
+  }, [selectedCinema]);
+
+  useEffect(() => {
     if (!selectedCinema) {
       setPeliculas([]);
+      setCarteleraMeta({ page: 1, limit: 10, total: 0, totalPages: 1 });
       setCarteleraError(null);
       return;
     }
@@ -189,11 +203,13 @@ const PanelUser = () => {
       setCarteleraError(null);
 
       try {
-        const funciones = await funcionesService.getFunciones({ cine: selectedCinema });
-        setPeliculas(mapFuncionesToCartelera(funciones));
+        const result = await funcionesService.getCartelera(selectedCinema, carteleraPage, 10, categoriaActiva !== 'todos' ? categoriaActiva : undefined);
+        setPeliculas(mapFuncionesToCartelera(result.data));
+        setCarteleraMeta(result.meta);
       } catch (error) {
         console.error('No se pudo cargar la cartelera del cine seleccionado', error);
         setPeliculas([]);
+        setCarteleraMeta({ page: 1, limit: 10, total: 0, totalPages: 1 });
         setCarteleraError('No se pudo cargar la cartelera en este momento.');
       } finally {
         setCarteleraLoading(false);
@@ -201,7 +217,7 @@ const PanelUser = () => {
     };
 
     void loadCartelera();
-  }, [selectedCinema]);
+  }, [selectedCinema, carteleraPage, categoriaActiva]);
 
   const handleVerHorarios = (pelicula: CarteleraPelicula) => {
     setSelectedPelicula(pelicula);
@@ -340,9 +356,13 @@ const PanelUser = () => {
     return (
       <Cartelera
         peliculas={peliculas}
+        meta={carteleraMeta}
+        onPageChange={setCarteleraPage}
         onVerHorarios={handleVerHorarios}
         selectedCity={selectedCity}
         selectedCinema={selectedCinema}
+        categoriaActiva={categoriaActiva}
+        onCategoriaChange={(cat) => { setCategoriaActiva(cat); setCarteleraPage(1); }}
       />
     );
   };

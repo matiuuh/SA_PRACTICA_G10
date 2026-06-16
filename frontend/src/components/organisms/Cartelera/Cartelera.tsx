@@ -8,25 +8,43 @@ import {
   FaRedo,
   FaRocket,
   FaStar,
+  FaChevronLeft,
+  FaChevronRight,
+  FaAngleDoubleLeft,
+  FaAngleDoubleRight,
 } from 'react-icons/fa';
 import type { CarteleraCategoria, CarteleraPelicula } from '../../../types/user-panel.types';
 
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 interface CarteleraProps {
   peliculas: CarteleraPelicula[];
+  meta: PaginationMeta;
+  onPageChange: (page: number) => void;
   onVerHorarios: (pelicula: CarteleraPelicula) => void;
   selectedCity?: string;
   selectedCinema?: string;
+  categoriaActiva: CategoriaFiltro;
+  onCategoriaChange: (categoria: CategoriaFiltro) => void;
 }
 
 type CategoriaFiltro = 'todos' | CarteleraCategoria;
 
 const Cartelera: React.FC<CarteleraProps> = ({
   peliculas,
+  meta,
+  onPageChange,
   onVerHorarios,
   selectedCity,
   selectedCinema,
+  categoriaActiva,
+  onCategoriaChange,
 }) => {
-  const [categoriaActiva, setCategoriaActiva] = useState<CategoriaFiltro>('todos');
   const [peliculaDetalle, setPeliculaDetalle] = useState<CarteleraPelicula | null>(null);
 
   const categorias = [
@@ -36,10 +54,43 @@ const Cartelera: React.FC<CarteleraProps> = ({
     { id: 'reestreno' as CategoriaFiltro, label: 'Re-Estrenos', icon: FaRedo, color: 'bg-purple-500' },
   ];
 
-  const peliculasFiltradas =
-    categoriaActiva === 'todos'
-      ? peliculas
-      : peliculas.filter((pelicula) => pelicula.categoria === categoriaActiva);
+  const paginaActual = meta.page;
+  const totalPaginas = meta.totalPages;
+
+  // Funciones de navegación
+  const goToFirstPage = () => onPageChange(1);
+  const goToLastPage = () => onPageChange(totalPaginas);
+  const goToNextPage = () => onPageChange(Math.min(paginaActual + 1, totalPaginas));
+  const goToPreviousPage = () => onPageChange(Math.max(paginaActual - 1, 1));
+
+  // Generar números de página para mostrar
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPaginas <= maxPagesToShow) {
+      for (let i = 1; i <= totalPaginas; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (paginaActual <= 3) {
+        for (let i = 1; i <= 4; i++) pageNumbers.push(i);
+        pageNumbers.push('...');
+        pageNumbers.push(totalPaginas);
+      } else if (paginaActual >= totalPaginas - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPaginas - 3; i <= totalPaginas; i++) pageNumbers.push(i);
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = paginaActual - 1; i <= paginaActual + 1; i++) pageNumbers.push(i);
+        pageNumbers.push('...');
+        pageNumbers.push(totalPaginas);
+      }
+    }
+    return pageNumbers;
+  };
 
   const getCategoriaBadge = (categoria: CarteleraCategoria) => {
     switch (categoria) {
@@ -75,7 +126,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
           return (
             <button
               key={categoria.id}
-              onClick={() => setCategoriaActiva(categoria.id)}
+              onClick={() => onCategoriaChange(categoria.id)}
               className={`flex items-center gap-2 px-5 py-2 rounded-full transition-all transform hover:scale-105 ${
                 isActive
                   ? `${categoria.color} text-white shadow-lg`
@@ -86,7 +137,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
               <span className="font-medium">{categoria.label}</span>
               {isActive && (
                 <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                  {peliculasFiltradas.length}
+                  {peliculas.length}
                 </span>
               )}
             </button>
@@ -96,15 +147,16 @@ const Cartelera: React.FC<CarteleraProps> = ({
 
       <div className="text-center mb-6">
         <p className="text-gray-400 text-sm">
-          Mostrando <span className="text-cinema-gold-500 font-bold">{peliculasFiltradas.length}</span>{' '}
-          peliculas
+          Mostrando <span className="text-cinema-gold-500 font-bold">{peliculas.length}</span> de{' '}
+          <span className="text-cinema-gold-500 font-bold">{meta.total}</span> peliculas
           {categoriaActiva !== 'todos' &&
             ` en ${categorias.find((categoria) => categoria.id === categoriaActiva)?.label}`}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
-        {peliculasFiltradas.map((pelicula) => {
+      {/* Grid de películas - 5 columnas fijas */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        {peliculas.map((pelicula) => {
           const badge = getCategoriaBadge(pelicula.categoria);
           const BadgeIcon = badge.icon;
 
@@ -184,7 +236,81 @@ const Cartelera: React.FC<CarteleraProps> = ({
         })}
       </div>
 
-      {peliculasFiltradas.length === 0 && (
+      {/* Componente de Paginación */}
+      {meta.total > 0 && (
+        <div className="mt-12 mb-8">
+          <div className="flex justify-center items-center gap-2 flex-wrap">
+            {/* Botón Primera Página */}
+            <button
+              onClick={goToFirstPage}
+              disabled={paginaActual === 1}
+              className="px-3 py-2 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-cinema-dark-800 disabled:hover:text-gray-400"
+              title="Primera página"
+            >
+              <FaAngleDoubleLeft />
+            </button>
+
+            {/* Botón Anterior */}
+            <button
+              onClick={goToPreviousPage}
+              disabled={paginaActual === 1}
+              className="px-4 py-2 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <FaChevronLeft className="text-sm" />
+              <span>Anterior</span>
+            </button>
+
+            {/* Números de página */}
+            <div className="flex gap-2 mx-2">
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() => typeof page === 'number' && onPageChange(page)}
+                  className={`min-w-[40px] h-10 rounded-lg font-medium transition-all ${
+                    paginaActual === page
+                      ? 'bg-cinema-gold-500 text-black'
+                      : page === '...'
+                      ? 'bg-transparent text-gray-500 cursor-default'
+                      : 'bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white'
+                  }`}
+                  disabled={page === '...'}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            {/* Botón Siguiente */}
+            <button
+              onClick={goToNextPage}
+              disabled={paginaActual === totalPaginas}
+              className="px-4 py-2 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <span>Siguiente</span>
+              <FaChevronRight className="text-sm" />
+            </button>
+
+            {/* Botón Última Página */}
+            <button
+              onClick={goToLastPage}
+              disabled={paginaActual === totalPaginas}
+              className="px-3 py-2 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Última página"
+            >
+              <FaAngleDoubleRight />
+            </button>
+          </div>
+
+          {/* Información de página */}
+          <div className="text-center mt-4">
+            <p className="text-gray-500 text-sm">
+              Página {paginaActual} de {totalPaginas}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {peliculas.length === 0 && (
         <div className="text-center py-16">
           <FaFilm className="text-6xl text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400 text-lg">
@@ -193,6 +319,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
         </div>
       )}
 
+      {/* Modal de detalles */}
       {peliculaDetalle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-cinema-gold-500/30 bg-gradient-to-br from-cinema-dark-800 to-cinema-dark-900 shadow-2xl">
@@ -205,7 +332,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
                 onClick={() => setPeliculaDetalle(null)}
                 className="text-2xl text-gray-400 transition-colors hover:text-white"
               >
-                x
+                ×
               </button>
             </div>
 

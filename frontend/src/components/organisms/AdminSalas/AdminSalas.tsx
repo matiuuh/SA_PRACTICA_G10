@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
-import { FaCouch, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaUsers, FaTag, FaBuilding } from 'react-icons/fa';
+import { useState, useEffect, useCallback } from 'react';
+import { FaCouch, FaPlus, FaSearch, FaTheaterMasks, FaInfoCircle, FaUsers, FaTag, FaBuilding, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { funcionesService } from '../../../services/funciones.service';
 import AdminActionButtons from '../../admin/AdminActionButtons';
 import Toast from '../../atoms/Toast/Toast';
 import ConfirmDialog from '../AdminLocalidades/ConfirmDialog';
 import type { CreateSalaForm, Localidad, Sala } from '../../../types/admin.types';
 
 interface AdminSalasProps {
-  salas: Sala[];
+  salas?: Sala[];
   localidades: Localidad[];
   isSaving?: boolean;
   onAgregar: (sala: CreateSalaForm) => Promise<void>;
@@ -22,18 +23,23 @@ const initialForm: CreateSalaForm = {
 };
 
 const AdminSalas: React.FC<AdminSalasProps> = ({
-  salas,
   localidades,
   isSaving = false,
   onAgregar,
   onEditar,
   onEliminar,
 }) => {
+  const [salas, setSalas] = useState<Sala[]>([]);
+  const [isLoadingSalas, setIsLoadingSalas] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
   const [selectedSala, setSelectedSala] = useState<Sala | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalSalas, setTotalSalas] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -48,17 +54,39 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
     window.setTimeout(() => setShowToast(true), 0);
   };
 
-  const salasFiltradas = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+  const mapSala = useCallback((s: any, locs: Localidad[]): Sala => {
+    const localidad = locs.find((l) => l.id === s.id_cine_externo);
+    return {
+      id: s.id,
+      cineId: s.id_cine_externo,
+      localidadNombre: localidad?.cine || 'Cine no encontrado',
+      ciudad: localidad?.ciudad || 'Sin ciudad',
+      nombre: s.nombre,
+      capacidad: s.capacidad,
+      tipo: s.tipo || 'General',
+    };
+  }, []);
 
-    if (!term) {
-      return salas;
+  const loadSalas = useCallback(async (page: number, search: string) => {
+    setIsLoadingSalas(true);
+    try {
+      const result = await funcionesService.getSalasPaginated({ page, limit: 10, search: search || undefined });
+      setSalas(result.data.map((s) => mapSala(s, localidades)));
+      setPaginaActual(result.meta.page);
+      setTotalPaginas(result.meta.totalPages);
+      setTotalSalas(result.meta.total);
+    } catch (error) {
+      console.error('Error loading salas:', error);
+    } finally {
+      setIsLoadingSalas(false);
     }
+  }, [localidades, mapSala]);
 
-    return salas.filter((sala) =>
-      [sala.nombre, sala.localidadNombre, sala.ciudad, sala.tipo].join(' ').toLowerCase().includes(term),
-    );
-  }, [salas, searchTerm]);
+  useEffect(() => {
+    void loadSalas(paginaActual, searchTerm);
+  }, [paginaActual, searchTerm, loadSalas]);
+
+  const salasFiltradas = salas;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -118,6 +146,7 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
         showSalaToast('Sala creada exitosamente');
       }
 
+      await loadSalas(paginaActual, searchTerm);
       setShowModal(false);
       setEditingSala(null);
       setFormData(initialForm);
@@ -136,6 +165,7 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
 
     try {
       await onEliminar(salaToDelete.id);
+      await loadSalas(paginaActual, searchTerm);
       setSalaToDelete(null);
       showSalaToast('Sala eliminada exitosamente');
     } catch (error) {
@@ -183,11 +213,14 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
           <input
             type="text"
             placeholder="Buscar por sala, cine o ciudad..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setPaginaActual(1); setSearchTerm(searchInput); } }}
+            onBlur={() => { setPaginaActual(1); setSearchTerm(searchInput); }}
             className="w-full pl-10 pr-4 py-2 bg-cinema-dark-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none"
           />
         </div>
+        {isLoadingSalas && <div className="text-center text-gray-400 py-4">Cargando salas...</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {salasFiltradas.map((sala) => (
@@ -219,6 +252,33 @@ const AdminSalas: React.FC<AdminSalasProps> = ({
             </div>
           ))}
         </div>
+
+        {salasFiltradas.length === 0 && !isLoadingSalas && (
+          <div className="text-center py-12 text-gray-400">No se encontraron salas</div>
+        )}
+
+        {totalPaginas > 1 && (
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+            <p className="text-gray-400 text-sm">Mostrando {salas.length} de {totalSalas} salas</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="px-3 py-1.5 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                <FaChevronLeft className="text-xs" /> Anterior
+              </button>
+              <span className="text-gray-400 text-sm px-2">Página {paginaActual} de {totalPaginas}</span>
+              <button
+                onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="px-3 py-1.5 rounded-lg bg-cinema-dark-800 text-gray-400 hover:bg-cinema-dark-700 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                Siguiente <FaChevronRight className="text-xs" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Modal de detalles */}
         {showDetailsModal && selectedSala && (

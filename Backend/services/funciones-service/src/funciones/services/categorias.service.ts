@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateCategoriaDto } from '../dto/create-categoria.dto';
 import { Categoria } from '../entities/categoria.entity';
 
@@ -20,6 +20,17 @@ export class CategoriasService {
 
     if (!categoria) {
       throw new NotFoundException(`Categoria ${id} no encontrada`);
+    }
+
+    return categoria;
+  }
+
+  async findByNombre(nombre: string): Promise<Categoria> {
+    const normalizedName = nombre.trim();
+    const categoria = await this.repo.findOne({ where: { nombre: ILike(normalizedName) } });
+
+    if (!categoria) {
+      throw new NotFoundException(`Categoria "${normalizedName}" no encontrada. Verifica que el nombre coincida con una categoria existente.`);
     }
 
     return categoria;

@@ -107,7 +107,7 @@ const PanelAdmin = () => {
       setError(null);
 
       const [peliculasData, ciudadesData, salasFuncionesData, funcionesData] = await Promise.all([
-        peliculasService.getPeliculas(),
+        peliculasService.getAllPeliculas(),
         localidadesService.getCiudades(),
         funcionesService.getSalas(),
         funcionesService.getFunciones(),
@@ -168,6 +168,11 @@ const PanelAdmin = () => {
   const handleEliminarPelicula = (id: string) => {
     setPeliculas((prev) => prev.filter((pelicula) => pelicula.id_pelicula !== id));
   };
+
+  const handleImportarPeliculas = useCallback(async () => {
+    const peliculasData = await peliculasService.getAllPeliculas();
+    setPeliculas(peliculasData);
+  }, []);
 
   const handleAgregarLocalidad = async (localidad: CreateLocalidadForm) => {
     setSavingSection('localidades');
@@ -396,6 +401,7 @@ const PanelAdmin = () => {
             onAgregar={handleAgregarPelicula}
             onEditar={handleEditarPelicula}
             onEliminar={handleEliminarPelicula}
+            onImportar={handleImportarPeliculas}
           />
         )}
 

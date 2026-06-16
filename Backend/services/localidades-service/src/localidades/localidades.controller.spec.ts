@@ -11,6 +11,7 @@ describe('LocalidadesController', () => {
       findCiudadById: jest.fn(),
       findCinesByCiudad: jest.fn(),
       findCines: jest.fn(),
+      findCinesPaginated: jest.fn(),
       createCiudad: jest.fn(),
       createCine: jest.fn(),
       updateCine: jest.fn(),
@@ -60,6 +61,32 @@ describe('LocalidadesController', () => {
 
     await expect(controller.findCines()).resolves.toEqual(['cine']);
     expect(service.findCines).toHaveBeenCalledTimes(1);
+  });
+
+  it('findCinesPaginated delega con query params convertidos', async () => {
+    service.findCinesPaginated.mockResolvedValue({ data: ['cine'], meta: {} as any });
+
+    await expect(
+      controller.findCinesPaginated('2', '5', 'Cine', 'ciudad-1'),
+    ).resolves.toEqual({ data: ['cine'], meta: {} });
+    expect(service.findCinesPaginated).toHaveBeenCalledWith({
+      page: 2,
+      limit: 5,
+      search: 'Cine',
+      idCiudad: 'ciudad-1',
+    });
+  });
+
+  it('findCinesPaginated delega sin query params', async () => {
+    service.findCinesPaginated.mockResolvedValue({ data: ['cine'], meta: {} as any });
+
+    await expect(controller.findCinesPaginated()).resolves.toEqual({ data: ['cine'], meta: {} });
+    expect(service.findCinesPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      limit: undefined,
+      search: undefined,
+      idCiudad: undefined,
+    });
   });
 
   it('createCiudad delega al service con el dto', async () => {

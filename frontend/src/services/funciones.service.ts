@@ -12,20 +12,33 @@ import type {
   UpdateFuncionRequest,
   CreateSalaFuncionRequest,
   FuncionesFilter,
+  PaginatedFunciones,
+  PaginatedSalas,
 } from '../types/funciones.types';
 
 const peliculasRoute = '/api/peliculas';
 const categoriasRoute = '/api/categorias';
 const tiposCarteleraRoute = '/api/tipo-cartelera';
 const salasRoute = '/api/salas';
+const allowedTipoCarteleraNames = new Set(['estreno', 'preventa', 'reestreno']);
+
+interface ApiPaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 class FuncionesService {
   async getPeliculas(tipoCartelera?: string): Promise<Pelicula[]> {
-    const response = await api.get<Pelicula[]>(peliculasRoute, {
+    const response = await api.get<Pelicula[] | ApiPaginatedResponse<Pelicula>>(peliculasRoute, {
       params: tipoCartelera ? { tipo_cartelera: tipoCartelera } : undefined,
     });
 
-    return response.data;
+    return Array.isArray(response.data) ? response.data : response.data.data;
   }
 
   async getPelicula(id: string): Promise<Pelicula> {
@@ -107,7 +120,9 @@ class FuncionesService {
 
   async getTiposCartelera(): Promise<TipoCartelera[]> {
     const response = await api.get<TipoCartelera[]>(tiposCarteleraRoute);
-    return response.data;
+    return response.data.filter((tipo) =>
+      allowedTipoCarteleraNames.has(tipo.nombre.trim().toLowerCase()),
+    );
   }
 
   async createTipoCartelera(nombre: string): Promise<TipoCartelera> {
@@ -117,6 +132,27 @@ class FuncionesService {
 
   async getSalas(): Promise<SalaFuncion[]> {
     const response = await api.get<SalaFuncion[]>(salasRoute);
+    return response.data;
+  }
+
+  async getCartelera(cine: string, page = 1, limit = 10, tipoCartelera?: string): Promise<PaginatedFunciones> {
+    const response = await api.get<PaginatedFunciones>(`${endpoints.funciones}/cartelera`, {
+      params: { cine, page, limit, ...(tipoCartelera ? { tipo_cartelera: tipoCartelera } : {}) },
+    });
+    return response.data;
+  }
+
+  async getFuncionesPaginated(params: { page?: number; limit?: number; cine?: string; sala?: string; pelicula?: string } = {}): Promise<PaginatedFunciones> {
+    const response = await api.get<PaginatedFunciones>(`${endpoints.funciones}/paginated`, {
+      params,
+    });
+    return response.data;
+  }
+
+  async getSalasPaginated(params: { page?: number; limit?: number; cine?: string; search?: string } = {}): Promise<PaginatedSalas> {
+    const response = await api.get<PaginatedSalas>(`${salasRoute}/paginated`, {
+      params,
+    });
     return response.data;
   }
 

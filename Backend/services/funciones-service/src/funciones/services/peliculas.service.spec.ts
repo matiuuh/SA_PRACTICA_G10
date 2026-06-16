@@ -25,9 +25,15 @@ describe('PeliculasService', () => {
 
   beforeEach(() => {
     const mockQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       innerJoin: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       getCount: jest.fn().mockResolvedValue(0),
+      getManyAndCount: jest.fn().mockResolvedValue([[mockPelicula], 1]),
     };
 
     repo = {
@@ -38,8 +44,14 @@ describe('PeliculasService', () => {
       remove: jest.fn().mockResolvedValue(undefined),
       createQueryBuilder: jest.fn().mockReturnValue(mockQb),
     };
-    categoriasService = { findOne: jest.fn().mockResolvedValue(mockCategoria) };
-    tipoCarteleraService = { findOne: jest.fn().mockResolvedValue(mockTipoCartelera) };
+    categoriasService = {
+      findOne: jest.fn().mockResolvedValue(mockCategoria),
+      findByNombre: jest.fn().mockResolvedValue(mockCategoria),
+    };
+    tipoCarteleraService = {
+      findOne: jest.fn().mockResolvedValue(mockTipoCartelera),
+      findByNombre: jest.fn().mockResolvedValue(mockTipoCartelera),
+    };
 
     service = new PeliculasService(
       repo as any,
@@ -61,6 +73,51 @@ describe('PeliculasService', () => {
     it('debe retornar peliculas por tipo de cartelera', async () => {
       const result = await service.findByTipoCartelera('tipo-1');
       expect(result).toEqual([mockPelicula]);
+    });
+  });
+
+  describe('findPaginated', () => {
+    it('debe retornar peliculas paginadas con metadata', async () => {
+      const result = await service.findPaginated({ page: 1, limit: 10 });
+
+      expect(result.data).toEqual([mockPelicula]);
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      });
+      expect(repo.createQueryBuilder().skip).toHaveBeenCalledWith(0);
+      expect(repo.createQueryBuilder().take).toHaveBeenCalledWith(10);
+    });
+
+    it('debe aplicar filtros de busqueda, categoria, tipo y activa', async () => {
+      await service.findPaginated({
+        page: 2,
+        limit: 5,
+        search: 'test',
+        id_categoria: 'cat-1',
+        id_tipo_cartelera: 'tipo-1',
+        activa: true,
+      });
+
+      const qb = repo.createQueryBuilder();
+      expect(qb.skip).toHaveBeenCalledWith(5);
+      expect(qb.take).toHaveBeenCalledWith(5);
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        '(LOWER(pelicula.titulo) LIKE :search OR LOWER(pelicula.sinopsis) LIKE :search)',
+        { search: '%test%' },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith('categoria.id = :idCategoria', {
+        idCategoria: 'cat-1',
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'tipoCartelera.id = :idTipoCartelera',
+        { idTipoCartelera: 'tipo-1' },
+      );
+      expect(qb.andWhere).toHaveBeenCalledWith('pelicula.activa = :activa', {
+        activa: true,
+      });
     });
   });
 
@@ -103,6 +160,41 @@ describe('PeliculasService', () => {
           id_tipo_cartelera: 'tipo-1',
         }),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('importCsv', () => {
+    it('debe importar peliculas validas desde CSV', async () => {
+      repo.findOne.mockResolvedValue(null);
+      const file = {
+        buffer: Buffer.from(
+          'titulo,sinopsis,duracion_minutos,poster_url,categoria,tipo_cartelera,activa\n"Movie, CSV",Sinopsis,100,http://img,Accion,Estrenos,true',
+        ),
+      };
+
+      const result = await service.importCsv(file);
+
+      expect(result).toEqual({ insertadas: 1, fallidas: 0, errores: [] });
+      expect(repo.save).toHaveBeenCalled();
+    });
+
+    it('debe reportar filas fallidas sin detener toda la carga', async () => {
+      repo.findOne.mockResolvedValueOnce(mockPelicula).mockResolvedValueOnce(null);
+      const file = {
+        buffer: Buffer.from(
+          'titulo,categoria,tipo_cartelera\nTest Movie,Accion,Estrenos\nNew Movie,Accion,Estrenos',
+        ),
+      };
+
+      const result = await service.importCsv(file);
+
+      expect(result.insertadas).toBe(1);
+      expect(result.fallidas).toBe(1);
+      expect(result.errores[0].fila).toBe(2);
+    });
+
+    it('debe rechazar carga sin archivo', async () => {
+      await expect(service.importCsv(undefined)).rejects.toThrow(BadRequestException);
     });
   });
 

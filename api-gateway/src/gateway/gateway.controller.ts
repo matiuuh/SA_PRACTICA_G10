@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { GatewayService } from './gateway.service';
+import * as http from 'http';
+import * as https from 'https';
 
 @Controller()
 export class GatewayController {
@@ -57,7 +59,61 @@ export class GatewayController {
     delete forwardHeaders['content-length'];
 
     try {
-      // Reenviar petición al servicio
+      const contentType = headers['content-type'] || '';
+      const isMultipart =
+        typeof contentType === 'string' && contentType.includes('multipart/form-data');
+
+      if (isMultipart) {
+        // Para multipart/form-data se hace pipe del stream crudo para preservar
+        // el boundary y los buffers de archivo sin que Axios los reserialice.
+        const targetUrlObj = new URL(targetUrl);
+        const transport = targetUrlObj.protocol === 'https:' ? https : http;
+
+        await new Promise<void>((resolve, reject) => {
+          const proxyReq = transport.request(
+            {
+              hostname: targetUrlObj.hostname,
+              port: targetUrlObj.port || (targetUrlObj.protocol === 'https:' ? 443 : 80),
+              path: targetUrlObj.pathname + (targetUrlObj.search ?? ''),
+              method,
+              headers: {
+                ...forwardHeaders,
+                host: targetUrlObj.host,
+              },
+            },
+            (proxyRes) => {
+              const responseTime = Date.now() - startTime;
+              this.logger.log(
+                ` ${method} ${originalUrl} → ${service.name} (${proxyRes.statusCode}) - ${responseTime}ms`,
+              );
+
+              const chunks: Buffer[] = [];
+              proxyRes.on('data', (chunk: Buffer) => chunks.push(chunk));
+              proxyRes.on('end', () => {
+                const raw = Buffer.concat(chunks).toString('utf8');
+                let data: unknown;
+                try {
+                  data = JSON.parse(raw);
+                } catch {
+                  data = raw;
+                }
+                res.setHeader('X-Service-Name', service.name);
+                res.setHeader('X-Response-Time', `${responseTime}ms`);
+                res.status(proxyRes.statusCode ?? 200).json(data);
+                resolve();
+              });
+              proxyRes.on('error', reject);
+            },
+          );
+
+          proxyReq.on('error', reject);
+          req.pipe(proxyReq);
+        });
+
+        return;
+      }
+
+      // Reenviar petición JSON/form-urlencoded al servicio
       const response = await firstValueFrom(
         this.httpService.request({
           method,
@@ -66,6 +122,8 @@ export class GatewayController {
           headers: forwardHeaders,
           params: query,
           timeout: 30000,
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
         })
       );
 

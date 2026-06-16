@@ -1,0 +1,11 @@
+titulo,sinopsis,duracion_minutos,poster_url,categoria,tipo_cartelera,activa
+,"Pelicula sin titulo",120,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,Estreno,true
+Inception,"Titulo duplicado de pelicula ya existente",148,https://image.tmdb.org/t/p/w500/abc.jpg,Ciencia Ficcion,Estreno,true
+Pelicula Sin Categoria,"Falta categoria y id_categoria",90,https://image.tmdb.org/t/p/w500/abc.jpg,,Estreno,true
+Pelicula Sin Tipo Cartelera,"Falta tipo_cartelera y id_tipo_cartelera",90,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,,true
+Pelicula Duracion Cero,"Duracion cero no es valida",0,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,Estreno,true
+Pelicula Duracion Negativa,"Duracion negativa no es valida",-30,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,Estreno,true
+Pelicula Duracion Texto,"Duracion con texto no es valida",dos_horas,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,Estreno,true
+Pelicula Activa Invalida,"Valor booleano no reconocido",100,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,Estreno,si_por_favor
+Pelicula Categoria Inexistente,"Categoria que no existe en BD",110,https://image.tmdb.org/t/p/w500/abc.jpg,GeneroQueNoExiste,Estreno,true
+Pelicula Tipo Inexistente,"Tipo de cartelera que no existe en BD",110,https://image.tmdb.org/t/p/w500/abc.jpg,Accion,TipoQueNoExiste,true

@@ -8,10 +8,21 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { CreateFuncionDto } from '../dto/create-funcion.dto';
+import { PaginateFuncionesDto } from '../dto/paginate-funciones.dto';
 import { UpdateFuncionDto } from '../dto/update-funcion.dto';
 import { Funcion } from '../entities/funcion.entity';
 import { PeliculasService } from './peliculas.service';
 import { SalasService } from './salas.service';
+
+export interface PaginatedFunciones {
+  data: Funcion[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 @Injectable()
 export class FuncionesService {
@@ -44,6 +55,120 @@ export class FuncionesService {
       .innerJoinAndSelect('p.tipoCartelera', 'tc')
       .where('s.id_cine_externo = :id AND f.activa = true', { id: idCineExterno })
       .getMany();
+  }
+
+  async findPaginated(query: PaginateFuncionesDto): Promise<PaginatedFunciones> {
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 10, 50);
+
+    const qb = this.repo
+      .createQueryBuilder('f')
+      .innerJoinAndSelect('f.sala', 's')
+      .innerJoinAndSelect('f.pelicula', 'p')
+      .innerJoinAndSelect('p.categoria', 'c')
+      .innerJoinAndSelect('p.tipoCartelera', 'tc')
+      .orderBy('f.fecha', 'ASC')
+      .addOrderBy('f.hora', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (query.cine) {
+      qb.andWhere('s.id_cine_externo = :cine AND f.activa = true', { cine: query.cine });
+    }
+
+    if (query.sala) {
+      qb.andWhere('s.id = :sala', { sala: query.sala });
+    }
+
+    if (query.pelicula) {
+      qb.andWhere('p.id = :pelicula', { pelicula: query.pelicula });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findCarteleraPaginated(
+    idCine: string,
+    page: number,
+    limit: number,
+    tipoCartelera?: string,
+  ): Promise<{ data: Funcion[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    const safeLimit = Math.min(limit, 50);
+    const tipoNorm = tipoCartelera?.trim().toLowerCase() || undefined;
+
+    // Get distinct pelicula IDs that have active funciones in this cine, paginated
+    const peliculasQb = this.repo
+      .createQueryBuilder('f')
+      .innerJoin('f.sala', 's')
+      .innerJoin('f.pelicula', 'p')
+      .innerJoin('p.tipoCartelera', 'tc')
+      .select('p.id', 'peliculaId')
+      .addSelect('p.titulo', 'titulo')
+      .distinct(true)
+      .where('s.id_cine_externo = :cine AND f.activa = true', { cine: idCine })
+      .orderBy('p.titulo', 'ASC')
+      .offset((page - 1) * safeLimit)
+      .limit(safeLimit);
+
+    const totalQb = this.repo
+      .createQueryBuilder('f')
+      .innerJoin('f.sala', 's')
+      .innerJoin('f.pelicula', 'p')
+      .innerJoin('p.tipoCartelera', 'tc')
+      .select('COUNT(DISTINCT p.id)', 'total')
+      .where('s.id_cine_externo = :cine AND f.activa = true', { cine: idCine });
+
+    if (tipoNorm) {
+      peliculasQb.andWhere('LOWER(tc.nombre) = :tipoNorm', { tipoNorm });
+      totalQb.andWhere('LOWER(tc.nombre) = :tipoNorm', { tipoNorm });
+    }
+
+    const [peliculaRows, totalRow] = await Promise.all([
+      peliculasQb.getRawMany<{ peliculaId: string }>(),
+      totalQb.getRawOne<{ total: string }>(),
+    ]);
+
+    const total = parseInt(totalRow?.total ?? '0', 10);
+    const peliculaIds = peliculaRows.map((row) => row.peliculaId);
+
+    if (peliculaIds.length === 0) {
+      return { data: [], meta: { page, limit: safeLimit, total: 0, totalPages: 0 } };
+    }
+
+    const funciones = await this.repo
+      .createQueryBuilder('f')
+      .innerJoinAndSelect('f.sala', 's')
+      .innerJoinAndSelect('f.pelicula', 'p')
+      .innerJoinAndSelect('p.categoria', 'c')
+      .innerJoinAndSelect('p.tipoCartelera', 'tc')
+      .where('s.id_cine_externo = :cine AND f.activa = true AND p.id IN (:...ids)', {
+        cine: idCine,
+        ids: peliculaIds,
+      })
+      .orderBy('p.titulo', 'ASC')
+      .addOrderBy('f.fecha', 'ASC')
+      .addOrderBy('f.hora', 'ASC')
+      .getMany();
+
+    return {
+      data: funciones,
+      meta: {
+        page,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Funcion> {
@@ -95,7 +220,7 @@ export class FuncionesService {
     const reservasServiceUrl =
       this.configService.get<string>('RESERVAS_SERVICE_URL') || 'http://reservas-service:3004';
     const response = await fetch(
-      `${reservasServiceUrl}/reservas/internal/funciones/${id}/boletos`,
+      `${reservasServiceUrl}/api/reservas/internal/funciones/${id}/boletos`,
     ).catch(() => null);
 
     if (!response?.ok) {

@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -42,6 +43,21 @@ export class LocalidadesController {
   @Get('ciudades/:id/cines')
   findCinesByCiudad(@Param('id', ParseUUIDPipe) id: string) {
     return this.localidadesService.findCinesByCiudad(id);
+  }
+
+  @Get('cines/paginated')
+  findCinesPaginated(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('idCiudad') idCiudad?: string,
+  ) {
+    return this.localidadesService.findCinesPaginated({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search,
+      idCiudad,
+    });
   }
 
   @Get('cines')

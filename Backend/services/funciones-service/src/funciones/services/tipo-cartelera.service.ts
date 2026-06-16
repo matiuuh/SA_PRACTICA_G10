@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateTipoCarteleraDto } from '../dto/create-tipo-cartelera.dto';
 import { TipoCartelera } from '../entities/tipo-cartelera.entity';
 
@@ -20,6 +20,17 @@ export class TipoCarteleraService {
 
     if (!tipo) {
       throw new NotFoundException(`Tipo de cartelera ${id} no encontrado`);
+    }
+
+    return tipo;
+  }
+
+  async findByNombre(nombre: string): Promise<TipoCartelera> {
+    const normalizedName = nombre.trim();
+    const tipo = await this.repo.findOne({ where: { nombre: ILike(normalizedName) } });
+
+    if (!tipo) {
+      throw new NotFoundException(`Tipo de cartelera "${normalizedName}" no encontrado. Verifica que el nombre coincida con un tipo existente.`);
     }
 
     return tipo;

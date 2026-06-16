@@ -8,12 +8,16 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
 import { CreatePeliculaDto } from '../dto/create-pelicula.dto';
+import { PaginatePeliculasDto } from '../dto/paginate-peliculas.dto';
 import { UpdatePeliculaDto } from '../dto/update-pelicula.dto';
 import { PeliculasService } from '../services/peliculas.service';
 
@@ -22,12 +26,8 @@ export class PeliculasController {
   constructor(private readonly peliculasService: PeliculasService) {}
 
   @Get()
-  findAll(@Query('tipo_cartelera') tipoCartelera?: string) {
-    if (tipoCartelera) {
-      return this.peliculasService.findByTipoCartelera(tipoCartelera);
-    }
-
-    return this.peliculasService.findAll();
+  findAll(@Query() query: PaginatePeliculasDto) {
+    return this.peliculasService.findPaginated(query);
   }
 
   @Get(':id')
@@ -40,6 +40,14 @@ export class PeliculasController {
   @Roles('ADMINISTRADOR')
   create(@Body() dto: CreatePeliculaDto) {
     return this.peliculasService.create(dto);
+  }
+
+  @Post('carga-csv')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(@UploadedFile() file: any) {
+    return this.peliculasService.importCsv(file);
   }
 
   @Put(':id')
