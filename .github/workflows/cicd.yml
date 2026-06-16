@@ -159,6 +159,7 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin release
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
+            docker rm -f postgres-auth postgres-localidades postgres-funciones postgres-reservas postgres-pagos rabbitmq 2>/dev/null || true
             docker compose -f docker-compose.vm3.yml pull
             docker compose -f docker-compose.vm3.yml up -d --force-recreate
             docker image prune -f
@@ -184,6 +185,7 @@ jobs:
             echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
             echo "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}" >> .env
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            docker rm -f auth-service localidades-service funciones-service reservas-service pagos-service 2>/dev/null || true
             docker compose -f docker-compose.vm2.yml pull
             docker compose -f docker-compose.vm2.yml up -d --force-recreate
             docker image prune -f
@@ -206,6 +208,7 @@ jobs:
             echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
             echo "VM1_HOST=${{ secrets.EC2_HOST_VM1 }}" >> .env
             echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
+            docker rm -f api-gateway frontend 2>/dev/null || true
             docker compose -f docker-compose.vm1.yml pull
             docker compose -f docker-compose.vm1.yml up -d --force-recreate
             docker image prune -f
