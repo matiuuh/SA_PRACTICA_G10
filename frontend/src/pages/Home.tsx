@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
+import { FaArrowRight, FaCouch, FaFilm, FaMagic, FaPlayCircle, FaStar, FaUsers } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
-import { FaPlayCircle, FaArrowRight, FaMagic, FaUsers, FaFilm, FaCouch, FaStar } from 'react-icons/fa'
-import MainLayout from '../components/templates/MainLayout/MainLayout'
 import Button from '../components/atoms/Button/Button'
 import PageTransition from '../components/atoms/PageTransition/PageTransition'
+import MainLayout from '../components/templates/MainLayout/MainLayout'
 
 const Home = () => {
   useEffect(() => {
-    document.title = 'FilmStars | Tu experiencia de cine premium'
+    document.title = 'Calificacion | Tu experiencia de cine premium'
   }, [])
 
   return (
