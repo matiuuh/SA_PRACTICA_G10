@@ -78,8 +78,10 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/release" ]]; then
             echo "api_url=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> $GITHUB_OUTPUT
+            echo "ws_url=http://${{ secrets.EC2_HOST_VM2 }}:3004" >> $GITHUB_OUTPUT
           else
             echo "api_url=http://localhost:3006" >> $GITHUB_OUTPUT
+            echo "ws_url=http://localhost:3004" >> $GITHUB_OUTPUT
           fi
 
       - name: Build y push auth-service
@@ -131,6 +133,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_GATEWAY_URL=${{ steps.vars.outputs.api_url }}
+            VITE_RESERVAS_WS_URL=${{ steps.vars.outputs.ws_url }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
       - name: Notificar fallo de build
