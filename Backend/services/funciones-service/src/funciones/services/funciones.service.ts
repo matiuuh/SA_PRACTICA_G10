@@ -220,7 +220,7 @@ export class FuncionesService {
     const reservasServiceUrl =
       this.configService.get<string>('RESERVAS_SERVICE_URL') || 'http://reservas-service:3004';
     const response = await fetch(
-      `${reservasServiceUrl}/reservas/internal/funciones/${id}/boletos`,
+      `${reservasServiceUrl}/api/reservas/internal/funciones/${id}/boletos`,
     ).catch(() => null);
 
     if (!response?.ok) {
