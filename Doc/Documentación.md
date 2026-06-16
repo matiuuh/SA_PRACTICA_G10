@@ -34,8 +34,7 @@ Integrantes:
 
 ### Justificacion de tecnologias y principios SOLID aplicados
 - [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
-- [Principios SOLID aplicados](./Solid/Solid.md)
-- [Principios SOLID aplicados en Administrador](Solid/SolidAdmin.md)
+- [Principios SOLID aplicados](./Solid/SolidUnificado.md)
 - [Despliegue Local](./Despligue/despliegue.md)
 
 ### Levantamiento del proyecto
