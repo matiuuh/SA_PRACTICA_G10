@@ -1,3 +1,5 @@
+// src/pages/PanelUser/PanelUser.tsx
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
@@ -9,6 +11,7 @@ import ModalHorarios from '../../components/organisms/ModalHorarios/ModalHorario
 import ModalPago, { type DatosPago } from '../../components/organisms/ModalPago/ModalPago';
 import ModalConfirmacion from '../../components/organisms/ModalConfirmacion/ModalConfirmacion';
 import Toast from '../../components/atoms/Toast/Toast';
+import HistorialCompras from '../../components/organisms/HistorialCompras/HistorialCompras';
 import { authService } from '../../services/auth.service';
 import { funcionesService } from '../../services/funciones.service';
 import { pagosService } from '../../services/pagos.service';
@@ -401,6 +404,8 @@ const PanelUser = () => {
             </button>
           </div>
         );
+      case 'historial':
+        return <HistorialCompras />;
       default:
         return null;
     }
