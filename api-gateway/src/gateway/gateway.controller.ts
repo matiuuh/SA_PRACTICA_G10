@@ -1,3 +1,5 @@
+// api-gateway/src/gateway/gateway.controller.ts
+
 import { Controller, All, Req, Res, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { HttpService } from '@nestjs/axios';
@@ -20,7 +22,6 @@ export class GatewayController {
     const startTime = Date.now();
     const { method, originalUrl, body, query, headers, path } = req;
     
-    // Ignorar health checks del gateway
     if (originalUrl === '/health') {
       return res.status(200).json({
         status: 'ok',
@@ -31,7 +32,6 @@ export class GatewayController {
 
     this.logger.log(` ${method} ${originalUrl}`);
 
-    // Encontrar el servicio correspondiente
     const service = this.gatewayService.findService(path);
     
     if (!service) {
@@ -46,7 +46,6 @@ export class GatewayController {
 
     const targetUrl = `${service.url}${path}`;
     
-    // Preparar headers para reenviar
     const forwardHeaders = {
       ...headers,
       'X-Original-Url': originalUrl,
@@ -54,18 +53,18 @@ export class GatewayController {
       'X-Gateway-Request-Time': startTime.toString(),
     };
     
-    // Eliminar headers que no deben reenviarse
     delete forwardHeaders.host;
     delete forwardHeaders['content-length'];
 
     try {
       const contentType = headers['content-type'] || '';
-      const isMultipart =
-        typeof contentType === 'string' && contentType.includes('multipart/form-data');
+      const isMultipart = typeof contentType === 'string' && contentType.includes('multipart/form-data');
+      
+      // ========== DETECTAR DESCARGA DE PDF ==========
+      const isPdfDownload = originalUrl.includes('/descargar') || 
+                           (headers['accept'] && headers['accept'].includes('application/pdf'));
 
       if (isMultipart) {
-        // Para multipart/form-data se hace pipe del stream crudo para preservar
-        // el boundary y los buffers de archivo sin que Axios los reserialice.
         const targetUrlObj = new URL(targetUrl);
         const transport = targetUrlObj.protocol === 'https:' ? https : http;
 
@@ -113,7 +112,46 @@ export class GatewayController {
         return;
       }
 
-      // Reenviar petición JSON/form-urlencoded al servicio
+      // ========== SI ES PDF, USAR PIPE DIRECTO ==========
+      if (isPdfDownload) {
+        const response = await firstValueFrom(
+          this.httpService.request({
+            method,
+            url: targetUrl,
+            data: body,
+            headers: forwardHeaders,
+            params: query,
+            timeout: 30000,
+            responseType: 'stream', // <-- IMPORTANTE: stream para binarios
+          })
+        );
+
+        const responseTime = Date.now() - startTime;
+        this.logger.log(
+          ` ${method} ${originalUrl} → ${service.name} (PDF) - ${responseTime}ms`
+        );
+
+        // Copiar headers de la respuesta
+        const responseHeaders = response.headers as any;
+        if (responseHeaders['content-type']) {
+          res.setHeader('Content-Type', responseHeaders['content-type']);
+        }
+        if (responseHeaders['content-disposition']) {
+          res.setHeader('Content-Disposition', responseHeaders['content-disposition']);
+        }
+        if (responseHeaders['content-length']) {
+          res.setHeader('Content-Length', responseHeaders['content-length']);
+        }
+        
+        res.setHeader('X-Service-Name', service.name);
+        res.setHeader('X-Response-Time', `${responseTime}ms`);
+        
+        // Pipe directo del stream sin transformar
+        response.data.pipe(res);
+        return;
+      }
+
+      // ========== REQUEST NORMAL (JSON) ==========
       const response = await firstValueFrom(
         this.httpService.request({
           method,
@@ -132,7 +170,6 @@ export class GatewayController {
         ` ${method} ${originalUrl} → ${service.name} (${response.status}) - ${responseTime}ms`
       );
 
-      // Agregar headers de respuesta
       res.setHeader('X-Service-Name', service.name);
       res.setHeader('X-Response-Time', `${responseTime}ms`);
       res.status(response.status).json(response.data);
@@ -141,14 +178,12 @@ export class GatewayController {
       const responseTime = Date.now() - startTime;
       
       if (error.response) {
-        // El servicio respondió con error
         this.logger.warn(
           ` ${method} ${originalUrl} → ${service.name} (${error.response.status}) - ${responseTime}ms`
         );
         res.status(error.response.status).json(error.response.data);
         
       } else if (error.code === 'ECONNREFUSED') {
-        // Servicio no disponible
         this.logger.error(` Service ${service.name} is unavailable on ${service.url}`);
         res.status(503).json({
           statusCode: 503,
@@ -159,7 +194,6 @@ export class GatewayController {
         });
         
       } else if (error.code === 'ETIMEDOUT') {
-        // Timeout
         this.logger.error(`⏱️ Service ${service.name} timeout`);
         res.status(504).json({
           statusCode: 504,
@@ -170,7 +204,6 @@ export class GatewayController {
         });
         
       } else {
-        // Error interno
         this.logger.error(`💥 Gateway error: ${error.message}`);
         res.status(500).json({
           statusCode: 500,
