@@ -1,8 +1,13 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TABLE "asientos" (
   "id_asiento" uuid PRIMARY KEY,
   "fila" varchar NOT NULL,
   "numero" integer NOT NULL,
-  "id_funcion_externa" uuid NOT NULL
+  "id_funcion_externa" uuid NOT NULL,
+  "estado" varchar(20) NOT NULL DEFAULT 'DISPONIBLE',
+  CONSTRAINT "ck_asientos_estado"
+    CHECK ("estado" IN ('DISPONIBLE', 'RESERVADO', 'EN_USO'))
 );
 
 COMMENT ON TABLE "asientos" IS 'Asientos disponibles por funcion';
@@ -35,9 +40,20 @@ COMMENT ON TABLE "reserva_detalle" IS 'Relacion entre reserva y asientos';
 
 CREATE TABLE "boletos" (
   "id_boleto" uuid PRIMARY KEY,
-  "codigo_qr" varchar NOT NULL,
+  "codigo_qr" varchar UNIQUE NOT NULL,
   "fecha_emision" timestamp NOT NULL,
-  "id_reserva" uuid NOT NULL
+  "estado" varchar(20) NOT NULL DEFAULT 'VALIDO',
+  "fecha_uso" timestamp,
+  "validado_por" uuid,
+  "id_funcion_externa" uuid,
+  "id_pelicula_externa" uuid,
+  "titulo_pelicula" varchar(255),
+  "fecha_funcion" date,
+  "hora_funcion" time,
+  "sala_nombre" varchar(100),
+  "id_reserva" uuid NOT NULL,
+  CONSTRAINT "ck_boletos_estado"
+    CHECK ("estado" IN ('VALIDO', 'USADO'))
 );
 
 COMMENT ON TABLE "boletos" IS 'Boleto generado despues del pago';
@@ -61,3 +77,20 @@ ALTER TABLE "boletos"
   ADD CONSTRAINT "boleto_reserva"
   FOREIGN KEY ("id_reserva") REFERENCES "reservas" ("id_reserva")
   DEFERRABLE INITIALLY IMMEDIATE;
+
+CREATE INDEX "ix_reservas_usuario_fecha"
+  ON "reservas" ("usuario_id_externo", "fecha_reserva" DESC);
+
+CREATE INDEX "ix_boletos_fecha_emision"
+  ON "boletos" ("fecha_emision" DESC);
+
+CREATE INDEX "ix_boletos_estado"
+  ON "boletos" ("estado");
+
+CREATE INDEX "ix_boletos_titulo_pelicula_trgm"
+  ON "boletos"
+  USING gin (LOWER("titulo_pelicula") gin_trgm_ops);
+
+CREATE INDEX "ix_boletos_codigo_qr_trgm"
+  ON "boletos"
+  USING gin (LOWER("codigo_qr") gin_trgm_ops);

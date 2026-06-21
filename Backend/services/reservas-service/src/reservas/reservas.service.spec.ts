@@ -1,9 +1,17 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ReservasService } from './reservas.service';
+import { EstadoAsiento } from './enums/estado-asiento.enum';
+import { EstadoBoleto } from './enums/estado-boleto.enum';
 
 const mockEstadoTemporal = { id: 'est-1', nombre: 'TEMPORAL' };
 const mockEstadoConfirmada = { id: 'est-2', nombre: 'CONFIRMADA' };
-const mockAsiento = { id: 'asiento-1', fila: 'A', numero: 1, idFuncionExterna: 'funcion-1' };
+const mockAsiento = {
+  id: 'asiento-1',
+  fila: 'A',
+  numero: 1,
+  idFuncionExterna: 'funcion-1',
+  estado: EstadoAsiento.DISPONIBLE,
+};
 const mockReserva = {
   id: 'reserva-1',
   usuarioIdExterno: 'user-1',
@@ -24,6 +32,7 @@ describe('ReservasService', () => {
   let boletosRepo: Record<string, jest.Mock>;
   let rabbitMqService: Record<string, jest.Mock>;
   let reservasGateway: Record<string, jest.Mock>;
+  let funcionCatalogClient: Record<string, jest.Mock>;
 
   beforeEach(() => {
     asientosRepo = {
@@ -72,6 +81,16 @@ describe('ReservasService', () => {
       notifySeatAvailabilityChanged: jest.fn(),
       releaseSeatsForReservation: jest.fn(),
     };
+    funcionCatalogClient = {
+      findSnapshotById: jest.fn().mockResolvedValue({
+        funcionId: 'funcion-1',
+        peliculaId: 'pelicula-1',
+        peliculaTitulo: 'Pelicula de prueba',
+        fechaFuncion: '2026-06-22',
+        horaFuncion: '18:30:00',
+        salaNombre: 'Sala 1',
+      }),
+    };
 
     service = new ReservasService(
       asientosRepo as any,
@@ -81,6 +100,7 @@ describe('ReservasService', () => {
       boletosRepo as any,
       rabbitMqService as any,
       reservasGateway as any,
+      funcionCatalogClient as any,
     );
   });
 
@@ -149,6 +169,7 @@ describe('ReservasService', () => {
       });
       expect(result.fila).toBe('A');
       expect(result.numero).toBe(1);
+      expect(result.estado).toBe(EstadoAsiento.DISPONIBLE);
     });
 
     it('debe lanzar ConflictException si el asiento ya existe', async () => {
@@ -187,6 +208,9 @@ describe('ReservasService', () => {
       expect(reservasRepo.create).toHaveBeenCalled();
       expect(reservasRepo.save).toHaveBeenCalled();
       expect(detallesRepo.save).toHaveBeenCalled();
+      expect(asientosRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({ estado: EstadoAsiento.RESERVADO }),
+      ]);
       expect(result).toEqual(mockReserva);
     });
 
@@ -226,6 +250,19 @@ describe('ReservasService', () => {
       const result = await service.confirmReserva('reserva-1');
       expect(reservasRepo.save).toHaveBeenCalled();
       expect(boletosRepo.create).toHaveBeenCalled();
+      expect(boletosRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          estado: EstadoBoleto.VALIDO,
+          fechaUso: null,
+          validadoPor: null,
+          idFuncionExterna: 'funcion-1',
+          idPeliculaExterna: 'pelicula-1',
+          tituloPelicula: 'Pelicula de prueba',
+          fechaFuncion: '2026-06-22',
+          horaFuncion: '18:30:00',
+          salaNombre: 'Sala 1',
+        }),
+      );
       expect(boletosRepo.save).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
@@ -237,6 +274,28 @@ describe('ReservasService', () => {
 
       await service.confirmReserva('reserva-1');
       expect(boletosRepo.create).not.toHaveBeenCalled();
+      expect(funcionCatalogClient.findSnapshotById).not.toHaveBeenCalled();
+    });
+
+    it('debe emitir el boleto aunque funciones-service no este disponible', async () => {
+      reservasRepo.findOne.mockResolvedValue({ ...mockReserva });
+      estadosRepo.findOne.mockResolvedValue(mockEstadoConfirmada);
+      boletosRepo.findOne.mockResolvedValue(null);
+      funcionCatalogClient.findSnapshotById.mockResolvedValue(null);
+
+      await service.confirmReserva('reserva-1');
+
+      expect(boletosRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          idFuncionExterna: 'funcion-1',
+          idPeliculaExterna: null,
+          tituloPelicula: null,
+          fechaFuncion: null,
+          horaFuncion: null,
+          salaNombre: null,
+        }),
+      );
+      expect(boletosRepo.save).toHaveBeenCalled();
     });
   });
 
@@ -248,6 +307,9 @@ describe('ReservasService', () => {
 
       const result = await service.rejectReserva('reserva-1', 'Pago rechazado');
       expect(reservasRepo.save).toHaveBeenCalled();
+      expect(asientosRepo.save).toHaveBeenCalledWith([
+        expect.objectContaining({ estado: EstadoAsiento.DISPONIBLE }),
+      ]);
       expect(reservasGateway.releaseSeatsForReservation).toHaveBeenCalled();
       expect(reservasGateway.notifySeatAvailabilityChanged).toHaveBeenCalled();
       expect(result).toBeDefined();
@@ -262,6 +324,7 @@ describe('ReservasService', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty('ocupado');
       expect(result[0]).toHaveProperty('propio');
+      expect(result[0].estadoOperativo).toBe(EstadoAsiento.DISPONIBLE);
     });
 
     it('debe marcar como propio el asiento reservado por el usuario actual', async () => {
@@ -282,6 +345,20 @@ describe('ReservasService', () => {
       const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
       expect(result[0].ocupado).toBe(true);
       expect(result[0].propio).toBe(false);
+    });
+
+    it('debe marcar ocupado un asiento con estado operativo EN_USO', async () => {
+      asientosRepo.find.mockResolvedValue([
+        { ...mockAsiento, estado: EstadoAsiento.EN_USO },
+      ]);
+
+      const result = await service.findAsientosByFuncion(
+        'funcion-1',
+        'user-1',
+      );
+
+      expect(result[0].ocupado).toBe(true);
+      expect(result[0].estadoOperativo).toBe(EstadoAsiento.EN_USO);
     });
   });
 
@@ -365,6 +442,7 @@ describe('ReservasService', () => {
       boletosRepo.findOne.mockResolvedValue(null);
 
       await service.confirmReserva('reserva-1');
+      expect(funcionCatalogClient.findSnapshotById).not.toHaveBeenCalled();
       expect(reservasGateway.releaseSeatsForReservation).not.toHaveBeenCalled();
       expect(reservasGateway.notifySeatAvailabilityChanged).not.toHaveBeenCalled();
     });

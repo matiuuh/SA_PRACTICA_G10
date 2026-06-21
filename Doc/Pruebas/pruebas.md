@@ -147,7 +147,7 @@ Cada caso de prueba fue seleccionado para cubrir **al menos un camino de código
 
 | Archivo | Qué cubre | Por qué estas pruebas |
 |---|---|---|
-| `localidades.service.spec.ts` | CRUD de ciudades, cines y salas; relaciones entre entidades (ciudad → cine → sala); campos opcionales (`tipoSala`) | Se prueba cada nivel jerárquico por separado porque cada uno tiene su propia `NotFoundException`. El caso de `tipoSala` undefined prueba el branch donde el valor es omitido vs proporcionado, ya que el servicio lo convierte en `null` explícitamente |
+| `localidades.service.spec.ts` | CRUD de ciudades y cines; relación ciudad → cine; paginación y filtros | Las salas pertenecen a `funciones-service`; localidades valida únicamente la jerarquía de ciudades y cines. |
 
 #### pagos-service
 
