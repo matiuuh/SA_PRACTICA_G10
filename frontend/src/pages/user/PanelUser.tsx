@@ -30,7 +30,8 @@ const CINEMA_STORAGE_KEY = 'selectedCinema';
 const SELECTION_EVENT = 'filmstars-selection-changed';
 
 interface BoletaGenerada {
-  id: string;
+  id: string;           // UUID del boleto para descarga
+  codigoQr: string;     // Código QR para mostrar
   pelicula: string;
   horario: string;
   fecha: string;
@@ -266,7 +267,8 @@ const PanelUser = () => {
         }
 
         const boleta: BoletaGenerada = {
-          id: boleto.codigoQr,
+          id: boleto.id,                    // UUID para descarga
+          codigoQr: boleto.codigoQr,        // Código QR para mostrar
           pelicula: compraData?.pelicula.titulo || '',
           horario: compraData?.funcion.hora || '',
           fecha: compraData?.funcion.fecha || '',
