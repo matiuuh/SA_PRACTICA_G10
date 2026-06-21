@@ -6,12 +6,6 @@ import {
   FaSearch,
   FaCheckCircle,
   FaSpinner,
-  FaFilm,
-  FaCalendarAlt,
-  FaClock,
-  FaChair,
-  FaTag,
-  FaBuilding,
   FaChevronLeft,
   FaChevronRight,
   FaRedo,
@@ -23,7 +17,6 @@ import Toast from '../../atoms/Toast/Toast';
 import type { BoletoValidacion, AdminBusquedaBoletosFiltros } from '../../../types/admin.types';
 
 const AdminValidacionBoletos = () => {
-  // Estado para escaneo/validación
   const [codigoEscaneado, setCodigoEscaneado] = useState('');
   const [validando, setValidando] = useState(false);
   const [resultadoValidacion, setResultadoValidacion] = useState<{
@@ -32,7 +25,6 @@ const AdminValidacionBoletos = () => {
     boleto?: BoletoValidacion;
   } | null>(null);
 
-  // Estado para búsqueda avanzada
   const [busquedaActiva, setBusquedaActiva] = useState(false);
   const [filtros, setFiltros] = useState<AdminBusquedaBoletosFiltros>({
     page: 1,
@@ -53,7 +45,6 @@ const AdminValidacionBoletos = () => {
     setShowToast(true);
   };
 
-  // ========== VALIDACIÓN POR CÓDIGO QR ==========
   const handleValidarCodigo = useCallback(async () => {
     if (!codigoEscaneado.trim()) {
       showValidationToast('Ingresa un código QR para validar.', 'error');
@@ -84,7 +75,6 @@ const AdminValidacionBoletos = () => {
     }
   }, [codigoEscaneado]);
 
-  // ========== BÚSQUEDA AVANZADA ==========
   const handleBuscarBoletos = useCallback(async () => {
     setBuscando(true);
     setResultadosBusqueda(null);
@@ -134,74 +124,127 @@ const AdminValidacionBoletos = () => {
     setBusquedaActiva(false);
   }, []);
 
-  // ========== RENDER: DETALLE DEL BOLETO ==========
-  const renderBoletoDetalle = (boleto: BoletoValidacion) => (
-    <div className="bg-cinema-dark-900/50 rounded-xl p-4 border border-cinema-gold-500/30 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <FaTicketAlt className="text-cinema-gold-500 text-xl" />
-          <div>
-            <p className="text-white font-semibold">{boleto.pelicula.titulo || 'Película no disponible'}</p>
-            <p className="text-gray-400 text-sm font-mono">{boleto.codigoQr}</p>
+  // ========== RENDER: TARJETA DE BOLETO (ESTILO TICKET) ==========
+  const renderBoletoDetalle = (boleto: BoletoValidacion) => {
+    const estaActivo = boleto.estado === 'VALIDO';
+    const asientosTexto = boleto.asientos.length > 0
+      ? boleto.asientos.map((a) => `${a.fila}${a.numero}`).join(', ')
+      : 'N/A';
+
+    return (
+      <div className="relative group mt-4">
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cinema-gold-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10" />
+        
+        <div className="relative w-full max-w-md mx-auto transition-all duration-300 transform hover:scale-[1.01] hover:shadow-2xl">
+          
+          <div className="relative bg-gradient-to-br from-[#8B0000] via-[#4A0000] to-black rounded-2xl overflow-hidden shadow-xl">
+            
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-gray-900 rounded-r-full shadow-inner" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-gray-900 rounded-l-full shadow-inner" />
+
+            <div className="relative px-8 py-6">
+              
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500/40 to-transparent" />
+              
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FaTicketAlt className="text-cinema-gold-500 text-lg" />
+                  <span className="text-lg font-bold text-white tracking-tight">FilmStars</span>
+                </div>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                  estaActivo 
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                }`}>
+                  {estaActivo ? '● ACTIVO' : '● USADO'}
+                </span>
+              </div>
+
+              <h3 className="text-xl font-bold text-white mb-3 line-clamp-1">
+                {boleto.pelicula.titulo || 'Película no disponible'}
+              </h3>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Fecha</p>
+                  <p className="text-white font-medium">{boleto.funcion.fecha || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Hora</p>
+                  <p className="text-white font-medium">{boleto.funcion.hora || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Sala</p>
+                  <p className="text-white font-medium">{boleto.funcion.sala || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Asientos</p>
+                  <p className="text-cinema-gold-400 font-bold">{asientosTexto}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Total</p>
+                  <p className="text-cinema-gold-400 font-bold text-lg">Q{boleto.reserva.total.toFixed(2)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Código</p>
+                  <p className="text-white/60 font-mono text-xs truncate max-w-[120px]">
+                    {boleto.codigoQr}
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative my-3">
+                <div className="border-t-2 border-dashed border-white/20" />
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#4A0000] px-3 py-0.5 rounded-full">
+                  <span className="text-[10px] text-white/40 font-mono">✦</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 bg-white rounded-lg flex items-center justify-center shadow-lg">
+                    <span className="text-gray-400 text-[7px] text-center font-mono leading-tight">
+                      QR
+                      <br />
+                      {boleto.codigoQr.slice(0, 8)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Validado por</p>
+                  <p className="text-white/70 text-sm font-medium">
+                    {boleto.validadoPor || 'Pendiente'}
+                  </p>
+                  <p className="text-white/20 text-[9px] mt-0.5">
+                    {new Date(boleto.fechaEmision).toLocaleString('es-GT')}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => boletosService.descargarBoleto(boleto.id)}
+                  className="flex-shrink-0 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold px-3 py-2 rounded-lg text-xs transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                >
+                  Descargar
+                </button>
+              </div>
+
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500/40 to-transparent" />
+            </div>
           </div>
-        </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-          boleto.estado === 'VALIDO'
-            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-            : 'bg-red-500/20 text-red-400 border border-red-500/30'
-        }`}>
-          {boleto.estado === 'VALIDO' ? '✓ ACTIVO' : '✗ USADO'}
-        </span>
-      </div>
 
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="flex items-center gap-2">
-          <FaFilm className="text-cinema-gold-500 text-xs" />
-          <span className="text-gray-300">{boleto.pelicula.titulo || 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FaCalendarAlt className="text-cinema-gold-500 text-xs" />
-          <span className="text-gray-300">{boleto.funcion.fecha || 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FaClock className="text-cinema-gold-500 text-xs" />
-          <span className="text-gray-300">{boleto.funcion.hora || 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FaBuilding className="text-cinema-gold-500 text-xs" />
-          <span className="text-gray-300">{boleto.funcion.sala || 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FaChair className="text-cinema-gold-500 text-xs" />
-          <span className="text-gray-300">
-            {boleto.asientos.length > 0
-              ? boleto.asientos.map((a) => `${a.fila}${a.numero}`).join(', ')
-              : 'N/A'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <FaTag className="text-cinema-gold-500 text-xs" />
-          <span className="text-cinema-gold-500 font-bold">Q{boleto.reserva.total.toFixed(2)}</span>
+          <div className="absolute inset-0 rounded-2xl border border-cinema-gold-500/10 pointer-events-none" />
+          <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none" />
         </div>
       </div>
-
-      <div className="pt-2 border-t border-gray-700/50 flex justify-between text-xs text-gray-500">
-        <span>ID: {boleto.id}</span>
-        <span>Emisión: {new Date(boleto.fechaEmision).toLocaleString('es-GT')}</span>
-      </div>
-
-      <button
-        onClick={() => boletosService.descargarBoleto(boleto.id)}
-        className="w-full mt-2 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold px-4 py-2 rounded-lg text-sm transition-all"
-      >
-        📄 Descargar Boleto
-      </button>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="cinema-card p-6 space-y-6">
-      {/* ===== TÍTULO ===== */}
       <div className="flex items-center gap-3">
         <FaQrcode className="text-cinema-gold-500 text-2xl" />
         <div>
@@ -210,7 +253,6 @@ const AdminValidacionBoletos = () => {
         </div>
       </div>
 
-      {/* ===== SECCIÓN DE ESCANEO ===== */}
       <div className="bg-cinema-dark-900/50 rounded-xl p-5 border border-gray-700">
         <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
           <FaQrcode className="text-cinema-gold-500" />
@@ -235,7 +277,6 @@ const AdminValidacionBoletos = () => {
           </button>
         </div>
 
-        {/* Resultado de validación */}
         {resultadoValidacion && (
           <div className={`mt-4 p-4 rounded-xl border ${
             resultadoValidacion.success
@@ -245,16 +286,11 @@ const AdminValidacionBoletos = () => {
             <p className={`font-semibold ${resultadoValidacion.success ? 'text-green-400' : 'text-red-400'}`}>
               {resultadoValidacion.message}
             </p>
-            {resultadoValidacion.boleto && (
-              <div className="mt-3">
-                {renderBoletoDetalle(resultadoValidacion.boleto)}
-              </div>
-            )}
+            {resultadoValidacion.boleto && renderBoletoDetalle(resultadoValidacion.boleto)}
           </div>
         )}
       </div>
 
-      {/* ===== SECCIÓN DE BÚSQUEDA AVANZADA ===== */}
       <div className="bg-cinema-dark-900/50 rounded-xl p-5 border border-gray-700">
         <button
           onClick={() => setBusquedaActiva(!busquedaActiva)}
@@ -335,13 +371,12 @@ const AdminValidacionBoletos = () => {
               </div>
             </div>
 
-            {/* Resultados de búsqueda */}
             {resultadosBusqueda && (
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-4">
                 <p className="text-sm text-gray-400">
                   Mostrando {resultadosBusqueda.data.length} de {resultadosBusqueda.meta.total} resultados
                 </p>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
                   {resultadosBusqueda.data.map((boleto) => (
                     <div key={boleto.id}>
                       {renderBoletoDetalle(boleto)}
@@ -349,7 +384,6 @@ const AdminValidacionBoletos = () => {
                   ))}
                 </div>
 
-                {/* Paginación */}
                 {resultadosBusqueda.meta.totalPages > 1 && (
                   <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                     <button
@@ -391,7 +425,6 @@ const AdminValidacionBoletos = () => {
         )}
       </div>
 
-      {/* Toast */}
       {showToast && (
         <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />
       )}
