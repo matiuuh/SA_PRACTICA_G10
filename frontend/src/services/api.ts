@@ -1,7 +1,9 @@
+// src/services/api.ts
+
 import axios from 'axios';
 import { clearStoredSession, isTokenExpired } from './auth-token';
 
-const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3006';
+export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3006';
 
 export const api = axios.create({
   baseURL: API_GATEWAY_URL,
@@ -35,7 +37,12 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config.responseType === 'blob') {
+      return response;
+    }
+    return response;
+  },
   (error) => {
     const requestUrl = error.config?.url ?? '';
     const isLoginRequest = requestUrl.includes('/api/auth/login');
