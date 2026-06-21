@@ -30,8 +30,9 @@ class BoletosService {
       params.estado = filtros.estado;
     }
 
+    // CAMBIO: usar 'mis-boletos' en lugar de 'historial'
     const response = await api.get<PaginatedTicketHistory>(
-      `${endpoints.reservas}/historial`,
+      `${endpoints.reservas}/mis-boletos`,
       { params }
     );
 
