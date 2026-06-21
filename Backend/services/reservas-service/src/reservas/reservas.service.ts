@@ -44,7 +44,11 @@ export class ReservasService {
     private readonly funcionCatalogClient: FuncionCatalogClient,
   ) {}
 
-  async findAsientosByFuncion(idFuncionExterna: string, usuarioIdExterno?: string) {
+  async findAsientosByFuncion(
+    idFuncionExterna: string,
+    usuarioIdExterno?: string,
+    rol?: string,
+  ) {
     const asientos = await this.asientosRepository.find({
       where: { idFuncionExterna },
       order: { fila: 'ASC', numero: 'ASC' },
@@ -61,23 +65,55 @@ export class ReservasService {
       )
       .select('asiento.id_asiento', 'id')
       .addSelect('reserva.usuario_id_externo', 'usuarioIdExterno')
-      .getRawMany<{ id: string; usuarioIdExterno: string }>();
+      .addSelect('estado.nombre', 'estadoReserva')
+      .getRawMany<{
+        id: string;
+        usuarioIdExterno: string;
+        estadoReserva: string;
+      }>();
 
-    const reservedIds = new Set(reservados.map((item) => item.id));
-    const ownReservedIds = new Set(
-      reservados
-        .filter((item) => item.usuarioIdExterno === usuarioIdExterno)
-        .map((item) => item.id),
+    const reservaPorAsiento = new Map(
+      reservados.map((item) => [item.id, item]),
     );
 
-    return asientos.map((asiento) => ({
-      ...asiento,
-      ocupado:
-        asiento.estado !== EstadoAsiento.DISPONIBLE ||
-        reservedIds.has(asiento.id),
-      propio: ownReservedIds.has(asiento.id),
-      estadoOperativo: asiento.estado,
-    }));
+    return asientos.map((asiento) => {
+      const reservaActiva = reservaPorAsiento.get(asiento.id);
+      const propio =
+        !!reservaActiva &&
+        reservaActiva.usuarioIdExterno === usuarioIdExterno;
+
+      let estadoVisual = 'LIBRE';
+
+      if (reservaActiva && !propio) {
+        estadoVisual = 'OCUPADO';
+      } else if (propio && asiento.estado === EstadoAsiento.EN_USO) {
+        estadoVisual = 'VALIDADO';
+      } else if (propio && reservaActiva?.estadoReserva === 'CONFIRMADA') {
+        estadoVisual = 'POR_VALIDAR';
+      } else if (propio && reservaActiva?.estadoReserva === 'TEMPORAL') {
+        estadoVisual = 'EN_PROCESO';
+      } else if (asiento.estado === EstadoAsiento.EN_USO) {
+        estadoVisual = 'OCUPADO';
+      }
+
+      return {
+        ...asiento,
+        ocupado: estadoVisual !== 'LIBRE',
+        propio,
+        estadoOperativo: asiento.estado,
+        estadoVisual,
+        ...(rol === 'ADMINISTRADOR'
+          ? {
+              estadoAdministrativo:
+                asiento.estado === EstadoAsiento.EN_USO
+                  ? 'VALIDADO'
+                  : reservaActiva?.estadoReserva === 'CONFIRMADA'
+                    ? 'COMPRADO'
+                    : 'OTRO',
+            }
+          : {}),
+      };
+    });
   }
 
   async findReservaById(id: string): Promise<Reserva> {
