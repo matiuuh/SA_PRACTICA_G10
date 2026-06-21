@@ -50,7 +50,7 @@ export class TicketHistoryService {
       .getRawMany<{ estado: EstadoBoleto; total: string }>();
 
     const [boletos, total] = await query
-      .orderBy('boleto.fecha_emision', 'DESC')
+      .orderBy('boleto.fechaEmision', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();

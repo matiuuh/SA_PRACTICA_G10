@@ -34,7 +34,7 @@ export class AdminTicketSearchService {
       .leftJoinAndSelect('boleto.reserva', 'reserva')
       .leftJoinAndSelect('reserva.detalles', 'detalle')
       .leftJoinAndSelect('detalle.asiento', 'asiento')
-      .orderBy('boleto.fecha_emision', 'DESC')
+      .orderBy('boleto.fechaEmision', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 

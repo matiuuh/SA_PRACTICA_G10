@@ -1,6 +1,6 @@
 // src/components/organisms/AdminValidacionBoletos/AdminValidacionBoletos.tsx
 
-import { useState, useCallback } from 'react';
+import { useCallback, useRef, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import {
   FaQrcode,
@@ -11,6 +11,7 @@ import {
   FaChevronRight,
   FaRedo,
   FaTicketAlt,
+  FaUpload,
 } from 'react-icons/fa';
 import { reservasService } from '../../../services/reservas.service';
 import { boletosService } from '../../../services/boletos.service';
@@ -18,10 +19,13 @@ import Toast from '../../atoms/Toast/Toast';
 import TicketQr from '../../atoms/TicketQr/TicketQr';
 import AdminSeatMiniMap from '../AdminSeatMiniMap/AdminSeatMiniMap';
 import type { BoletoValidacion, AdminBusquedaBoletosFiltros } from '../../../types/admin.types';
+import { readQrFromTicketFile } from '../../../utils/readQrFromTicketFile';
 
 const AdminValidacionBoletos = () => {
   const [codigoEscaneado, setCodigoEscaneado] = useState('');
   const [validando, setValidando] = useState(false);
+  const [leyendoArchivo, setLeyendoArchivo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [resultadoValidacion, setResultadoValidacion] = useState<{
     success: boolean;
     message: string;
@@ -38,6 +42,7 @@ const AdminValidacionBoletos = () => {
     meta: { page: number; limit: number; total: number; totalPages: number };
   } | null>(null);
   const [buscando, setBuscando] = useState(false);
+  const [busquedaError, setBusquedaError] = useState<string | null>(null);
   const [validandoManualId, setValidandoManualId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -49,8 +54,10 @@ const AdminValidacionBoletos = () => {
     setShowToast(true);
   };
 
-  const handleValidarCodigo = useCallback(async () => {
-    if (!codigoEscaneado.trim()) {
+  const handleValidarCodigo = useCallback(async (codigo?: string) => {
+    const codigoAValidar = codigo?.trim() || codigoEscaneado.trim();
+
+    if (!codigoAValidar) {
       showValidationToast('Ingresa un código QR para validar.', 'error');
       return;
     }
@@ -59,7 +66,7 @@ const AdminValidacionBoletos = () => {
     setResultadoValidacion(null);
 
     try {
-      const result = await reservasService.validarBoleto(codigoEscaneado.trim());
+      const result = await reservasService.validarBoleto(codigoAValidar);
       
       setResultadoValidacion({
         success: true,
@@ -81,14 +88,54 @@ const AdminValidacionBoletos = () => {
     }
   }, [codigoEscaneado]);
 
+  const handleArchivoBoleto = useCallback(async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    setLeyendoArchivo(true);
+
+    try {
+      const codigo = await readQrFromTicketFile(file);
+      setCodigoEscaneado(codigo);
+      setResultadoValidacion(null);
+      showValidationToast(
+        'Código QR leído correctamente. Presiona Validar para continuar.',
+        'success',
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error
+        ? error.message
+        : 'No se pudo leer el código QR del archivo.';
+      showValidationToast(message, 'error');
+    } finally {
+      setLeyendoArchivo(false);
+    }
+  }, []);
+
   const handleBuscarBoletos = useCallback(async (
     overrides?: Partial<AdminBusquedaBoletosFiltros>,
   ) => {
+    const nextFilters = { ...filtros, ...overrides };
+
+    if (
+      nextFilters.fechaDesde &&
+      nextFilters.fechaHasta &&
+      nextFilters.fechaDesde > nextFilters.fechaHasta
+    ) {
+      const message = 'La fecha inicial no puede ser posterior a la fecha final';
+      setBusquedaError(message);
+      showValidationToast(message, 'error');
+      return;
+    }
+
     setBuscando(true);
-    setResultadosBusqueda(null);
+    setBusquedaError(null);
 
     try {
-      const nextFilters = { ...filtros, ...overrides };
       const params: AdminBusquedaBoletosFiltros = {
         ...nextFilters,
         page: nextFilters.page || 1,
@@ -98,16 +145,23 @@ const AdminValidacionBoletos = () => {
       };
 
       const result = await reservasService.buscarBoletosAdmin(params);
+      setFiltros(nextFilters);
       setResultadosBusqueda(result);
     } catch (error: unknown) {
       const message = isAxiosError<{ message?: string }>(error)
         ? error.response?.data?.message || 'Error al buscar boletos'
         : 'Error al buscar boletos';
+      setBusquedaError(message);
       showValidationToast(message, 'error');
     } finally {
       setBuscando(false);
     }
   }, [filtros]);
+
+  const handleSubmitBusqueda = useCallback((event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void handleBuscarBoletos({ page: 1 });
+  }, [handleBuscarBoletos]);
 
   const handleCambiarPagina = useCallback((page: number) => {
     setFiltros((prev) => ({ ...prev, page }));
@@ -137,6 +191,9 @@ const AdminValidacionBoletos = () => {
         boleto: boletoActualizado,
       });
       showValidationToast('Boleto validado manualmente', 'success');
+      await handleBuscarBoletos({
+        page: resultadosBusqueda?.meta.page ?? 1,
+      });
     } catch (error: unknown) {
       const message = isAxiosError<{ message?: string }>(error)
         ? error.response?.data?.message || 'No se pudo validar el boleto'
@@ -145,7 +202,7 @@ const AdminValidacionBoletos = () => {
     } finally {
       setValidandoManualId(null);
     }
-  }, []);
+  }, [handleBuscarBoletos, resultadosBusqueda?.meta.page]);
 
   const handleDescargar = useCallback(async (boletoId: string) => {
     try {
@@ -161,7 +218,7 @@ const AdminValidacionBoletos = () => {
       limit: 10,
     });
     setResultadosBusqueda(null);
-    setBusquedaActiva(false);
+    setBusquedaError(null);
   }, []);
 
   // ========== RENDER: TARJETA DE BOLETO (ESTILO TICKET) ==========
@@ -313,17 +370,39 @@ const AdminValidacionBoletos = () => {
             placeholder="Ingresa el código QR del boleto..."
             value={codigoEscaneado}
             onChange={(e) => setCodigoEscaneado(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleValidarCodigo(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') void handleValidarCodigo(); }}
             className="flex-1 px-4 py-2.5 bg-cinema-dark-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none text-sm"
           />
           <button
-            onClick={handleValidarCodigo}
-            disabled={validando}
+            onClick={() => void handleValidarCodigo()}
+            disabled={validando || leyendoArchivo}
             className="px-6 py-2.5 bg-cinema-red-500 hover:bg-cinema-red-600 text-white rounded-lg font-semibold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {validando ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
             Validar
           </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+            onChange={(event) => void handleArchivoBoleto(event)}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={leyendoArchivo || validando}
+            className="flex items-center gap-2 rounded-lg border border-cinema-gold-500/40 bg-cinema-gold-500/10 px-4 py-2 text-sm font-semibold text-cinema-gold-400 transition-colors hover:bg-cinema-gold-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {leyendoArchivo ? <FaSpinner className="animate-spin" /> : <FaUpload />}
+            {leyendoArchivo ? 'Leyendo boleto...' : 'Subir boleto'}
+          </button>
+          <p className="text-xs text-gray-500">
+            PDF, PNG, JPG o WEBP.
+          </p>
         </div>
 
         {resultadoValidacion && (
@@ -350,7 +429,7 @@ const AdminValidacionBoletos = () => {
         </button>
 
         {busquedaActiva && (
-          <div className="mt-4 space-y-4">
+          <form onSubmit={handleSubmitBusqueda} className="mt-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="block text-gray-400 text-xs mb-1">ID o Código QR</label>
@@ -404,7 +483,7 @@ const AdminValidacionBoletos = () => {
               </div>
               <div className="flex items-end gap-2">
                 <button
-                  onClick={() => void handleBuscarBoletos({ page: 1 })}
+                  type="submit"
                   disabled={buscando}
                   className="flex-1 px-4 py-2 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
@@ -412,7 +491,10 @@ const AdminValidacionBoletos = () => {
                   Buscar
                 </button>
                 <button
+                  type="button"
                   onClick={handleLimpiarFiltros}
+                  title="Limpiar búsqueda"
+                  aria-label="Limpiar búsqueda"
                   className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center gap-2"
                 >
                   <FaRedo />
@@ -420,18 +502,34 @@ const AdminValidacionBoletos = () => {
               </div>
             </div>
 
+            {busquedaError && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                {busquedaError}
+              </div>
+            )}
+
             {resultadosBusqueda && (
-              <div className="mt-4 space-y-4">
+              <div className={`mt-4 space-y-4 transition-opacity ${buscando ? 'opacity-50' : ''}`}>
                 <p className="text-sm text-gray-400">
                   Mostrando {resultadosBusqueda.data.length} de {resultadosBusqueda.meta.total} resultados
                 </p>
-                <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
-                  {resultadosBusqueda.data.map((boleto) => (
-                    <div key={boleto.id}>
-                      {renderBoletoDetalle(boleto)}
-                    </div>
-                  ))}
-                </div>
+                {resultadosBusqueda.data.length === 0 ? (
+                  <div className="rounded-xl border border-gray-700 bg-cinema-dark-800/50 py-10 text-center">
+                    <FaSearch className="mx-auto mb-3 text-3xl text-gray-600" />
+                    <p className="font-medium text-gray-300">No se encontraron boletos</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Revisa el código, las fechas o elimina algún filtro.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6 max-h-[600px] overflow-y-auto pr-1">
+                    {resultadosBusqueda.data.map((boleto) => (
+                      <div key={boleto.id}>
+                        {renderBoletoDetalle(boleto)}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {resultadosBusqueda.meta.totalPages > 1 && (
                   <div className="flex items-center justify-between pt-3 border-t border-gray-700">
@@ -464,13 +562,13 @@ const AdminValidacionBoletos = () => {
               </div>
             )}
 
-            {buscando && (
+            {buscando && !resultadosBusqueda && (
               <div className="text-center py-6">
                 <FaSpinner className="animate-spin mx-auto text-cinema-gold-500 text-3xl" />
                 <p className="text-gray-400 mt-2 text-sm">Buscando boletos...</p>
               </div>
             )}
-          </div>
+          </form>
         )}
       </div>
 
