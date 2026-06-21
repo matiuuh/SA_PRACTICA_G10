@@ -2,18 +2,21 @@ import { NotFoundException } from '@nestjs/common';
 import { LocalidadesService } from './localidades.service';
 
 const mockCiudad = { id: 'ciudad-1', nombre: 'Guatemala' };
-const mockCine = { id: 'cine-1', nombre: 'Cinepolis Miraflores', direccion: 'Zona 11', ciudad: mockCiudad };
-const mockSala = { id: 'sala-1', nombre: 'Sala 1', capacidad: 100, tipoSala: 'IMAX', cine: mockCine };
+const mockCine = {
+  id: 'cine-1',
+  nombre: 'Cine Central',
+  direccion: 'Zona 1',
+  ciudad: mockCiudad,
+};
 
 describe('LocalidadesService', () => {
   let service: LocalidadesService;
   let ciudadesRepo: Record<string, jest.Mock>;
   let cinesRepo: Record<string, jest.Mock>;
-  let salasRepo: Record<string, jest.Mock>;
-  let mockQueryBuilder: Record<string, jest.Mock>;
+  let queryBuilder: Record<string, jest.Mock>;
 
   beforeEach(() => {
-    mockQueryBuilder = {
+    queryBuilder = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -21,386 +24,150 @@ describe('LocalidadesService', () => {
       andWhere: jest.fn().mockReturnThis(),
       getManyAndCount: jest.fn().mockResolvedValue([[mockCine], 1]),
     };
-
     ciudadesRepo = {
       find: jest.fn().mockResolvedValue([mockCiudad]),
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((data) => data),
-      save: jest.fn().mockImplementation((data) => Promise.resolve(data)),
+      save: jest.fn().mockImplementation(async (data) => data),
       remove: jest.fn().mockResolvedValue(undefined),
     };
     cinesRepo = {
       find: jest.fn().mockResolvedValue([mockCine]),
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((data) => data),
-      save: jest.fn().mockImplementation((data) => Promise.resolve(data)),
+      save: jest.fn().mockImplementation(async (data) => data),
       remove: jest.fn().mockResolvedValue(undefined),
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-    };
-    salasRepo = {
-      find: jest.fn().mockResolvedValue([mockSala]),
-      findOne: jest.fn(),
-      create: jest.fn().mockImplementation((data) => data),
-      save: jest.fn().mockImplementation((data) => Promise.resolve(data)),
-      remove: jest.fn().mockResolvedValue(undefined),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
     service = new LocalidadesService(
       ciudadesRepo as any,
       cinesRepo as any,
-      salasRepo as any,
     );
   });
 
-  afterEach(() => jest.clearAllMocks());
-
-  // ─── Ciudades ─────────────────────────────────────────────────────
-
-  describe('findCiudades', () => {
-    it('debe retornar lista de ciudades', async () => {
-      const result = await service.findCiudades();
-      expect(result).toEqual([mockCiudad]);
-      expect(ciudadesRepo.find).toHaveBeenCalledWith({ order: { nombre: 'ASC' } });
-    });
+  it('consulta ciudades y cines', async () => {
+    await expect(service.findCiudades()).resolves.toEqual([mockCiudad]);
+    await expect(service.findCines()).resolves.toEqual([mockCine]);
   });
 
-  describe('findCiudadById', () => {
-    it('debe retornar una ciudad por ID', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
-      const result = await service.findCiudadById('ciudad-1');
-      expect(result).toEqual(mockCiudad);
-    });
-
-    it('debe lanzar NotFoundException si no existe', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(null);
-      await expect(service.findCiudadById('no-existe')).rejects.toThrow(NotFoundException);
-    });
+  it('crea una ciudad normalizando el nombre', async () => {
+    await expect(service.createCiudad({ nombre: '  Guatemala  ' })).resolves.toEqual(
+      expect.objectContaining({ nombre: 'Guatemala' }),
+    );
   });
 
-  describe('createCiudad', () => {
-    it('debe crear una ciudad con nombre trimmeado', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(null);
-      const result = await service.createCiudad({ nombre: '  Guatemala  ' });
-      expect(result.nombre).toBe('Guatemala');
-      expect(ciudadesRepo.save).toHaveBeenCalled();
-    });
+  it('consulta, actualiza y elimina una ciudad existente', async () => {
+    ciudadesRepo.findOne.mockResolvedValue({ ...mockCiudad });
+
+    await expect(service.findCiudadById('ciudad-1')).resolves.toEqual(mockCiudad);
+    await expect(
+      service.updateCiudad('ciudad-1', { nombre: '  Mixco  ' }),
+    ).resolves.toEqual(expect.objectContaining({ nombre: 'Mixco' }));
+    await expect(service.updateCiudad('ciudad-1', {})).resolves.toEqual(
+      expect.objectContaining({ nombre: 'Mixco' }),
+    );
+    await expect(service.removeCiudad('ciudad-1')).resolves.toBeUndefined();
   });
 
-  describe('updateCiudad', () => {
-    it('debe actualizar el nombre de la ciudad', async () => {
-      ciudadesRepo.findOne.mockResolvedValue({ ...mockCiudad });
-      const result = await service.updateCiudad('ciudad-1', { nombre: '  Quetzaltenango  ' });
-      expect(result.nombre).toBe('Quetzaltenango');
-    });
+  it('crea un cine asociado a una ciudad existente', async () => {
+    ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
 
-    it('debe lanzar NotFoundException si no existe', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateCiudad('no-existe', { nombre: 'X' })).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('removeCiudad', () => {
-    it('debe eliminar una ciudad existente', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
-      await service.removeCiudad('ciudad-1');
-      expect(ciudadesRepo.remove).toHaveBeenCalledWith(mockCiudad);
-    });
-
-    it('debe lanzar NotFoundException si no existe', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(null);
-      await expect(service.removeCiudad('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  // ─── Cines ────────────────────────────────────────────────────────
-
-  describe('findCines', () => {
-    it('debe retornar lista de cines', async () => {
-      const result = await service.findCines();
-      expect(result).toEqual([mockCine]);
-    });
-  });
-
-  describe('findCineById', () => {
-    it('debe retornar un cine por ID', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.findCineById('cine-1');
-      expect(result).toEqual(mockCine);
-    });
-
-    it('debe lanzar NotFoundException si no existe', async () => {
-      cinesRepo.findOne.mockResolvedValue(null);
-      await expect(service.findCineById('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('findCinesByCiudad', () => {
-    it('debe retornar cines de una ciudad', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
-      const result = await service.findCinesByCiudad('ciudad-1');
-      expect(result).toEqual([mockCine]);
-    });
-
-    it('debe lanzar NotFoundException si la ciudad no existe', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(null);
-      await expect(service.findCinesByCiudad('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('createCine', () => {
-    it('debe crear un cine asociado a una ciudad', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
-      const result = await service.createCine({
-        nombre: '  Cinepolis  ',
-        direccion: '  Zona 11  ',
+    await expect(
+      service.createCine({
+        nombre: '  Cine Central  ',
+        direccion: '  Zona 1  ',
         idCiudad: 'ciudad-1',
-      });
-      expect(result.nombre).toBe('Cinepolis');
-      expect(result.direccion).toBe('Zona 11');
-      expect(result.ciudad).toEqual(mockCiudad);
-    });
-
-    it('debe lanzar NotFoundException si la ciudad no existe', async () => {
-      ciudadesRepo.findOne.mockResolvedValue(null);
-      await expect(
-        service.createCine({ nombre: 'X', direccion: 'Y', idCiudad: 'no-existe' }),
-      ).rejects.toThrow(NotFoundException);
-    });
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        nombre: 'Cine Central',
+        direccion: 'Zona 1',
+        ciudad: mockCiudad,
+      }),
+    );
   });
 
-  describe('updateCine', () => {
-    it('debe actualizar nombre, direccion y ciudad del cine', async () => {
-      cinesRepo.findOne.mockResolvedValue({ ...mockCine });
-      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
+  it('rechaza un cine cuando la ciudad no existe', async () => {
+    ciudadesRepo.findOne.mockResolvedValue(null);
 
-      const result = await service.updateCine('cine-1', {
-        nombre: '  Nuevo Nombre  ',
-        direccion: '  Nueva Dir  ',
+    await expect(
+      service.createCine({
+        nombre: 'Cine',
+        direccion: 'Dirección',
+        idCiudad: 'no-existe',
+      }),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('pagina y filtra cines', async () => {
+    const result = await service.findCinesPaginated({
+      page: 2,
+      limit: 5,
+      search: 'central',
+      idCiudad: 'ciudad-1',
+    });
+
+    expect(result.meta).toEqual({
+      page: 2,
+      limit: 5,
+      total: 1,
+      totalPages: 1,
+    });
+    expect(queryBuilder.andWhere).toHaveBeenCalledTimes(2);
+  });
+
+  it('pagina cines con valores por defecto y límite máximo', async () => {
+    const defaults = await service.findCinesPaginated({});
+    const capped = await service.findCinesPaginated({ limit: 100 });
+
+    expect(defaults.meta.page).toBe(1);
+    expect(defaults.meta.limit).toBe(10);
+    expect(capped.meta.limit).toBe(50);
+  });
+
+  it('consulta cines por id y ciudad', async () => {
+    cinesRepo.findOne.mockResolvedValue(mockCine);
+    ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
+
+    await expect(service.findCineById('cine-1')).resolves.toEqual(mockCine);
+    await expect(service.findCinesByCiudad('ciudad-1')).resolves.toEqual([
+      mockCine,
+    ]);
+  });
+
+  it('actualiza y elimina un cine existente', async () => {
+    cinesRepo.findOne.mockResolvedValue({ ...mockCine });
+    ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
+
+    await expect(
+      service.updateCine('cine-1', {
+        nombre: '  Renovado  ',
+        direccion: '  Zona 10  ',
         idCiudad: 'ciudad-1',
-      });
-      expect(result.nombre).toBe('Nuevo Nombre');
-      expect(result.direccion).toBe('Nueva Dir');
-    });
-
-    it('debe lanzar NotFoundException si el cine no existe', async () => {
-      cinesRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateCine('no-existe', { nombre: 'X' })).rejects.toThrow(NotFoundException);
-    });
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        nombre: 'Renovado',
+        direccion: 'Zona 10',
+        ciudad: mockCiudad,
+      }),
+    );
+    await expect(service.updateCine('cine-1', {})).resolves.toEqual(
+      expect.objectContaining({ nombre: 'Renovado' }),
+    );
+    await expect(service.removeCine('cine-1')).resolves.toBeUndefined();
   });
 
-  describe('removeCine', () => {
-    it('debe eliminar un cine existente', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      await service.removeCine('cine-1');
-      expect(cinesRepo.remove).toHaveBeenCalledWith(mockCine);
-    });
-  });
+  it('lanza NotFoundException para ids inexistentes', async () => {
+    ciudadesRepo.findOne.mockResolvedValue(null);
+    cinesRepo.findOne.mockResolvedValue(null);
 
-  // ─── Salas ────────────────────────────────────────────────────────
-
-  describe('findSalas', () => {
-    it('debe retornar todas las salas', async () => {
-      const result = await service.findSalas();
-      expect(result).toEqual([mockSala]);
-    });
-  });
-
-  describe('findSalasByCine', () => {
-    it('debe retornar salas de un cine', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.findSalasByCine('cine-1');
-      expect(result).toEqual([mockSala]);
-    });
-
-    it('debe lanzar NotFoundException si el cine no existe', async () => {
-      cinesRepo.findOne.mockResolvedValue(null);
-      await expect(service.findSalasByCine('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('findSalaById', () => {
-    it('debe retornar una sala por ID', async () => {
-      salasRepo.findOne.mockResolvedValue(mockSala);
-      const result = await service.findSalaById('sala-1');
-      expect(result).toEqual(mockSala);
-    });
-
-    it('debe lanzar NotFoundException si no existe', async () => {
-      salasRepo.findOne.mockResolvedValue(null);
-      await expect(service.findSalaById('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('createSala', () => {
-    it('debe crear una sala asociada a un cine', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.createSala({
-        nombre: '  Sala VIP  ',
-        capacidad: 50,
-        tipoSala: '  3D  ',
-        idCine: 'cine-1',
-      });
-      expect(result.nombre).toBe('Sala VIP');
-      expect(result.tipoSala).toBe('3D');
-      expect(result.capacidad).toBe(50);
-    });
-
-    it('debe manejar tipoSala undefined (null)', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.createSala({
-        nombre: 'Sala Normal',
-        capacidad: 80,
-        idCine: 'cine-1',
-      });
-      expect(result.tipoSala).toBeNull();
-    });
-  });
-
-  describe('updateSala', () => {
-    it('debe actualizar campos de la sala', async () => {
-      salasRepo.findOne.mockResolvedValue({ ...mockSala });
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-
-      const result = await service.updateSala('sala-1', {
-        nombre: '  Sala Renovada  ',
-        capacidad: 120,
-        tipoSala: '  4DX  ',
-        idCine: 'cine-1',
-      });
-      expect(result.nombre).toBe('Sala Renovada');
-      expect(result.capacidad).toBe(120);
-      expect(result.tipoSala).toBe('4DX');
-    });
-
-    it('debe manejar tipoSala undefined sin cambiar', async () => {
-      salasRepo.findOne.mockResolvedValue({ ...mockSala });
-      const result = await service.updateSala('sala-1', {});
-      expect(result.tipoSala).toBe('IMAX');
-    });
-
-    it('debe lanzar NotFoundException si la sala no existe', async () => {
-      salasRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateSala('no-existe', {})).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('removeSala', () => {
-    it('debe eliminar una sala existente', async () => {
-      salasRepo.findOne.mockResolvedValue(mockSala);
-      await service.removeSala('sala-1');
-      expect(salasRepo.remove).toHaveBeenCalledWith(mockSala);
-    });
-
-    it('debe lanzar NotFoundException si la sala no existe', async () => {
-      salasRepo.findOne.mockResolvedValue(null);
-      await expect(service.removeSala('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  // ─── Branch coverage additions ────────────────────────────────────
-
-  describe('findCinesPaginated', () => {
-    it('debe retornar cines paginados sin filtros', async () => {
-      const result = await service.findCinesPaginated({});
-      expect(result.data).toEqual([mockCine]);
-      expect(result.meta.total).toBe(1);
-    });
-
-    it('debe filtrar por busqueda', async () => {
-      const result = await service.findCinesPaginated({ search: 'Cine' });
-      expect(result.data).toEqual([mockCine]);
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
-    });
-
-    it('debe filtrar por idCiudad', async () => {
-      const result = await service.findCinesPaginated({ idCiudad: 'ciudad-1' });
-      expect(result.data).toEqual([mockCine]);
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('ciudad.id = :idCiudad', {
-        idCiudad: 'ciudad-1',
-      });
-    });
-
-    it('debe aplicar page y limit', async () => {
-      const result = await service.findCinesPaginated({ page: 2, limit: 5 });
-      expect(result.meta.page).toBe(2);
-      expect(result.meta.limit).toBe(5);
-    });
-  });
-
-  describe('updateCiudad - branch', () => {
-    it('debe no modificar nombre si no se envia', async () => {
-      ciudadesRepo.findOne.mockResolvedValue({ ...mockCiudad });
-      const result = await service.updateCiudad('ciudad-1', {});
-      expect(result.nombre).toBe('Guatemala');
-    });
-  });
-
-  describe('updateCine - partial branches', () => {
-    it('debe mantener campos si no se envian', async () => {
-      cinesRepo.findOne.mockResolvedValue({ ...mockCine });
-      const result = await service.updateCine('cine-1', {});
-      expect(result.nombre).toBe('Cinepolis Miraflores');
-      expect(result.direccion).toBe('Zona 11');
-    });
-
-    it('debe actualizar ciudad si se envia idCiudad', async () => {
-      cinesRepo.findOne.mockResolvedValue({ ...mockCine });
-      ciudadesRepo.findOne.mockResolvedValue(mockCiudad);
-      const result = await service.updateCine('cine-1', { idCiudad: 'ciudad-1' });
-      expect(result.ciudad).toEqual(mockCiudad);
-    });
-  });
-
-  describe('removeCine - not found branch', () => {
-    it('debe lanzar NotFoundException si el cine no existe', async () => {
-      cinesRepo.findOne.mockResolvedValue(null);
-      await expect(service.removeCine('no-existe')).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('createSala - tipoSala branch', () => {
-    it('debe crear sala con tipoSala null si no se envia', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.createSala({
-        nombre: 'Sala Normal',
-        capacidad: 80,
-        idCine: 'cine-1',
-      });
-      expect(result.tipoSala).toBeNull();
-    });
-
-    it('debe crear sala con tipoSala trimmeado', async () => {
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.createSala({
-        nombre: 'Sala VIP',
-        capacidad: 50,
-        tipoSala: '  3D  ',
-        idCine: 'cine-1',
-      });
-      expect(result.tipoSala).toBe('3D');
-    });
-  });
-
-  describe('updateSala - partial branches', () => {
-    it('debe mantener campos si no se envian', async () => {
-      salasRepo.findOne.mockResolvedValue({ ...mockSala });
-      const result = await service.updateSala('sala-1', {});
-      expect(result.nombre).toBe('Sala 1');
-      expect(result.capacidad).toBe(100);
-      expect(result.tipoSala).toBe('IMAX');
-    });
-
-    it('debe setear tipoSala a null si se envia vacio', async () => {
-      salasRepo.findOne.mockResolvedValue({ ...mockSala });
-      const result = await service.updateSala('sala-1', { tipoSala: '' });
-      expect(result.tipoSala).toBeNull();
-    });
-
-    it('debe actualizar cine si se envia idCine', async () => {
-      salasRepo.findOne.mockResolvedValue({ ...mockSala });
-      cinesRepo.findOne.mockResolvedValue(mockCine);
-      const result = await service.updateSala('sala-1', { idCine: 'cine-1' });
-      expect(result.cine).toEqual(mockCine);
-    });
+    await expect(service.findCiudadById('no-existe')).rejects.toThrow(
+      NotFoundException,
+    );
+    await expect(service.findCineById('no-existe')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

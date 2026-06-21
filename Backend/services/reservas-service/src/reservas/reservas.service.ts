@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes, randomUUID } from 'crypto';
 import { In, Repository } from 'typeorm';
@@ -13,6 +18,12 @@ import { ReservaDetalle } from './entities/reserva-detalle.entity';
 import { Reserva } from './entities/reserva.entity';
 import { ReservasGateway } from './reservas.gateway';
 import { RabbitMqService } from './rabbitmq.service';
+import { EstadoAsiento } from './enums/estado-asiento.enum';
+import { EstadoBoleto } from './enums/estado-boleto.enum';
+import {
+  FUNCION_CATALOG_CLIENT,
+  FuncionCatalogClient,
+} from './interfaces/funcion-snapshot.interface';
 
 @Injectable()
 export class ReservasService {
@@ -29,6 +40,8 @@ export class ReservasService {
     private readonly boletosRepository: Repository<Boleto>,
     private readonly rabbitMqService: RabbitMqService,
     private readonly reservasGateway: ReservasGateway,
+    @Inject(FUNCION_CATALOG_CLIENT)
+    private readonly funcionCatalogClient: FuncionCatalogClient,
   ) {}
 
   async findAsientosByFuncion(idFuncionExterna: string, usuarioIdExterno?: string) {
@@ -59,8 +72,11 @@ export class ReservasService {
 
     return asientos.map((asiento) => ({
       ...asiento,
-      ocupado: reservedIds.has(asiento.id),
+      ocupado:
+        asiento.estado !== EstadoAsiento.DISPONIBLE ||
+        reservedIds.has(asiento.id),
       propio: ownReservedIds.has(asiento.id),
+      estadoOperativo: asiento.estado,
     }));
   }
 
@@ -122,6 +138,7 @@ export class ReservasService {
       fila: createAsientoDto.fila.trim(),
       numero: createAsientoDto.numero,
       idFuncionExterna: createAsientoDto.idFuncionExterna,
+      estado: EstadoAsiento.DISPONIBLE,
     });
 
     return this.asientosRepository.save(asiento);
@@ -183,6 +200,15 @@ export class ReservasService {
     reserva.estado = estadoRechazada;
     reserva.fechaExpiracion = reserva.fechaExpiracion ?? new Date();
     await this.reservasRepository.save(reserva);
+
+    const asientosLiberados = reserva.detalles.map((detalle) => {
+      detalle.asiento.estado = EstadoAsiento.DISPONIBLE;
+      return detalle.asiento;
+    });
+    if (asientosLiberados.length > 0) {
+      await this.asientosRepository.save(asientosLiberados);
+    }
+
     const funcionId = reserva.detalles[0]?.asiento.idFuncionExterna;
     if (funcionId) {
       this.reservasGateway.releaseSeatsForReservation(
@@ -252,6 +278,12 @@ export class ReservasService {
     );
 
     await this.detallesRepository.save(detalles);
+    await this.asientosRepository.save(
+      asientos.map((asiento) => ({
+        ...asiento,
+        estado: EstadoAsiento.RESERVADO,
+      })),
+    );
 
     const funcionId = asientos[0]?.idFuncionExterna;
     if (funcionId) {
@@ -274,10 +306,23 @@ export class ReservasService {
     });
 
     if (!existingBoleto) {
+      const funcionId = reserva.detalles[0]?.asiento.idFuncionExterna;
+      const funcionSnapshot = funcionId
+        ? await this.funcionCatalogClient.findSnapshotById(funcionId)
+        : null;
       const boleto = this.boletosRepository.create({
         id: randomUUID(),
         codigoQr: this.generateTicketCode(),
         fechaEmision: new Date(),
+        estado: EstadoBoleto.VALIDO,
+        fechaUso: null,
+        validadoPor: null,
+        idFuncionExterna: funcionId ?? null,
+        idPeliculaExterna: funcionSnapshot?.peliculaId ?? null,
+        tituloPelicula: funcionSnapshot?.peliculaTitulo ?? null,
+        fechaFuncion: funcionSnapshot?.fechaFuncion ?? null,
+        horaFuncion: funcionSnapshot?.horaFuncion ?? null,
+        salaNombre: funcionSnapshot?.salaNombre ?? null,
         reserva,
       });
       await this.boletosRepository.save(boleto);
