@@ -1,5 +1,10 @@
 name: CI/CD FilmStars
 
+# ──────────────────────────────────────────────────────────────────────────────
+# FLUJOS:
+#   develop → Test → Build/Push DockerHub   → Deploy Docker Compose (self-hosted)
+#   release → Test → Build/Push Harbor/Zot  → Deploy K3s AWS
+# ──────────────────────────────────────────────────────────────────────────────
 on:
   push:
     branches: [release, develop]
@@ -9,11 +14,10 @@ env:
 
 jobs:
 
-  # ══════════════════════════════════════════════════════════════════════
-  # FASE 1 — TEST
-  # Pruebas unitarias con cobertura mínima del 75%.
-  # Si falla: notifica el error y el pipeline se detiene.
-  # ══════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 1 — TEST (ambas ramas)
+  # Obligatorio en release: cobertura mínima del 75%.
+  # ════════════════════════════════════════════════════════════════════════════
   test:
     name: "Fase 1 · Test ${{ matrix.service }}"
     runs-on: ubuntu-latest
@@ -55,15 +59,15 @@ jobs:
         run: |
           echo "::error::FASE 1 FALLIDA — ${{ matrix.service }} no alcanzo el 75% de cobertura minima requerida. Pipeline detenido."
 
-  # ══════════════════════════════════════════════════════════════════════
-  # FASE 2 — BUILD & PUSH
-  # Construye las imagenes Docker y las publica en DockerHub con tag :latest.
-  # Si falla: notifica el error y el pipeline se detiene.
-  # ══════════════════════════════════════════════════════════════════════
-  build-push:
-    name: "Fase 2 · Build & Push a DockerHub"
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 2a — BUILD & PUSH A DOCKERHUB  (solo rama develop)
+  # Publica imagenes con tag :latest para el entorno de staging local.
+  # ════════════════════════════════════════════════════════════════════════════
+  build-push-develop:
+    name: "Fase 2 · Build & Push a DockerHub (develop)"
     runs-on: ubuntu-latest
     needs: test
+    if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
 
@@ -72,17 +76,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Definir URL del API Gateway segun rama
-        id: vars
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/release" ]]; then
-            echo "api_url=http://${{ secrets.EC2_HOST_VM1 }}:3006" >> $GITHUB_OUTPUT
-            echo "ws_url=http://${{ secrets.EC2_HOST_VM2 }}:3004" >> $GITHUB_OUTPUT
-          else
-            echo "api_url=http://localhost:3006" >> $GITHUB_OUTPUT
-            echo "ws_url=http://localhost:3004" >> $GITHUB_OUTPUT
-          fi
 
       - name: Build y push auth-service
         uses: docker/build-push-action@v6
@@ -132,99 +125,128 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=${{ steps.vars.outputs.api_url }}
-            VITE_RESERVAS_WS_URL=${{ steps.vars.outputs.ws_url }}
+            VITE_API_GATEWAY_URL=http://localhost:3006
+            VITE_RESERVAS_WS_URL=http://localhost:3004
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
       - name: Notificar fallo de build
         if: failure()
         run: |
-          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes Docker. Pipeline detenido."
+          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en DockerHub. Pipeline detenido."
 
-  # ══════════════════════════════════════════════════════════════════════
-  # FASE 3a — DEPLOY AWS (solo rama release)
-  # Se conecta via SSH a las VMs y ejecuta docker compose pull + up.
-  # Orden: VM3 (bases de datos) → VM2 (servicios) → VM1 (frontend + gateway)
-  # ══════════════════════════════════════════════════════════════════════
-  deploy-vm3:
-    name: "Fase 3 · Deploy VM3 – Bases de datos (AWS)"
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 2b — BUILD & PUSH AL REGISTRY PRIVADO  (solo rama release)
+  # Publica imagenes con tag :latest y :<sha_corto> en Harbor/Zot.
+  # El SHA garantiza trazabilidad e inmutabilidad del artefacto desplegado.
+  #
+  # Secrets requeridos:
+  #   REGISTRY_HOST  — hostname del registry privado (ej: registry.filmstars.io)
+  #   REGISTRY_USER  — usuario de Harbor/Zot
+  #   REGISTRY_PASS  — contraseña de Harbor/Zot
+  #   K3S_INGRESS_HOST — IP o dominio publico del Ingress del cluster K3s
+  # ════════════════════════════════════════════════════════════════════════════
+  build-push-release:
+    name: "Fase 2 · Build & Push a Registry Privado (release)"
     runs-on: ubuntu-latest
-    needs: build-push
+    needs: test
     if: github.ref == 'refs/heads/release'
+    outputs:
+      sha_short: ${{ steps.vars.outputs.sha_short }}
     steps:
-      - name: Desplegar bases de datos en VM3
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST_VM3 }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin release
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
-            docker rm -f postgres-auth postgres-localidades postgres-funciones postgres-reservas postgres-pagos rabbitmq 2>/dev/null || true
-            docker compose -f docker-compose.vm3.yml pull
-            docker compose -f docker-compose.vm3.yml up -d --force-recreate
-            docker image prune -f
+      - uses: actions/checkout@v4
 
-  deploy-vm2:
-    name: "Fase 3 · Deploy VM2 – Servicios Backend (AWS)"
-    runs-on: ubuntu-latest
-    needs: deploy-vm3
-    if: github.ref == 'refs/heads/release'
-    steps:
-      - name: Desplegar servicios en VM2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST_VM2 }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin release
-            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-            echo "VM3_HOST=${{ secrets.VM3_HOST }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
-            echo "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}" >> .env
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-            docker rm -f auth-service localidades-service funciones-service reservas-service pagos-service 2>/dev/null || true
-            docker compose -f docker-compose.vm2.yml pull
-            docker compose -f docker-compose.vm2.yml up -d --force-recreate
-            docker image prune -f
+      - name: Obtener SHA corto del commit
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-  deploy-vm1:
-    name: "Fase 3 · Deploy VM1 – Frontend + API Gateway (AWS)"
-    runs-on: ubuntu-latest
-    needs: deploy-vm2
-    if: github.ref == 'refs/heads/release'
-    steps:
-      - name: Desplegar frontend y gateway en VM1
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Login al Registry Privado (Harbor / Zot)
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.EC2_HOST_VM1 }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin release
-            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-            echo "VM1_HOST=${{ secrets.EC2_HOST_VM1 }}" >> .env
-            echo "VM2_HOST=${{ secrets.VM2_HOST }}" >> .env
-            docker rm -f api-gateway frontend 2>/dev/null || true
-            docker compose -f docker-compose.vm1.yml pull
-            docker compose -f docker-compose.vm1.yml up -d --force-recreate
-            docker image prune -f
+          registry: ${{ secrets.REGISTRY_HOST }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASS }}
 
-  # ══════════════════════════════════════════════════════════════════════
-  # FASE 3b — DEPLOY LOCAL (solo rama develop)
+      - name: Build y push auth-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/auth-service
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-auth-service:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-auth-service:${{ steps.vars.outputs.sha_short }}
+
+      - name: Build y push localidades-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/localidades-service
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-localidades-service:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-localidades-service:${{ steps.vars.outputs.sha_short }}
+
+      - name: Build y push funciones-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/funciones-service
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-funciones-service:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-funciones-service:${{ steps.vars.outputs.sha_short }}
+
+      - name: Build y push reservas-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/reservas-service
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-reservas-service:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-reservas-service:${{ steps.vars.outputs.sha_short }}
+
+      - name: Build y push pagos-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/pagos-service
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-pagos-service:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-pagos-service:${{ steps.vars.outputs.sha_short }}
+
+      - name: Build y push api-gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api-gateway
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-api-gateway:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-api-gateway:${{ steps.vars.outputs.sha_short }}
+
+      - name: Build y push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          # VITE_API_GATEWAY_URL apunta al Ingress del cluster K3s con el prefijo /api
+          build-args: |
+            VITE_API_GATEWAY_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
+            VITE_RESERVAS_WS_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
+          tags: |
+            ${{ secrets.REGISTRY_HOST }}/filmstars-frontend:latest
+            ${{ secrets.REGISTRY_HOST }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
+
+      - name: Notificar fallo de build
+        if: failure()
+        run: |
+          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en el Registry Privado. Pipeline detenido."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 3a — DEPLOY DOCKER COMPOSE  (solo rama develop)
   # Corre en la maquina del equipo via self-hosted runner.
-  # Descarga las imagenes de DockerHub y levanta todos los servicios.
-  # ══════════════════════════════════════════════════════════════════════
-  deploy-local:
-    name: "Fase 3 · Deploy Local – Maquina del equipo (develop)"
+  # Descarga las imagenes de DockerHub y levanta todos los servicios localmente.
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-develop:
+    name: "Fase 3 · Deploy Docker Compose – Staging (develop)"
     runs-on: self-hosted
-    needs: build-push
+    needs: build-push-develop
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
@@ -246,7 +268,7 @@ jobs:
       - name: Pull imagenes desde DockerHub
         run: docker compose pull
 
-      - name: Levantar servicios localmente
+      - name: Levantar servicios
         shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
@@ -264,3 +286,130 @@ jobs:
 
       - name: Limpiar imagenes antiguas
         run: docker image prune -f
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 3b — DEPLOY K3S AWS  (solo rama release)
+  # Aplica los manifiestos de k8s/ al cluster con kubectl.
+  # Orden: namespace → configmaps → secrets → storage → infra → apps → ingress
+  # Verifica rollout de cada deployment; en fallo ejecuta kubectl rollout undo.
+  #
+  # Secrets requeridos:
+  #   KUBECONFIG_B64  — kubeconfig del cluster K3s codificado en base64
+  #                     (obtener en el master: base64 -w0 /etc/rancher/k3s/k3s.yaml)
+  #                     Reemplazar 127.0.0.1 por la IP publica del nodo master.
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-k3s:
+    name: "Fase 3 · Deploy K3s – Produccion AWS (release)"
+    runs-on: ubuntu-latest
+    needs: build-push-release
+    if: github.ref == 'refs/heads/release'
+    env:
+      REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
+      IMAGE_TAG: ${{ needs.build-push-release.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── kubectl ──────────────────────────────────────────────────────────
+      - name: Instalar kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.0'
+
+      - name: Configurar kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verificar conexion al cluster
+        run: kubectl cluster-info
+
+      # ── 1. Namespace y ConfigMaps ─────────────────────────────────────────
+      - name: Aplicar Namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Aplicar ConfigMaps
+        run: kubectl apply -f k8s/configmaps/
+
+      # ── 2. Secrets de la aplicacion ───────────────────────────────────────
+      - name: Aplicar Secrets de la aplicacion
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+        run: |
+          export POSTGRES_PASSWORD_B64=$(echo -n "$POSTGRES_PASSWORD" | base64 -w0)
+          export JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 -w0)
+          export RABBITMQ_USER_B64=$(echo -n "$RABBITMQ_USER" | base64 -w0)
+          export RABBITMQ_PASS_B64=$(echo -n "$RABBITMQ_PASS" | base64 -w0)
+          envsubst < k8s/secrets/app-secrets.yaml | kubectl apply -f -
+
+      - name: Crear Secret de credenciales del Registry Privado
+        run: |
+          kubectl create secret docker-registry registry-credentials \
+            --namespace filmstars \
+            --docker-server=${{ secrets.REGISTRY_HOST }} \
+            --docker-username=${{ secrets.REGISTRY_USER }} \
+            --docker-password=${{ secrets.REGISTRY_PASS }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # ── 3. Storage (PVCs) ────────────────────────────────────────────────
+      - name: Aplicar PersistentVolumeClaims
+        run: kubectl apply -f k8s/storage/
+
+      # ── 4. Infraestructura (bases de datos + RabbitMQ) ───────────────────
+      - name: Aplicar infraestructura
+        run: kubectl apply -f k8s/infra/
+
+      - name: Esperar que la infraestructura este lista
+        run: |
+          INFRA_DEPS="rabbitmq postgres-auth postgres-localidades postgres-funciones postgres-reservas postgres-pagos"
+          for dep in $INFRA_DEPS; do
+            echo "Esperando deployment/$dep..."
+            kubectl rollout status deployment/$dep -n filmstars --timeout=180s
+          done
+
+      # ── 5. Microservicios y Frontend ──────────────────────────────────────
+      - name: Desplegar microservicios y frontend
+        run: |
+          for f in k8s/apps/*.yaml; do
+            echo "Aplicando $f..."
+            envsubst < "$f" | kubectl apply -f -
+          done
+
+      # ── 6. Ingress ────────────────────────────────────────────────────────
+      - name: Aplicar Ingress
+        run: kubectl apply -f k8s/ingress/
+
+      # ── 7. Verificacion de rollout con rollback automatico ────────────────
+      - name: Verificar rollout y revertir en caso de fallo
+        run: |
+          APP_DEPS="auth-service localidades-service funciones-service reservas-service pagos-service api-gateway frontend"
+          FAILED=""
+          for dep in $APP_DEPS; do
+            echo "Verificando rollout de $dep..."
+            if ! kubectl rollout status deployment/$dep -n filmstars --timeout=120s; then
+              echo "::error::$dep fallo en el rollout. Ejecutando kubectl rollout undo..."
+              kubectl rollout undo deployment/$dep -n filmstars
+              FAILED="$FAILED $dep"
+            fi
+          done
+          if [ -n "$FAILED" ]; then
+            echo "::error::FASE 3 FALLIDA — Rollback ejecutado para:$FAILED"
+            exit 1
+          fi
+          echo "Todos los deployments estan saludables. Despliegue completado."
+
+      - name: Mostrar estado final del cluster
+        if: always()
+        run: |
+          echo "=== Pods en namespace filmstars ==="
+          kubectl get pods -n filmstars
+          echo "=== Ingress ==="
+          kubectl get ingress -n filmstars
+
+      - name: Notificar fallo de despliegue
+        if: failure()
+        run: |
+          echo "::error::FASE 3 FALLIDA — Error en el despliegue a K3s. Revisar logs con: kubectl logs -n filmstars deploy/<nombre>"
