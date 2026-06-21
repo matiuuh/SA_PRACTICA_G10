@@ -37,5 +37,9 @@ export interface PaginatedTicketHistory {
     limit: number;
     total: number;
     totalPages: number;
+    totalsByStatus?: {
+      validos: number;
+      usados: number;
+    };
   };
 }

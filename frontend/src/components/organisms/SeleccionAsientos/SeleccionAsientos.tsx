@@ -74,6 +74,28 @@ const createSeatBlueprint = (capacidadSala: number) => {
   return blueprint;
 };
 
+const mapEstadoVisual = (
+  estadoVisual?: 'LIBRE' | 'EN_PROCESO' | 'POR_VALIDAR' | 'VALIDADO' | 'OCUPADO',
+  propio?: boolean,
+  ocupado?: boolean,
+): UserAsiento['estado'] => {
+  switch (estadoVisual) {
+    case 'EN_PROCESO':
+      return 'en_proceso';
+    case 'POR_VALIDAR':
+      return 'por_validar';
+    case 'VALIDADO':
+      return 'validado';
+    case 'OCUPADO':
+      return 'ocupado';
+    case 'LIBRE':
+      return 'libre';
+    default:
+      if (propio) return 'en_proceso';
+      return ocupado ? 'ocupado' : 'libre';
+  }
+};
+
 const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   pelicula,
   onConfirmarSeleccion,
@@ -120,7 +142,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
           id: seat.id,
           numero: seat.numero,
           fila: seat.fila,
-          estado: seat.propio ? 'propio' : seat.ocupado ? 'ocupado' : 'disponible',
+          estado: mapEstadoVisual(seat.estadoVisual, seat.propio, seat.ocupado),
         })),
       );
     } catch (loadError) {
@@ -172,7 +194,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   }, [loadAsientos, pelicula.funcionId]);
 
   const handleAsientoClick = (asiento: UserAsiento) => {
-    if (asiento.estado === 'ocupado' || asiento.estado === 'propio') {
+    if (asiento.estado !== 'libre' && asiento.estado !== 'seleccionado') {
       return;
     }
 
@@ -186,8 +208,8 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
       setAsientosSeleccionados((current) => current.filter((item) => item.id !== asiento.id));
       setAsientos((current) =>
         current.map((item) =>
-          item.id === asiento.id && item.estado !== 'ocupado'
-            ? { ...item, estado: 'disponible' }
+          item.id === asiento.id && item.estado === 'seleccionado'
+            ? { ...item, estado: 'libre' }
             : item,
         ),
       );
@@ -234,7 +256,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
     });
     setAsientosSeleccionados((current) => current.filter((item) => item.id !== asientoId));
     setAsientos((current) =>
-      current.map((item) => (item.id === asientoId ? { ...item, estado: 'disponible' } : item)),
+      current.map((item) => (item.id === asientoId ? { ...item, estado: 'libre' } : item)),
     );
   };
 
@@ -250,14 +272,18 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
 
   const getColorAsiento = (estado: UserAsiento['estado']) => {
     switch (estado) {
-      case 'disponible':
+      case 'libre':
         return 'bg-gradient-to-br from-gray-600 to-gray-700 hover:from-cinema-gold-500 hover:to-cinema-gold-600 hover:text-black hover:shadow-lg hover:scale-110';
       case 'seleccionado':
         return 'bg-gradient-to-br from-cinema-gold-500 to-cinema-gold-600 text-black shadow-lg scale-105 ring-2 ring-white/50';
-      case 'propio':
-        return 'bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg scale-105 ring-2 ring-blue-200/70';
+      case 'en_proceso':
+        return 'bg-gradient-to-br from-amber-600 to-orange-700 text-white cursor-not-allowed ring-2 ring-amber-300/50';
+      case 'por_validar':
+        return 'bg-gradient-to-br from-blue-500 to-blue-700 text-white cursor-not-allowed shadow-lg ring-2 ring-blue-200/70';
+      case 'validado':
+        return 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white cursor-not-allowed shadow-lg ring-2 ring-emerald-200/70';
       case 'ocupado':
-        return 'bg-gradient-to-br from-green-700 to-green-800 cursor-not-allowed opacity-60';
+        return 'bg-gradient-to-br from-red-800 to-red-950 text-white cursor-not-allowed opacity-70';
       default:
         return 'bg-gray-600';
     }
@@ -272,7 +298,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   const asientosRender = useMemo(
     () =>
       asientos.map((asiento) => {
-        if (asiento.estado === 'propio') {
+        if (asiento.estado !== 'libre' && asiento.estado !== 'seleccionado') {
           return asiento;
         }
 
@@ -280,15 +306,11 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
           return { ...asiento, estado: 'seleccionado' as const };
         }
 
-        if (asiento.estado === 'ocupado') {
-          return asiento;
-        }
-
         if (lockedSeatIdsSet.has(asiento.id)) {
-          return { ...asiento, estado: 'ocupado' as const };
+          return { ...asiento, estado: 'en_proceso' as const };
         }
 
-        return { ...asiento, estado: 'disponible' as const };
+        return { ...asiento, estado: 'libre' as const };
       }),
     [asientos, lockedSeatIdsSet, selectedSeatIds],
   );
@@ -363,19 +385,27 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
       <div className="flex flex-wrap justify-center gap-8 mb-8 pb-6 border-b border-cinema-gold-500/20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-md" />
-          <span className="text-sm text-gray-300">Disponible</span>
+          <span className="text-sm text-gray-300">Libre</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-cinema-gold-500 to-cinema-gold-600 rounded-lg shadow-md ring-1 ring-white/50" />
           <span className="text-sm text-gray-300">Seleccionado</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-700 to-green-800 rounded-lg opacity-60" />
-          <span className="text-sm text-gray-300">Ocupado</span>
+          <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-orange-700 rounded-lg ring-1 ring-amber-300/50" />
+          <span className="text-sm text-gray-300">En proceso</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg shadow-md ring-1 ring-blue-200/70" />
-          <span className="text-sm text-gray-300">Tus asientos</span>
+          <span className="text-sm text-gray-300">Por validar</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-lg shadow-md ring-1 ring-emerald-200/70" />
+          <span className="text-sm text-gray-300">Validado</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-red-800 to-red-950 rounded-lg opacity-70" />
+          <span className="text-sm text-gray-300">Ocupado</span>
         </div>
       </div>
 
@@ -398,7 +428,18 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
                     <button
                       key={asiento.id}
                       onClick={() => handleAsientoClick(asiento)}
-                      disabled={asiento.estado === 'ocupado' || asiento.estado === 'propio'}
+                      disabled={asiento.estado !== 'libre' && asiento.estado !== 'seleccionado'}
+                      title={
+                        asiento.estado === 'por_validar'
+                          ? 'Tu boleto está pendiente de validación'
+                          : asiento.estado === 'validado'
+                            ? 'Tu boleto ya fue validado'
+                            : asiento.estado === 'en_proceso'
+                              ? 'Este asiento está en proceso'
+                              : asiento.estado === 'ocupado'
+                                ? 'Este asiento no está disponible'
+                                : undefined
+                      }
                       className={`w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold transition-all duration-200 ${getColorAsiento(asiento.estado)}`}
                     >
                       {asiento.numero}

@@ -1,6 +1,7 @@
 // src/components/organisms/AdminValidacionBoletos/AdminValidacionBoletos.tsx
 
 import { useState, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import {
   FaQrcode,
   FaSearch,
@@ -14,6 +15,8 @@ import {
 import { reservasService } from '../../../services/reservas.service';
 import { boletosService } from '../../../services/boletos.service';
 import Toast from '../../atoms/Toast/Toast';
+import TicketQr from '../../atoms/TicketQr/TicketQr';
+import AdminSeatMiniMap from '../AdminSeatMiniMap/AdminSeatMiniMap';
 import type { BoletoValidacion, AdminBusquedaBoletosFiltros } from '../../../types/admin.types';
 
 const AdminValidacionBoletos = () => {
@@ -35,6 +38,7 @@ const AdminValidacionBoletos = () => {
     meta: { page: number; limit: number; total: number; totalPages: number };
   } | null>(null);
   const [buscando, setBuscando] = useState(false);
+  const [validandoManualId, setValidandoManualId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -63,8 +67,10 @@ const AdminValidacionBoletos = () => {
         boleto: result,
       });
       showValidationToast('Boleto validado correctamente', 'success');
-    } catch (error: any) {
-      const mensaje = error.response?.data?.message || 'Error al validar el boleto';
+    } catch (error: unknown) {
+      const mensaje = isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message || 'Error al validar el boleto'
+        : 'Error al validar el boleto';
       setResultadoValidacion({
         success: false,
         message: `❌ ${mensaje}`,
@@ -75,36 +81,29 @@ const AdminValidacionBoletos = () => {
     }
   }, [codigoEscaneado]);
 
-  const handleBuscarBoletos = useCallback(async () => {
+  const handleBuscarBoletos = useCallback(async (
+    overrides?: Partial<AdminBusquedaBoletosFiltros>,
+  ) => {
     setBuscando(true);
     setResultadosBusqueda(null);
 
     try {
-      const params: any = {
-        page: filtros.page || 1,
-        limit: filtros.limit || 10,
+      const nextFilters = { ...filtros, ...overrides };
+      const params: AdminBusquedaBoletosFiltros = {
+        ...nextFilters,
+        page: nextFilters.page || 1,
+        limit: nextFilters.limit || 10,
+        identificador: nextFilters.identificador?.trim() || undefined,
+        pelicula: nextFilters.pelicula?.trim() || undefined,
       };
-
-      if (filtros.identificador?.trim()) {
-        params.identificador = filtros.identificador.trim();
-      }
-      if (filtros.pelicula?.trim()) {
-        params.pelicula = filtros.pelicula.trim();
-      }
-      if (filtros.fechaDesde) {
-        params.fechaDesde = filtros.fechaDesde;
-      }
-      if (filtros.fechaHasta) {
-        params.fechaHasta = filtros.fechaHasta;
-      }
-      if (filtros.estado) {
-        params.estado = filtros.estado;
-      }
 
       const result = await reservasService.buscarBoletosAdmin(params);
       setResultadosBusqueda(result);
-    } catch (error: any) {
-      showValidationToast(error.response?.data?.message || 'Error al buscar boletos', 'error');
+    } catch (error: unknown) {
+      const message = isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message || 'Error al buscar boletos'
+        : 'Error al buscar boletos';
+      showValidationToast(message, 'error');
     } finally {
       setBuscando(false);
     }
@@ -112,8 +111,49 @@ const AdminValidacionBoletos = () => {
 
   const handleCambiarPagina = useCallback((page: number) => {
     setFiltros((prev) => ({ ...prev, page }));
-    setTimeout(() => handleBuscarBoletos(), 0);
+    void handleBuscarBoletos({ page });
   }, [handleBuscarBoletos]);
+
+  const handleValidarManual = useCallback(async (boletoId: string) => {
+    if (!window.confirm('¿Confirmas que deseas marcar este boleto como utilizado?')) {
+      return;
+    }
+
+    setValidandoManualId(boletoId);
+
+    try {
+      const boletoActualizado = await reservasService.validarBoletoManual(boletoId);
+      setResultadosBusqueda((current) => current
+        ? {
+            ...current,
+            data: current.data.map((boleto) =>
+              boleto.id === boletoId ? boletoActualizado : boleto,
+            ),
+          }
+        : current);
+      setResultadoValidacion({
+        success: true,
+        message: 'Boleto validado manualmente',
+        boleto: boletoActualizado,
+      });
+      showValidationToast('Boleto validado manualmente', 'success');
+    } catch (error: unknown) {
+      const message = isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message || 'No se pudo validar el boleto'
+        : 'No se pudo validar el boleto';
+      showValidationToast(message, 'error');
+    } finally {
+      setValidandoManualId(null);
+    }
+  }, []);
+
+  const handleDescargar = useCallback(async (boletoId: string) => {
+    try {
+      await boletosService.descargarBoleto(boletoId);
+    } catch {
+      showValidationToast('No se pudo descargar el boleto', 'error');
+    }
+  }, []);
 
   const handleLimpiarFiltros = useCallback(() => {
     setFiltros({
@@ -125,7 +165,7 @@ const AdminValidacionBoletos = () => {
   }, []);
 
   // ========== RENDER: TARJETA DE BOLETO (ESTILO TICKET) ==========
-  const renderBoletoDetalle = (boleto: BoletoValidacion) => {
+  const renderBoletoDetalle = (boleto: BoletoValidacion, mostrarMapa = false) => {
     const estaActivo = boleto.estado === 'VALIDO';
     const asientosTexto = boleto.asientos.length > 0
       ? boleto.asientos.map((a) => `${a.fila}${a.numero}`).join(', ')
@@ -206,11 +246,7 @@ const AdminValidacionBoletos = () => {
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
                   <div className="w-14 h-14 bg-white rounded-lg flex items-center justify-center shadow-lg">
-                    <span className="text-gray-400 text-[7px] text-center font-mono leading-tight">
-                      QR
-                      <br />
-                      {boleto.codigoQr.slice(0, 8)}
-                    </span>
+                    <TicketQr value={boleto.codigoQr} size={48} />
                   </div>
                 </div>
 
@@ -224,13 +260,26 @@ const AdminValidacionBoletos = () => {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => boletosService.descargarBoleto(boleto.id)}
-                  className="flex-shrink-0 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold px-3 py-2 rounded-lg text-xs transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                >
-                  Descargar
-                </button>
+                <div className="flex flex-col gap-2">
+                  {estaActivo && (
+                    <button
+                      onClick={() => void handleValidarManual(boleto.id)}
+                      disabled={validandoManualId === boleto.id}
+                      className="flex-shrink-0 bg-green-600 hover:bg-green-500 text-white font-bold px-3 py-2 rounded-lg text-xs transition-all disabled:opacity-50"
+                    >
+                      {validandoManualId === boleto.id ? 'Validando...' : 'Validar manual'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => void handleDescargar(boleto.id)}
+                    className="flex-shrink-0 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold px-3 py-2 rounded-lg text-xs transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  >
+                    Descargar
+                  </button>
+                </div>
               </div>
+
+              {mostrarMapa && <AdminSeatMiniMap boleto={boleto} />}
 
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500/40 to-transparent" />
             </div>
@@ -286,7 +335,7 @@ const AdminValidacionBoletos = () => {
             <p className={`font-semibold ${resultadoValidacion.success ? 'text-green-400' : 'text-red-400'}`}>
               {resultadoValidacion.message}
             </p>
-            {resultadoValidacion.boleto && renderBoletoDetalle(resultadoValidacion.boleto)}
+            {resultadoValidacion.boleto && renderBoletoDetalle(resultadoValidacion.boleto, true)}
           </div>
         )}
       </div>
@@ -355,7 +404,7 @@ const AdminValidacionBoletos = () => {
               </div>
               <div className="flex items-end gap-2">
                 <button
-                  onClick={handleBuscarBoletos}
+                  onClick={() => void handleBuscarBoletos({ page: 1 })}
                   disabled={buscando}
                   className="flex-1 px-4 py-2 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >

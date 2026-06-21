@@ -1,6 +1,7 @@
 // src/components/organisms/TarjetaBoleta/TarjetaBoleta.tsx
 
 import type { TicketHistoryItem } from '../../../types/boletos.types';
+import TicketQr from '../../atoms/TicketQr/TicketQr';
 
 interface TarjetaBoletaProps {
   boleta: TicketHistoryItem;
@@ -115,11 +116,7 @@ const TarjetaBoleta = ({ boleta, onDescargar }: TarjetaBoletaProps) => {
               {/* Código QR */}
               <div className="flex-shrink-0">
                 <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-lg">
-                  <span className="text-gray-400 text-[8px] text-center font-mono leading-tight">
-                    QR
-                    <br />
-                    {boleta.codigoQr.slice(0, 8)}
-                  </span>
+                  <TicketQr value={boleta.codigoQr} size={56} />
                 </div>
               </div>
 
@@ -133,14 +130,12 @@ const TarjetaBoleta = ({ boleta, onDescargar }: TarjetaBoletaProps) => {
               </div>
 
               {/* Botón descarga (solo si está activo) */}
-              {estaActivo && (
-                <button
-                  onClick={() => onDescargar(boleta.id)}
-                  className="flex-shrink-0 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold px-3 py-2 rounded-lg text-xs transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                >
-                  Descargar
-                </button>
-              )}
+              <button
+                onClick={() => onDescargar(boleta.id)}
+                className="flex-shrink-0 bg-cinema-gold-500 hover:bg-cinema-gold-400 text-black font-bold px-3 py-2 rounded-lg text-xs transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              >
+                Descargar
+              </button>
             </div>
 
             {/* Línea divisoria inferior decorativa */}
