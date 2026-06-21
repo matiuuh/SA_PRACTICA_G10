@@ -325,31 +325,73 @@ describe('ReservasService', () => {
       expect(result[0]).toHaveProperty('ocupado');
       expect(result[0]).toHaveProperty('propio');
       expect(result[0].estadoOperativo).toBe(EstadoAsiento.DISPONIBLE);
+      expect(result[0].estadoVisual).toBe('LIBRE');
     });
 
     it('debe marcar como propio el asiento reservado por el usuario actual', async () => {
       asientosRepo.find.mockResolvedValue([mockAsiento]);
       const qb = detallesRepo.createQueryBuilder();
-      qb.getRawMany.mockResolvedValue([{ id: 'asiento-1', usuarioIdExterno: 'user-1' }]);
+      qb.getRawMany.mockResolvedValue([
+        {
+          id: 'asiento-1',
+          usuarioIdExterno: 'user-1',
+          estadoReserva: 'TEMPORAL',
+        },
+      ]);
 
       const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
       expect(result[0].ocupado).toBe(true);
       expect(result[0].propio).toBe(true);
+      expect(result[0].estadoVisual).toBe('EN_PROCESO');
     });
 
     it('debe marcar ocupado=true pero propio=false si el asiento es de otro usuario', async () => {
       asientosRepo.find.mockResolvedValue([mockAsiento]);
       const qb = detallesRepo.createQueryBuilder();
-      qb.getRawMany.mockResolvedValue([{ id: 'asiento-1', usuarioIdExterno: 'otro-user' }]);
+      qb.getRawMany.mockResolvedValue([
+        {
+          id: 'asiento-1',
+          usuarioIdExterno: 'otro-user',
+          estadoReserva: 'CONFIRMADA',
+        },
+      ]);
 
       const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
       expect(result[0].ocupado).toBe(true);
       expect(result[0].propio).toBe(false);
+      expect(result[0].estadoVisual).toBe('OCUPADO');
     });
 
-    it('debe marcar ocupado un asiento con estado operativo EN_USO', async () => {
+    it('debe mostrar por validar una compra confirmada del usuario actual', async () => {
+      asientosRepo.find.mockResolvedValue([
+        { ...mockAsiento, estado: EstadoAsiento.RESERVADO },
+      ]);
+      const qb = detallesRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([
+        {
+          id: 'asiento-1',
+          usuarioIdExterno: 'user-1',
+          estadoReserva: 'CONFIRMADA',
+        },
+      ]);
+
+      const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
+
+      expect(result[0].estadoVisual).toBe('POR_VALIDAR');
+      expect(result[0].propio).toBe(true);
+    });
+
+    it('debe mostrar validado solo al propietario del asiento', async () => {
       asientosRepo.find.mockResolvedValue([
         { ...mockAsiento, estado: EstadoAsiento.EN_USO },
+      ]);
+      const qb = detallesRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([
+        {
+          id: 'asiento-1',
+          usuarioIdExterno: 'user-1',
+          estadoReserva: 'CONFIRMADA',
+        },
       ]);
 
       const result = await service.findAsientosByFuncion(
@@ -359,6 +401,65 @@ describe('ReservasService', () => {
 
       expect(result[0].ocupado).toBe(true);
       expect(result[0].estadoOperativo).toBe(EstadoAsiento.EN_USO);
+      expect(result[0].estadoVisual).toBe('VALIDADO');
+    });
+
+    it('debe ocultar el estado validado a otros usuarios', async () => {
+      asientosRepo.find.mockResolvedValue([
+        { ...mockAsiento, estado: EstadoAsiento.EN_USO },
+      ]);
+      const qb = detallesRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([
+        {
+          id: 'asiento-1',
+          usuarioIdExterno: 'propietario',
+          estadoReserva: 'CONFIRMADA',
+        },
+      ]);
+
+      const result = await service.findAsientosByFuncion('funcion-1', 'otro-user');
+
+      expect(result[0].estadoVisual).toBe('OCUPADO');
+      expect(result[0].propio).toBe(false);
+    });
+
+    it('debe tratar como libre un RESERVADO sin reserva activa', async () => {
+      asientosRepo.find.mockResolvedValue([
+        { ...mockAsiento, estado: EstadoAsiento.RESERVADO },
+      ]);
+
+      const result = await service.findAsientosByFuncion('funcion-1', 'user-1');
+
+      expect(result[0].estadoVisual).toBe('LIBRE');
+      expect(result[0].ocupado).toBe(false);
+    });
+
+    it('debe exponer comprado y validado únicamente al administrador', async () => {
+      asientosRepo.find.mockResolvedValue([
+        { ...mockAsiento, estado: EstadoAsiento.RESERVADO },
+      ]);
+      const qb = detallesRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([
+        {
+          id: 'asiento-1',
+          usuarioIdExterno: 'user-1',
+          estadoReserva: 'CONFIRMADA',
+        },
+      ]);
+
+      const adminResult = await service.findAsientosByFuncion(
+        'funcion-1',
+        'admin-1',
+        'ADMINISTRADOR',
+      );
+      expect(adminResult[0].estadoAdministrativo).toBe('COMPRADO');
+
+      const userResult = await service.findAsientosByFuncion(
+        'funcion-1',
+        'otro-user',
+        'CLIENTE',
+      );
+      expect(userResult[0]).not.toHaveProperty('estadoAdministrativo');
     });
   });
 

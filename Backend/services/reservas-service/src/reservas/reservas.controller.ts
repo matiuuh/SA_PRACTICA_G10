@@ -68,7 +68,11 @@ export class ReservasController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.reservasService.findAsientosByFuncion(id, getAuthenticatedUserId(request));
+    return this.reservasService.findAsientosByFuncion(
+      id,
+      getAuthenticatedUserId(request),
+      request.user?.rol,
+    );
   }
 
   @Get('boletos/:id')
@@ -94,8 +98,7 @@ export class ReservasController {
   ) {
     return this.ticketHistoryService.findByUser(
       getAuthenticatedUserId(request),
-      query.page,
-      query.limit,
+      query,
     );
   }
 

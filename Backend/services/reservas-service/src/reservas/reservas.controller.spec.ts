@@ -56,7 +56,11 @@ describe('ReservasController', () => {
     it('debe llamar al servicio con el id de funcion y usuario autenticado', () => {
       mockService.findAsientosByFuncion.mockResolvedValue([]);
       controller.findAsientosByFuncion('funcion-1', buildRequest(mockUser));
-      expect(mockService.findAsientosByFuncion).toHaveBeenCalledWith('funcion-1', 'user-1');
+      expect(mockService.findAsientosByFuncion).toHaveBeenCalledWith(
+        'funcion-1',
+        'user-1',
+        'CLIENTE',
+      );
     });
 
     it('debe lanzar UnauthorizedException si no hay usuario en el request', () => {
@@ -117,8 +121,7 @@ describe('ReservasController', () => {
 
       expect(mockTicketHistoryService.findByUser).toHaveBeenCalledWith(
         'user-1',
-        2,
-        5,
+        { page: 2, limit: 5 },
       );
     });
 

@@ -1,6 +1,6 @@
 // src/components/organisms/HistorialCompras/HistorialCompras.tsx
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { boletosService } from '../../../services/boletos.service';
 import type { TicketHistoryItem, HistorialFiltros } from '../../../types/boletos.types';
 import TarjetaBoleta from '../TarjetaBoleta/TarjetaBoleta';
@@ -84,7 +84,11 @@ const HistorialCompras = () => {
     page: 1,
     limit: 10,
     total: 0,
-    totalPages: 1
+    totalPages: 1,
+    totalsByStatus: {
+      validos: 0,
+      usados: 0,
+    },
   });
   const [filtros, setFiltros] = useState<HistorialFiltros>({
     busqueda: '',
@@ -93,7 +97,7 @@ const HistorialCompras = () => {
     estado: 'todos'
   });
 
-  const cargarHistorial = async (page: number = 1) => {
+  const cargarHistorial = useCallback(async (page: number = 1) => {
     setLoading(true);
     setError(null);
 
@@ -107,11 +111,15 @@ const HistorialCompras = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filtros, meta.limit]);
 
   useEffect(() => {
-    cargarHistorial(1);
-  }, [filtros]);
+    const timer = window.setTimeout(() => {
+      void cargarHistorial(1);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [cargarHistorial]);
 
   const cambiarPagina = (page: number) => {
     if (page >= 1 && page <= meta.totalPages) {
@@ -139,10 +147,6 @@ const HistorialCompras = () => {
       console.error('Error al descargar el boleto:', err);
       alert('No se pudo descargar el boleto. Intenta de nuevo.');
     }
-  };
-
-  const contarPorEstado = (estado: string) => {
-    return boletos.filter((b) => b.estado === estado).length;
   };
 
   if (loading && boletos.length === 0) {
@@ -178,11 +182,11 @@ const HistorialCompras = () => {
         </div>
         <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
           <p className="text-sm text-green-400">Activos</p>
-          <p className="text-2xl font-bold text-green-400">{contarPorEstado('VALIDO')}</p>
+          <p className="text-2xl font-bold text-green-400">{meta.totalsByStatus.validos}</p>
         </div>
         <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
           <p className="text-sm text-blue-400">Usados</p>
-          <p className="text-2xl font-bold text-blue-400">{contarPorEstado('USADO')}</p>
+          <p className="text-2xl font-bold text-blue-400">{meta.totalsByStatus.usados}</p>
         </div>
         <div className="bg-gray-500/10 rounded-xl p-4 border border-gray-500/20">
           <p className="text-sm text-gray-400">Páginas</p>
