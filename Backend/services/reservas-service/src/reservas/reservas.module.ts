@@ -19,6 +19,8 @@ import { TicketValidationService } from './services/ticket-validation.service';
 import { TicketDownloadService } from './services/ticket-download.service';
 import { PdfTicketDocumentGenerator } from './services/pdf-ticket-document.generator';
 import { TICKET_DOCUMENT_GENERATOR } from './interfaces/ticket-document-generator.interface';
+import { Incidencia } from './entities/incidencia.entity';
+import { IncidenciasService } from './services/incidencias.service';
 
 @Module({
   imports: [
@@ -29,6 +31,7 @@ import { TICKET_DOCUMENT_GENERATOR } from './interfaces/ticket-document-generato
       Reserva,
       ReservaDetalle,
       Boleto,
+      Incidencia,
     ]),
   ],
   controllers: [ReservasController],
@@ -42,6 +45,7 @@ import { TICKET_DOCUMENT_GENERATOR } from './interfaces/ticket-document-generato
     TicketValidationService,
     TicketDownloadService,
     PdfTicketDocumentGenerator,
+    IncidenciasService,
     HttpFuncionCatalogClient,
     {
       provide: FUNCION_CATALOG_CLIENT,

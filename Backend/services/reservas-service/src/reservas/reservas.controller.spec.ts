@@ -24,6 +24,12 @@ const mockTicketValidationService = {
 const mockTicketDownloadService = {
   download: jest.fn(),
 };
+const mockIncidenciasService = {
+  create: jest.fn(),
+  findByUser: jest.fn(),
+  findAll: jest.fn(),
+  respond: jest.fn(),
+};
 
 const mockUser = { id: 'user-1', rol: 'CLIENTE' };
 const mockAdminUser = { id: 'admin-1', rol: 'ADMINISTRADOR' };
@@ -39,6 +45,7 @@ describe('ReservasController', () => {
       mockAdminTicketSearchService as any,
       mockTicketValidationService as any,
       mockTicketDownloadService as any,
+      mockIncidenciasService as any,
     );
     jest.clearAllMocks();
   });
@@ -144,6 +151,45 @@ describe('ReservasController', () => {
       controller.searchTickets(filters);
 
       expect(mockAdminTicketSearchService.search).toHaveBeenCalledWith(filters);
+    });
+  });
+
+  describe('incidencias', () => {
+    it('crea una incidencia para el usuario autenticado', () => {
+      const dto = {
+        tipo: 'PROBLEMA',
+        asunto: 'Problema general',
+        descripcion: 'Descripcion suficientemente larga',
+      };
+
+      controller.createIncidencia(dto as any, buildRequest(mockUser));
+
+      expect(mockIncidenciasService.create).toHaveBeenCalledWith('user-1', dto);
+    });
+
+    it('lista las incidencias propias', () => {
+      const query = { page: 1, limit: 10 };
+
+      controller.findMyIncidencias(query, buildRequest(mockUser));
+
+      expect(mockIncidenciasService.findByUser).toHaveBeenCalledWith(
+        'user-1',
+        query,
+      );
+    });
+
+    it('permite al administrador responder una incidencia', () => {
+      controller.respondIncidencia(
+        '11111111-1111-4111-8111-111111111111',
+        { respuesta: 'Incidencia solucionada' },
+        buildRequest(mockAdminUser),
+      );
+
+      expect(mockIncidenciasService.respond).toHaveBeenCalledWith(
+        '11111111-1111-4111-8111-111111111111',
+        'Incidencia solucionada',
+        'admin-1',
+      );
     });
   });
 

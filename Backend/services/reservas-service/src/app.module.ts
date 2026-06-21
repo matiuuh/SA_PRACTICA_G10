@@ -7,6 +7,7 @@ import { Boleto } from './reservas/entities/boleto.entity';
 import { EstadoReserva } from './reservas/entities/estado-reserva.entity';
 import { ReservaDetalle } from './reservas/entities/reserva-detalle.entity';
 import { Reserva } from './reservas/entities/reserva.entity';
+import { Incidencia } from './reservas/entities/incidencia.entity';
 
 @Module({
   imports: [
@@ -23,7 +24,14 @@ import { Reserva } from './reservas/entities/reserva.entity';
         username: configService.get<string>('DB_USERNAME', 'postgres'),
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_NAME', 'reservas_service'),
-        entities: [Asiento, EstadoReserva, Reserva, ReservaDetalle, Boleto],
+        entities: [
+          Asiento,
+          EstadoReserva,
+          Reserva,
+          ReservaDetalle,
+          Boleto,
+          Incidencia,
+        ],
         synchronize: false,
       }),
     }),

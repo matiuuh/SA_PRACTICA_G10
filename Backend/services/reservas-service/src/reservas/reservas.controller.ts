@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -28,6 +29,10 @@ import { AdminTicketSearchService } from './services/admin-ticket-search.service
 import { ValidateTicketDto } from './dto/validate-ticket.dto';
 import { TicketValidationService } from './services/ticket-validation.service';
 import { TicketDownloadService } from './services/ticket-download.service';
+import { CreateIncidenciaDto } from './dto/create-incidencia.dto';
+import { PaginateIncidenciasDto } from './dto/paginate-incidencias.dto';
+import { RespondIncidenciaDto } from './dto/respond-incidencia.dto';
+import { IncidenciasService } from './services/incidencias.service';
 
 type AuthenticatedRequest = { user?: { id?: string; rol?: string } };
 const getAuthenticatedUserId = (request: AuthenticatedRequest) => {
@@ -51,6 +56,7 @@ export class ReservasController {
     private readonly adminTicketSearchService: AdminTicketSearchService,
     private readonly ticketValidationService: TicketValidationService,
     private readonly ticketDownloadService: TicketDownloadService,
+    private readonly incidenciasService: IncidenciasService,
   ) {}
 
   @Get('health')
@@ -107,6 +113,52 @@ export class ReservasController {
   @Roles('ADMINISTRADOR')
   searchTickets(@Query() query: SearchAdminTicketsDto) {
     return this.adminTicketSearchService.search(query);
+  }
+
+  @Post('incidencias')
+  @UseGuards(JwtAuthGuard)
+  createIncidencia(
+    @Body() dto: CreateIncidenciaDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.incidenciasService.create(
+      getAuthenticatedUserId(request),
+      dto,
+    );
+  }
+
+  @Get('mis-incidencias')
+  @UseGuards(JwtAuthGuard)
+  findMyIncidencias(
+    @Query() query: PaginateIncidenciasDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.incidenciasService.findByUser(
+      getAuthenticatedUserId(request),
+      query,
+    );
+  }
+
+  @Get('admin/incidencias')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
+  findAdminIncidencias(@Query() query: PaginateIncidenciasDto) {
+    return this.incidenciasService.findAll(query);
+  }
+
+  @Patch('admin/incidencias/:id/responder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMINISTRADOR')
+  respondIncidencia(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RespondIncidenciaDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.incidenciasService.respond(
+      id,
+      dto.respuesta,
+      getAuthenticatedUserId(request),
+    );
   }
 
   @Post('boletos/validar')
