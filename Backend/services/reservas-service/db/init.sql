@@ -58,6 +58,25 @@ CREATE TABLE "boletos" (
 
 COMMENT ON TABLE "boletos" IS 'Boleto generado despues del pago';
 
+CREATE TABLE "incidencias" (
+  "id_incidencia" uuid PRIMARY KEY,
+  "usuario_id_externo" uuid NOT NULL,
+  "tipo" varchar(20) NOT NULL,
+  "asunto" varchar(120) NOT NULL,
+  "descripcion" varchar(1000) NOT NULL,
+  "estado" varchar(20) NOT NULL DEFAULT 'PENDIENTE',
+  "respuesta" varchar(1000),
+  "administrador_id_externo" uuid,
+  "fecha_creacion" timestamp NOT NULL DEFAULT NOW(),
+  "fecha_respuesta" timestamp,
+  CONSTRAINT "ck_incidencias_tipo"
+    CHECK ("tipo" IN ('PROBLEMA', 'SUGERENCIA', 'OTRO')),
+  CONSTRAINT "ck_incidencias_estado"
+    CHECK ("estado" IN ('PENDIENTE', 'RESPONDIDA'))
+);
+
+COMMENT ON TABLE "incidencias" IS 'Incidencias generales reportadas por usuarios';
+
 ALTER TABLE "reservas"
   ADD CONSTRAINT "reserva_estado"
   FOREIGN KEY ("id_estado") REFERENCES "estado_reserva" ("id_estado")
@@ -94,3 +113,9 @@ CREATE INDEX "ix_boletos_titulo_pelicula_trgm"
 CREATE INDEX "ix_boletos_codigo_qr_trgm"
   ON "boletos"
   USING gin (LOWER("codigo_qr") gin_trgm_ops);
+
+CREATE INDEX "ix_incidencias_usuario_fecha"
+  ON "incidencias" ("usuario_id_externo", "fecha_creacion" DESC);
+
+CREATE INDEX "ix_incidencias_estado_fecha"
+  ON "incidencias" ("estado", "fecha_creacion" DESC);

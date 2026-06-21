@@ -1,6 +1,6 @@
 // src/components/organisms/UserSubHeader/UserSubHeader.tsx
 
-import { FaFilm, FaChair, FaHistory } from 'react-icons/fa'
+import { FaFilm, FaChair, FaHistory, FaExclamationCircle } from 'react-icons/fa'
 import { type TabType } from '../../../types/panel.types'
 
 interface UserSubHeaderProps {
@@ -13,6 +13,7 @@ const UserSubHeader: React.FC<UserSubHeaderProps> = ({ activeTab, onTabChange })
     { id: 'cartelera' as TabType, label: 'Cartelera', icon: FaFilm },
     { id: 'seleccion-asientos' as TabType, label: 'Selección de Asientos', icon: FaChair },
     { id: 'historial' as TabType, label: 'Historial de Compras', icon: FaHistory },
+    { id: 'incidencias' as TabType, label: 'Incidencias', icon: FaExclamationCircle },
   ]
 
   return (

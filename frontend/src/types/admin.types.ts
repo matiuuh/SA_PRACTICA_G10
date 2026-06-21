@@ -1,6 +1,6 @@
 // src/types/admin.types.ts
 
-export type AdminTabType = 'peliculas' | 'funciones' | 'localidades' | 'salas' | 'validacion';
+export type AdminTabType = 'peliculas' | 'funciones' | 'localidades' | 'salas' | 'validacion' | 'incidencias';
 
 export interface Categoria {
   id_categoria: string;

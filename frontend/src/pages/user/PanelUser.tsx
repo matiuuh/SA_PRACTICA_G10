@@ -12,6 +12,7 @@ import ModalPago, { type DatosPago } from '../../components/organisms/ModalPago/
 import ModalConfirmacion from '../../components/organisms/ModalConfirmacion/ModalConfirmacion';
 import Toast from '../../components/atoms/Toast/Toast';
 import HistorialCompras from '../../components/organisms/HistorialCompras/HistorialCompras';
+import MisIncidencias from '../../components/organisms/MisIncidencias/MisIncidencias';
 import { authService } from '../../services/auth.service';
 import { funcionesService } from '../../services/funciones.service';
 import { pagosService } from '../../services/pagos.service';
@@ -408,6 +409,8 @@ const PanelUser = () => {
         );
       case 'historial':
         return <HistorialCompras />;
+      case 'incidencias':
+        return <MisIncidencias />;
       default:
         return null;
     }
