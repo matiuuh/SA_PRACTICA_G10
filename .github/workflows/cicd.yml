@@ -325,8 +325,8 @@ jobs:
   # Verifica rollout de cada deployment; en fallo ejecuta kubectl rollout undo.
   #
   # Secrets requeridos:
-  #   KUBECONFIG_B64  — kubeconfig del cluster K3s codificado en base64
-  #                     (obtener en el master: base64 -w0 /etc/rancher/k3s/k3s.yaml)
+  #   KUBECONFIG_RAW  — kubeconfig del cluster K3s en YAML plano
+  #                     (obtener en el master: cat /etc/rancher/k3s/k3s.yaml)
   #                     Reemplazar 127.0.0.1 por la IP publica del nodo master.
   # ════════════════════════════════════════════════════════════════════════════
   deploy-k3s:
@@ -349,7 +349,9 @@ jobs:
       - name: Configurar kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          cat > ~/.kube/config <<'EOF'
+          ${{ secrets.KUBECONFIG_RAW }}
+          EOF
           chmod 600 ~/.kube/config
 
       - name: Verificar conexion al cluster
