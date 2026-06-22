@@ -24,6 +24,8 @@ pnpm-debug.log*
 # Dependency directories
 node_modules/
 
+actions-runner/
+
 # Build outputs
 dist/
 build/
@@ -59,3 +61,4 @@ junit.xml
 .yarn/
 
 # practica2
+enunciado5.md

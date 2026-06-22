@@ -27,5 +27,11 @@ export interface UserAsiento {
   id: string;
   numero: number;
   fila: string;
-  estado: 'disponible' | 'seleccionado' | 'ocupado' | 'propio';
+  estado:
+    | 'libre'
+    | 'seleccionado'
+    | 'en_proceso'
+    | 'por_validar'
+    | 'validado'
+    | 'ocupado';
 }

@@ -1,0 +1,101 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ConfigMap global: valores estáticos compartidos entre todos los servicios.
+# Ninguna variable sensible debe aparecer aquí (contraseñas, tokens, llaves).
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filmstars-config
+  namespace: filmstars
+data:
+  # Base de datos — usuario compartido (host y puerto van en cada configmap de servicio)
+  DB_USERNAME: "postgres"
+
+  # Auth service
+  JWT_EXPIRES_IN: "1h"
+  DEFAULT_ROLE: "CLIENTE"
+
+  # URLs internas (DNS de Kubernetes: <service-name>.<namespace>.svc.cluster.local)
+  AUTH_SERVICE_URL: "http://auth-service:3001"
+  LOCALIDADES_SERVICE_URL: "http://localidades-service:3002"
+  FUNCIONES_SERVICE_URL: "http://funciones-service:3003"
+  RESERVAS_SERVICE_URL: "http://reservas-service:3004"
+  PAGOS_SERVICE_URL: "http://pagos-service:3005"
+  FRONTEND_URL: "http://frontend:80"
+
+  # RabbitMQ
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_MANAGEMENT_PORT: "15672"
+  RABBITMQ_AMQP_PORT: "5672"
+
+---
+# ──────────────────────────────────────────────────────────────────────────────
+# ConfigMaps por servicio: valores únicos de cada microservicio.
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  namespace: filmstars
+data:
+  PORT: "3001"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5433"
+  DB_NAME: "auth_service"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: localidades-service-config
+  namespace: filmstars
+data:
+  PORT: "3002"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5434"
+  DB_NAME: "localidades_service"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: funciones-service-config
+  namespace: filmstars
+data:
+  PORT: "3003"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5435"
+  DB_NAME: "funciones_db"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reservas-service-config
+  namespace: filmstars
+data:
+  PORT: "3004"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5436"
+  DB_NAME: "reservas_service"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pagos-service-config
+  namespace: filmstars
+data:
+  PORT: "3005"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5437"
+  DB_NAME: "pagos_service"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: filmstars
+data:
+  PORT: "3006"

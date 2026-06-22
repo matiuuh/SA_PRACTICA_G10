@@ -4,13 +4,10 @@ import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import { CreateCiudadDto } from './dto/create-ciudad.dto';
 import { CreateCineDto } from './dto/create-cine.dto';
-import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateCiudadDto } from './dto/update-ciudad.dto';
 import { UpdateCineDto } from './dto/update-cine.dto';
-import { UpdateSalaDto } from './dto/update-sala.dto';
 import { Cine } from './entities/cine.entity';
 import { Ciudad } from './entities/ciudad.entity';
-import { Sala } from './entities/sala.entity';
 
 export interface PaginatedCines {
   data: Cine[];
@@ -36,8 +33,6 @@ export class LocalidadesService {
     private readonly ciudadesRepository: Repository<Ciudad>,
     @InjectRepository(Cine)
     private readonly cinesRepository: Repository<Cine>,
-    @InjectRepository(Sala)
-    private readonly salasRepository: Repository<Sala>,
   ) {}
 
   // ─── Ciudades ─────────────────────────────────────────────────────
@@ -113,15 +108,6 @@ export class LocalidadesService {
     };
   }
 
-  // En localidades.service.ts, agrega:
-
-findSalas(): Promise<Sala[]> {
-  return this.salasRepository.find({
-    relations: ['cine', 'cine.ciudad'],
-    order: { nombre: 'ASC' },
-  });
-}
-
   findCineById(id: string): Promise<Cine> {
     return this.ensureCineExists(id);
   }
@@ -162,46 +148,6 @@ findSalas(): Promise<Sala[]> {
 
   // ─── Salas ────────────────────────────────────────────────────────
 
-  findSalasByCine(idCine: string): Promise<Sala[]> {
-    return this.ensureCineExists(idCine).then(() =>
-      this.salasRepository.find({
-        where: { cine: { id: idCine } },
-        relations: ['cine', 'cine.ciudad'],
-        order: { nombre: 'ASC' },
-      }),
-    );
-  }
-
-  findSalaById(id: string): Promise<Sala> {
-    return this.ensureSalaExists(id);
-  }
-
-  async createSala(dto: CreateSalaDto): Promise<Sala> {
-    const cine = await this.ensureCineExists(dto.idCine);
-    const sala = this.salasRepository.create({
-      id: randomUUID(),
-      nombre: dto.nombre.trim(),
-      capacidad: dto.capacidad,
-      tipoSala: dto.tipoSala?.trim() || null,
-      cine,
-    });
-    return this.salasRepository.save(sala);
-  }
-
-  async updateSala(id: string, dto: UpdateSalaDto): Promise<Sala> {
-    const sala = await this.ensureSalaExists(id);
-    if (dto.nombre) sala.nombre = dto.nombre.trim();
-    if (dto.capacidad !== undefined) sala.capacidad = dto.capacidad;
-    if (dto.tipoSala !== undefined) sala.tipoSala = dto.tipoSala?.trim() || null;
-    if (dto.idCine) sala.cine = await this.ensureCineExists(dto.idCine);
-    return this.salasRepository.save(sala);
-  }
-
-  async removeSala(id: string): Promise<void> {
-    const sala = await this.ensureSalaExists(id);
-    await this.salasRepository.remove(sala);
-  }
-
   // ─── Helpers ──────────────────────────────────────────────────────
 
   private async ensureCiudadExists(id: string): Promise<Ciudad> {
@@ -219,12 +165,4 @@ findSalas(): Promise<Sala[]> {
     return cine;
   }
 
-  private async ensureSalaExists(id: string): Promise<Sala> {
-    const sala = await this.salasRepository.findOne({
-      where: { id },
-      relations: ['cine', 'cine.ciudad'],
-    });
-    if (!sala) throw new NotFoundException('Sala no encontrada');
-    return sala;
-  }
 }

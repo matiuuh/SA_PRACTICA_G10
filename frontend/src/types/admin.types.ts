@@ -1,4 +1,6 @@
-export type AdminTabType = 'peliculas' | 'funciones' | 'localidades' | 'salas';
+// src/types/admin.types.ts
+
+export type AdminTabType = 'peliculas' | 'funciones' | 'localidades' | 'salas' | 'validacion' | 'incidencias';
 
 export interface Categoria {
   id_categoria: string;
@@ -139,4 +141,63 @@ export interface CreateFuncionForm {
   horario: string;
   precio: number;
   activa: boolean;
+}
+
+// ========== TIPOS PARA VALIDACIÓN DE BOLETOS ==========
+
+export interface BoletoValidacion {
+  id: string;
+  codigoQr: string;
+  estado: 'VALIDO' | 'USADO';
+  fechaEmision: string;
+  fechaUso: string | null;
+  validadoPor: string | null;
+  reserva: {
+    id: string;
+    usuarioId: string;
+    fechaReserva: string;
+    total: number;
+  };
+  funcion: {
+    id: string | null;
+    fecha: string | null;
+    hora: string | null;
+    sala: string | null;
+  };
+  pelicula: {
+    id: string | null;
+    titulo: string | null;
+  };
+  asientos: Array<{
+    id: string;
+    fila: string;
+    numero: number;
+  }>;
+}
+
+export interface BoletoValidacionResultado {
+  success: boolean;
+  message: string;
+  boleto?: BoletoValidacion;
+  error?: string;
+}
+
+export interface AdminBusquedaBoletosFiltros {
+  identificador?: string;
+  pelicula?: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  estado?: 'VALIDO' | 'USADO';
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminBusquedaBoletosResultado {
+  data: BoletoValidacion[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

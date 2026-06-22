@@ -1,11 +1,15 @@
+// src/pages/PanelAdmin/PanelAdmin.tsx
+
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaCity, FaFilm, FaTheaterMasks } from 'react-icons/fa';
+import { FaCalendarAlt, FaCity, FaExclamationCircle, FaFilm, FaTheaterMasks, FaQrcode } from 'react-icons/fa';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
 import AdminPeliculas from '../../components/organisms/AdminPeliculas/AdminPeliculas';
 import AdminLocalidades from '../../components/organisms/AdminLocalidades/AdminLocalidades';
 import AdminFunciones from '../../components/organisms/AdminFunciones/AdminFunciones';
 import AdminSalas from '../../components/organisms/AdminSalas/AdminSalas';
+import AdminValidacionBoletos from '../../components/organisms/AdminValidacionBoletos/AdminValidacionBoletos';
+import AdminIncidencias from '../../components/organisms/AdminIncidencias/AdminIncidencias';
 import Toast from '../../components/atoms/Toast/Toast';
 import { authService } from '../../services/auth.service';
 import { peliculasService } from '../../services/peliculas.service';
@@ -349,6 +353,8 @@ const PanelAdmin = () => {
     { id: 'localidades' as AdminTabType, label: 'Cines', icon: FaCity },
     { id: 'salas' as AdminTabType, label: 'Salas', icon: FaTheaterMasks },
     { id: 'funciones' as AdminTabType, label: 'Funciones', icon: FaCalendarAlt },
+    { id: 'validacion' as AdminTabType, label: 'Validación', icon: FaQrcode },
+    { id: 'incidencias' as AdminTabType, label: 'Incidencias', icon: FaExclamationCircle },
   ];
 
   if (loading) {
@@ -434,6 +440,14 @@ const PanelAdmin = () => {
             onEditar={handleEditarFuncion}
             onEliminar={handleEliminarFuncion}
           />
+        )}
+
+        {activeTab === 'validacion' && (
+          <AdminValidacionBoletos />
+        )}
+
+        {activeTab === 'incidencias' && (
+          <AdminIncidencias />
         )}
       </div>
 

@@ -5,7 +5,6 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Cine } from './localidades/entities/cine.entity';
 import { Ciudad } from './localidades/entities/ciudad.entity';
-import { Sala } from './localidades/entities/sala.entity';
 import { LocalidadesModule } from './localidades/localidades.module';
 import { JwtStrategy } from './common/strategies/jwt.strategy';
 
@@ -29,8 +28,8 @@ import { JwtStrategy } from './common/strategies/jwt.strategy';
         username: configService.get<string>('DB_USERNAME', 'postgres'),
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_NAME', 'localidades_service'),
-        entities: [Ciudad, Cine, Sala],
-        synchronize: false,
+        entities: [Ciudad, Cine],
+        synchronize: true,
       }),
     }),
     LocalidadesModule,
