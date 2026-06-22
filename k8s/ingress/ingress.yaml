@@ -6,26 +6,23 @@
 # la anotación nginx.ingress.kubernetes.io/rewrite-target.
 #
 # Routing:
-#   /api/*  →  api-gateway:3006  (nginx stripea el prefijo /api)
+#   /api/*  →  api-gateway:3006  (se preserva el prefijo /api)
 #   /*      →  frontend:80
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Ingress para el API Gateway con strip del prefijo /api
+# Ingress para el API Gateway preservando el prefijo /api
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: api-gateway-ingress
   namespace: filmstars
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-          - path: /api(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /api
+            pathType: Prefix
             backend:
               service:
                 name: api-gateway
