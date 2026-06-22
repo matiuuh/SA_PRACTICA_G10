@@ -1,27 +1,33 @@
-# DIAGRAMA DE ACTIVIDADES
+# Diagramas de actividades
 
-El diagrama de actividades fue utilizado para representar el flujo principal de interacción dentro de la plataforma, modelando las acciones realizadas por los usuarios desde la selección de una película hasta la confirmación final de la compra.
+## Actividades del usuario
 
-Este diagrama permite visualizar de manera secuencial el comportamiento del sistema, incluyendo decisiones, validaciones y procesos que intervienen durante la reserva de asientos y procesamiento de pagos.
+El diagrama presenta la interacción del usuario con la aplicación web, el API Gateway y los servicios de usuarios, localidades, funciones, reservas y pagos. El flujo comienza con el registro o inicio de sesión, donde las credenciales son validadas y se genera el token JWT utilizado para autorizar las solicitudes posteriores.
 
-Adicionalmente, el diagrama incorpora puntos de decisión y control que permiten modelar situaciones como disponibilidad de asientos, pagos rechazados y expiración de reservas temporales.
+Después de autenticarse, el usuario consulta las ciudades, sucursales, películas y funciones disponibles. Al seleccionar una función, el sistema solicita al servicio correspondiente el mapa de la sala y muestra dinámicamente los estados de los asientos para que el usuario pueda escoger los que desea reservar.
 
-El objetivo principal del diagrama es proporcionar una representación visual del comportamiento del sistema y facilitar la comprensión de la interacción entre los diferentes módulos implementados dentro de la arquitectura propuesta.
+La solicitud de compra se procesa mediante los servicios de reservas y pagos, utilizando la cola de mensajes para desacoplar el procesamiento. Si la operación finaliza correctamente, se actualizan los estados de los asientos, se generan los boletos con sus códigos QR y se presentan al usuario con la opción de descargarlos.
 
-![alt text](./img/DiagramaActividades.drawio.svg)
+![Diagrama de actividades del usuario](<./data nueva/Actividades Usuario.drawio.svg>)
 
-## DIAGRAMA DE ACTIVIDADES - ADMINISTRADOR
+---
 
-El diagrama de actividades del administrador fue utilizado para representar el flujo principal de interacción dentro del panel administrativo, modelando las acciones realizadas desde el inicio de sesión hasta la gestión de los diferentes módulos del sistema.
+## Actividades del administrador
 
-Este diagrama permite visualizar de manera secuencial el comportamiento del sistema, incluyendo decisiones, validaciones y procesos que intervienen durante la administración de películas, cartelera, cines, salas y funciones.
+El diagrama describe la interacción del administrador con la aplicación web, el API Gateway y los microservicios. El acceso comienza con la validación de credenciales y permisos mediante JWT. También se representa el cierre de sesión y la invalidación del token de autenticación.
 
-Adicionalmente, el diagrama incorpora puntos de decisión y control que permiten modelar situaciones como credenciales inválidas, validación de rol de administrador, validación de datos, restricciones al eliminar registros y confirmación de cambios.
+Desde el panel administrativo se gestionan películas, funciones, localidades y demás datos operativos. Las solicitudes son validadas por el API Gateway y enviadas al servicio responsable. El flujo también contempla operaciones mediante archivos CSV y la consulta o descarga de información en formato PDF.
 
-El objetivo principal del diagrama es proporcionar una representación visual del comportamiento del módulo administrativo y facilitar la comprensión de la interacción entre los distintos elementos que conforman la gestión interna de la plataforma.
+Para el control de acceso, el administrador puede proporcionar un boleto, solicitar el análisis de su código QR y recibir el resultado de la validación. Además, puede consultar las incidencias enviadas por los usuarios, revisar su información y responderlas manualmente; la respuesta es almacenada por el servicio de reservas y queda disponible para el usuario.
 
-Diagrama de actividades crudo de administrador:
+![Diagrama de actividades del administrador](<./data nueva/Diagrama de actividades admin.svg>)
 
-![Actividades_Admin](./img/DIAGRAMA%20DE%20ACT%20ADMIN.drawio.png)
+---
 
-[Volver a Documentacion](../Documentación.md)
+## Diagrama editable
+
+El diagrama en crudo puede consultarse y editarse directamente en [Draw.io / diagrams.net](https://app.diagrams.net/#G17zqvzKtzFauwvckD7d33XzBFcmADsWsG#%7B%22pageId%22%3A%22qnoyfdcMu2km39snqnNb%22%7D).
+
+---
+
+[Volver a Documentación](../Documentaci%C3%B3n.md)
