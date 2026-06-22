@@ -13,5 +13,8 @@
 | RNF-09 | Punto de entrada único | Todos los servicios deben exponerse al cliente a través de un único API Gateway, que centralice el enrutamiento, la autenticación y el control de acceso. | Seguridad |
 | RNF-10 | Control de acceso basado en roles | El sistema debe implementar un sistema de control de acceso basado en roles  para diferenciar las funcionalidades disponibles para usuarios normales y administradores. | Seguridad |
 | RNF-11 | Paginación de resultados | Las consultas que devuelvan listados de películas, funciones o sucursales deben implementar paginación para limitar la cantidad de resultados por página a un máximo de 10. | Rendimiento |
+| RNF-12 | Control de accesos | El sistema debe identificar de forma precisa el estado de un boleto, para no autorizar accesos a las salas de cine de forma duplicada | Seguridad |
+| RNF-13 | Validación de boletos de forma manual | El sistema debe permitir al administrador validar un boleto de forma manual ante cualquier altercado con el sistema de escaneo | Disponibilidad |
+| RNF-14 | Manejo de secrets | El sistema debe manejar de forma segura los secrets de la aplicación, como las contraseñas de las bases de datos y las claves de API, en general la directivas de seguridad. | Seguridad |
 
 [Volver a Documentacion](../Documentación.md)

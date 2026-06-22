@@ -176,21 +176,39 @@ const HistorialCompras = () => {
     <div className="space-y-6">
       {/* Estadísticas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700">
-          <p className="text-sm text-gray-400">Total de Boletos</p>
-          <p className="text-2xl font-bold text-white">{meta.total}</p>
+        {/* Total de Boletos — negro con dorado */}
+        <div className="relative overflow-hidden bg-black rounded-xl p-4 border border-cinema-gold-500/60 shadow-[0_0_16px_rgba(212,175,55,0.15)] shadow-lg">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500 to-transparent" />
+          <p className="text-xs text-cinema-gold-500 uppercase tracking-wider font-semibold">Total de Boletos</p>
+          <p className="text-3xl font-bold text-cinema-gold-500 mt-1">{meta.total}</p>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500/40 to-transparent" />
         </div>
-        <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
-          <p className="text-sm text-green-400">Activos</p>
-          <p className="text-2xl font-bold text-green-400">{meta.totalsByStatus.validos}</p>
+
+        {/* Activos — replica estética del boleto activo */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#8B0000]/60 via-[#4A0000]/50 to-black/60 rounded-xl p-4 border border-cinema-red-500/40 shadow-lg">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500/40 to-transparent" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-6 bg-[#1A0F0A] rounded-r-full" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-6 bg-[#1A0F0A] rounded-l-full" />
+          <p className="text-xs text-cinema-gold-500/70 uppercase tracking-wider font-semibold">Activos</p>
+          <p className="text-3xl font-bold text-white mt-1">{meta.totalsByStatus.validos}</p>
         </div>
-        <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
-          <p className="text-sm text-blue-400">Usados</p>
-          <p className="text-2xl font-bold text-blue-400">{meta.totalsByStatus.usados}</p>
+
+        {/* Usados — mismo look del boleto usado: gradiente rojo→negro + grayscale + opacity */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#8B0000]/60 via-[#4A0000]/50 to-black/60 rounded-xl p-4 border border-cinema-red-500/40 shadow-lg grayscale opacity-70">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-0.5 bg-gradient-to-r from-transparent via-cinema-gold-500/40 to-transparent" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-6 bg-[#1A0F0A] rounded-r-full" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-6 bg-[#1A0F0A] rounded-l-full" />
+          <p className="text-xs text-white/60 uppercase tracking-wider font-semibold">Usados</p>
+          <p className="text-3xl font-bold text-white mt-1">{meta.totalsByStatus.usados}</p>
         </div>
-        <div className="bg-gray-500/10 rounded-xl p-4 border border-gray-500/20">
-          <p className="text-sm text-gray-400">Páginas</p>
-          <p className="text-2xl font-bold text-gray-400">{meta.totalPages}</p>
+
+        {/* Página actual */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#2C1810]/60 to-[#1A0F0A]/60 rounded-xl p-4 border border-cinema-warm-500/30 shadow-lg">
+          <p className="text-xs text-cinema-cream-600/70 uppercase tracking-wider font-semibold">Página actual</p>
+          <p className="text-3xl font-bold text-white mt-1">
+            {meta.page}
+            <span className="text-sm text-white/40 font-normal ml-1">/ {meta.totalPages}</span>
+          </p>
         </div>
       </div>
 

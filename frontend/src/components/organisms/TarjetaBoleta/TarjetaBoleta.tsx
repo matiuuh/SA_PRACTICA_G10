@@ -35,14 +35,14 @@ const TarjetaBoleta = ({ boleta, onDescargar }: TarjetaBoletaProps) => {
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cinema-gold-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10" />
       
       {/* Contenedor principal del boleto con forma de ticket */}
-      <div className="relative w-full max-w-sm mx-auto transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl">
+      <div className={`relative w-full max-w-sm mx-auto transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl${!estaActivo ? ' grayscale opacity-70' : ''}`}>
         
         {/* Cuerpo del boleto con efecto ticket (semicírculos laterales) */}
         <div className="relative bg-gradient-to-br from-[#8B0000] via-[#4A0000] to-black rounded-2xl overflow-hidden shadow-xl">
           
           {/* Semicírculos laterales recortados (efecto ticket) */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-gray-900 rounded-r-full shadow-inner" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-gray-900 rounded-l-full shadow-inner" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-[#1A0F0A] rounded-r-full shadow-inner" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-12 bg-[#1A0F0A] rounded-l-full shadow-inner" />
 
           {/* Contenido interno */}
           <div className="relative px-8 py-6">
@@ -55,13 +55,6 @@ const TarjetaBoleta = ({ boleta, onDescargar }: TarjetaBoletaProps) => {
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-white tracking-tight">FilmStars</span>
               </div>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                estaActivo 
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
-                {estaActivo ? '● ACTIVO' : '● USADO'}
-              </span>
             </div>
 
             {/* Título de la película */}
@@ -105,7 +98,7 @@ const TarjetaBoleta = ({ boleta, onDescargar }: TarjetaBoletaProps) => {
 
             {/* Línea punteada divisoria */}
             <div className="relative my-4">
-              <div className="border-t-2 border-dashed border-white/20" />
+              <div className="border-t-2 border-dashed border-white/60" />
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#4A0000] px-3 py-0.5 rounded-full">
                 <span className="text-[10px] text-white/40 font-mono">✦</span>
               </div>

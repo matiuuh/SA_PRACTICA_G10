@@ -14,4 +14,9 @@ Programadores:
 ```
 ---
 
+### Credenciales simuladas del proyecto
+
+#### Administrador:
+- **Correo:** `admin@filmstars.com`
+- **Contraseña:** `admin1234`
 
