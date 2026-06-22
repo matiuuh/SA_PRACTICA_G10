@@ -4,7 +4,7 @@ El modelo de vistas 4+1 es una metodología de diseño de arquitectura de softwa
 
 Las vistas contempladas son: Lógica, Procesos, Desarrollo, Física y la vista de Escenarios, que actúa como el hilo conductor que valida todas las demás.
 
-![Diagrama de Vistas 4+1](./img/Vista_4_+_1.drawio.svg)
+![Diagrama de Vistas 4+1](./img/Practica-4+1.drawio.svg)
 
 ## 1. Vista Lógica
 La vista lógica está orientada principalmente a los **usuarios finales** y analistas del sistema. Se encarga de capturar y modelar cómo el sistema satisface los requerimientos funcionales también concido como lo que el sistema debe hacer. En esta vista, se identifican las abstracciones clave a través de clases, interfaces, módulos y objetos del dominio, estableciendo sus relaciones, asociaciones y dependencias fundamentales sin preocuparse por los detalles técnicos de bajo nivel o el despliegue físico.
@@ -59,12 +59,15 @@ El diagrama de paquetes organiza la solución en tres niveles principales:
 | Base de datos | PostgreSQL |
 | Seguridad | JWT |
 
-![Diagrama de Componentes](./img/Practica-Vista-Componentes.drawio.svg)
+![Diagrama de Vista Física](img/Practica-Vista-Componentes.drawio.svg)
 
 ### Explicación del Diagrama de Componentes
 El frontend web canaliza las solicitudes hacia el API Gateway. Este distribuye las peticiones a los microservicios encapsulados. Existe un claro desacoplamiento facilitado por la mensajería a través de RabbitMQ (por ejemplo, para pagos y reservas) y persistencia dividida (bases de datos independientes para funcionalidades puntuales). Esto favorece el aislamiento, mantenibilidad y escalado.
 
 ## 4. Vista Física (Vista de Despliegue)
+
+![Diagrama de Componentes](./img/Practica-Vista-Despliegue-Local.drawio.svg)
+
 
 ### Introducción
 La vista física o de despliegue se dirige a los **ingenieros de sistemas y operaciones (DevOps)**. Describe topológicamente cómo se distribuyen los componentes de software sobre la infraestructura de ejecución (hardware). Identifica los nodos de red, los contenedores y los servicios externos.
@@ -77,11 +80,8 @@ La vista física o de despliegue se dirige a los **ingenieros de sistemas y oper
 5. **Servicio de Bases de Datos (PostgreSQL):** Clúster de bases de datos aisladas por servicio mediante TCP/IP (Puerto 5432).
 6. **Servicios Externos:** Pasarela de pago simulado (HTTPS 443) y proveedor de correo (SMTP 587).
 
-![Diagrama de Vista Física](img/Practica-Vista-Despliegue-nube.drawio.svg)
 
-Comparación con despligue local:
 
-![Diagrama de Vista Física Local](img/Practica-Vista-Despliegue-Local.drawio.svg)
 
 ### Explicación del Diagrama de Despliegue
 El tráfico web entra por el servidor frontend y se dirige al servidor backend central gestionado por un API Gateway. Una vez en el servidor de Docker, el flujo se bifurca hacia el microservicio apuntado. Las cargas de operaciones persistentes van al servidor de Base de Datos respectivo, aislando responsabilidades funcionales en hardware diferenciado (o contenedores dev), y las tareas de integración asíncronas dependen del nodo de encolamiento (Broker) manteniéndose independientes del tiempo de ejecución sincrónico principal.
