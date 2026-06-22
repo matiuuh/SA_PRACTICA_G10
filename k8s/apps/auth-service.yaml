@@ -40,7 +40,7 @@ spec:
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: filmstars-config
+                  name: auth-service-config
                   key: DB_PORT
             - name: DB_USERNAME
               valueFrom:

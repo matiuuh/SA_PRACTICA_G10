@@ -8,8 +8,7 @@ metadata:
   name: filmstars-config
   namespace: filmstars
 data:
-  # Base de datos compartida
-  DB_PORT: "5432"
+  # Base de datos — usuario compartido (host y puerto van en cada configmap de servicio)
   DB_USERNAME: "postgres"
 
   # Auth service
@@ -40,7 +39,8 @@ metadata:
   namespace: filmstars
 data:
   PORT: "3001"
-  DB_HOST: "postgres-auth"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5433"
   DB_NAME: "auth_service"
 
 ---
@@ -51,7 +51,8 @@ metadata:
   namespace: filmstars
 data:
   PORT: "3002"
-  DB_HOST: "postgres-localidades"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5434"
   DB_NAME: "localidades_service"
 
 ---
@@ -62,7 +63,8 @@ metadata:
   namespace: filmstars
 data:
   PORT: "3003"
-  DB_HOST: "postgres-funciones"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5435"
   DB_NAME: "funciones_db"
 
 ---
@@ -73,7 +75,8 @@ metadata:
   namespace: filmstars
 data:
   PORT: "3004"
-  DB_HOST: "postgres-reservas"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5436"
   DB_NAME: "reservas_service"
 
 ---
@@ -84,7 +87,8 @@ metadata:
   namespace: filmstars
 data:
   PORT: "3005"
-  DB_HOST: "postgres-pagos"
+  DB_HOST: "52.202.69.183"
+  DB_PORT: "5437"
   DB_NAME: "pagos_service"
 
 ---
