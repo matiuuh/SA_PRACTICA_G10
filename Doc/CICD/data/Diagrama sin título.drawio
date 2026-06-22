@@ -1,0 +1,371 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="CI_CD_FilmStars" id="cicd-filmstars-v2">
+    <mxGraphModel dx="3200" dy="1800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- TÍTULO                                                        -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="title" parent="1"
+          style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=28;fontStyle=1;"
+          value="DIAGRAMA DE FLUJO CI/CD — FILMSTARS" vertex="1">
+          <mxGeometry x="460" y="30" width="1320" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- LEYENDA                                                       -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="legend-box" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1;fontStyle=1;verticalAlign=top;align=left;spacingTop=8;spacingLeft=10;fontSize=12;"
+          value="LEYENDA" vertex="1">
+          <mxGeometry x="60" y="30" width="340" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;"
+          value="Compuerta de Seguridad" vertex="1">
+          <mxGeometry x="80" y="65" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;"
+          value="Job / Paso" vertex="1">
+          <mxGeometry x="80" y="110" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;"
+          value="Deploy / CD" vertex="1">
+          <mxGeometry x="80" y="155" width="190" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;"
+          value="Bifurcación" vertex="1">
+          <mxGeometry x="280" y="95" width="100" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- INICIO: Programador + Evento                                  -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="start" parent="1"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=13;"
+          value="Programador" vertex="1">
+          <mxGeometry x="1030" y="100" width="160" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="trigger" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;"
+          value="&lt;b&gt;Evento GitHub Actions&lt;/b&gt;&lt;br&gt;on: push&lt;br&gt;branches: [ develop, release ]" vertex="1">
+          <mxGeometry x="990" y="185" width="240" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- Bifurcación de rama -->
+        <mxCell id="branch-gate" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;"
+          value="¿Rama?" vertex="1">
+          <mxGeometry x="1010" y="300" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- COLUMNA IZQUIERDA — RAMA develop                             -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="lane-develop" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0f7ff;strokeColor=#6c8ebf;strokeWidth=2;fontStyle=1;verticalAlign=top;align=center;spacingTop=10;fontSize=14;"
+          value="RAMA: develop  →  Staging (Docker Compose)" vertex="1">
+          <mxGeometry x="460" y="255" width="460" height="890" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- COLUMNA DERECHA — RAMA release                               -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="lane-release" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8f0;strokeColor=#d6b656;strokeWidth=2;fontStyle=1;verticalAlign=top;align=center;spacingTop=10;fontSize=14;"
+          value="RAMA: release  →  Produccion AWS (K3s)" vertex="1">
+          <mxGeometry x="1310" y="255" width="460" height="890" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FASE 1 — TEST (común a ambas ramas, se ejecuta en paralelo)  -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- DEVELOP: FASE 1 TEST -->
+        <mxCell id="test-dev" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;[SG] FASE 1 · test (matrix)&lt;/b&gt;&lt;br&gt;npm run test:cov&lt;br&gt;Cobertura mínima: 75%&lt;br&gt;Artefacto: coverage-*&lt;br&gt;fail-fast: true" vertex="1">
+          <mxGeometry x="490" y="390" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- RELEASE: FASE 1 TEST -->
+        <mxCell id="test-rel" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;[SG] FASE 1 · test (matrix)&lt;/b&gt;&lt;br&gt;npm run test:cov&lt;br&gt;Cobertura mínima: 75%&lt;br&gt;Artefacto: coverage-*&lt;br&gt;fail-fast: true" vertex="1">
+          <mxGeometry x="1340" y="390" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Compuerta: test develop OK? -->
+        <mxCell id="gate-test-dev" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="¿Tests OK?&lt;br&gt;(≥75% cov)" vertex="1">
+          <mxGeometry x="535" y="530" width="170" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Compuerta: test release OK? -->
+        <mxCell id="gate-test-rel" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="¿Tests OK?&lt;br&gt;(≥75% cov)" vertex="1">
+          <mxGeometry x="1385" y="530" width="170" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Error develop -->
+        <mxCell id="err-test-dev" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;"
+          value="Pipeline FALLIDO&lt;br&gt;Cobertura insuficiente&lt;br&gt;Notificación de error" vertex="1">
+          <mxGeometry x="355" y="545" width="170" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Error release -->
+        <mxCell id="err-test-rel" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;"
+          value="Pipeline FALLIDO&lt;br&gt;Cobertura insuficiente&lt;br&gt;Notificación de error" vertex="1">
+          <mxGeometry x="1565" y="545" width="170" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FASE 2a — BUILD & PUSH DockerHub (develop)                   -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="build-dev" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;FASE 2 · build-push-develop&lt;/b&gt;&lt;br&gt;needs: test&lt;br&gt;if: github.ref == develop&lt;br&gt;Login DockerHub&lt;br&gt;docker build &amp;amp; push :latest&lt;br&gt;(7 imágenes)" vertex="1">
+          <mxGeometry x="490" y="660" width="260" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Compuerta: build develop OK? -->
+        <mxCell id="gate-build-dev" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="¿Build OK?" vertex="1">
+          <mxGeometry x="545" y="810" width="150" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Error build develop -->
+        <mxCell id="err-build-dev" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;"
+          value="Pipeline FALLIDO&lt;br&gt;Error build/push&lt;br&gt;DockerHub" vertex="1">
+          <mxGeometry x="355" y="825" width="170" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FASE 3a — DEPLOY Docker Compose (develop)                    -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="deploy-dev" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;FASE 3 · deploy-develop&lt;/b&gt;&lt;br&gt;needs: build-push-develop&lt;br&gt;runs-on: self-hosted&lt;br&gt;Crea .env local&lt;br&gt;docker compose pull&lt;br&gt;docker compose down --volumes&lt;br&gt;docker compose up -d&lt;br&gt;docker image prune -f" vertex="1">
+          <mxGeometry x="490" y="930" width="260" height="135" as="geometry" />
+        </mxCell>
+
+        <!-- Fin develop -->
+        <mxCell id="end-dev" parent="1"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;"
+          value="Staging listo&lt;br&gt;Docker Compose" vertex="1">
+          <mxGeometry x="535" y="1105" width="170" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FASE 2b — BUILD & PUSH Registry Privado (release)            -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="build-rel" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;FASE 2 · build-push-release&lt;/b&gt;&lt;br&gt;needs: test&lt;br&gt;if: github.ref == release&lt;br&gt;Obtener SHA corto&lt;br&gt;Buildx HTTP (Zot/Harbor)&lt;br&gt;docker build &amp;amp; push :latest + :sha&lt;br&gt;(7 imágenes)" vertex="1">
+          <mxGeometry x="1340" y="660" width="260" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Compuerta: build release OK? -->
+        <mxCell id="gate-build-rel" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="¿Build OK?" vertex="1">
+          <mxGeometry x="1395" y="820" width="150" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Error build release -->
+        <mxCell id="err-build-rel" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;"
+          value="Pipeline FALLIDO&lt;br&gt;Error build/push&lt;br&gt;Registry Privado" vertex="1">
+          <mxGeometry x="1565" y="830" width="170" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FASE 3b — DEPLOY K3s AWS (release)                           -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <mxCell id="deploy-rel" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;FASE 3 · deploy-k3s&lt;/b&gt;&lt;br&gt;needs: build-push-release&lt;br&gt;kubectl apply: namespace&lt;br&gt;configmaps → secrets → PVCs&lt;br&gt;infra (DB+RabbitMQ)&lt;br&gt;apps (microservicios+frontend)&lt;br&gt;ingress" vertex="1">
+          <mxGeometry x="1340" y="935" width="260" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Compuerta: rollout OK? -->
+        <mxCell id="gate-rollout" parent="1"
+          style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;"
+          value="&lt;b&gt;[SG] ¿Rollout OK?&lt;/b&gt;&lt;br&gt;kubectl rollout status&lt;br&gt;timeout: 120s" vertex="1">
+          <mxGeometry x="1375" y="1105" width="190" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Rollback automático -->
+        <mxCell id="rollback" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;"
+          value="&lt;b&gt;ROLLBACK AUTOMÁTICO&lt;/b&gt;&lt;br&gt;kubectl rollout undo&lt;br&gt;deploy/&lt;nombre&gt;&lt;br&gt;Notificación de error" vertex="1">
+          <mxGeometry x="1565" y="1120" width="175" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- Fin release -->
+        <mxCell id="end-rel" parent="1"
+          style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;"
+          value="Producción lista&lt;br&gt;K3s AWS" vertex="1">
+          <mxGeometry x="1390" y="1235" width="160" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- FLECHAS                                                       -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- Programador → Trigger -->
+        <mxCell id="e-start-trigger" edge="1" parent="1" source="start" target="trigger"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Trigger → Bifurcación -->
+        <mxCell id="e-trigger-branch" edge="1" parent="1" source="trigger" target="branch-gate"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Bifurcación → TEST develop -->
+        <mxCell id="e-branch-dev" edge="1" parent="1" source="branch-gate" target="test-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#6c8ebf;"
+          value="develop">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Bifurcación → TEST release -->
+        <mxCell id="e-branch-rel" edge="1" parent="1" source="branch-gate" target="test-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;"
+          value="release">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1470" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- TEST develop → gate-test-dev -->
+        <mxCell id="e-testdev-gate" edge="1" parent="1" source="test-dev" target="gate-test-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- TEST release → gate-test-rel -->
+        <mxCell id="e-testrel-gate" edge="1" parent="1" source="test-rel" target="gate-test-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-test-dev → Error (No) -->
+        <mxCell id="e-gtd-err" edge="1" parent="1" source="gate-test-dev" target="err-test-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;dashed=1;"
+          value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-test-rel → Error (No) -->
+        <mxCell id="e-gtr-err" edge="1" parent="1" source="gate-test-rel" target="err-test-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;dashed=1;"
+          value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-test-dev → build-dev (Sí) -->
+        <mxCell id="e-gtd-build" edge="1" parent="1" source="gate-test-dev" target="build-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2E7D32;"
+          value="Sí">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-test-rel → build-rel (Sí) -->
+        <mxCell id="e-gtr-build" edge="1" parent="1" source="gate-test-rel" target="build-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2E7D32;"
+          value="Sí">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- build-dev → gate-build-dev -->
+        <mxCell id="e-builddev-gate" edge="1" parent="1" source="build-dev" target="gate-build-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- build-rel → gate-build-rel -->
+        <mxCell id="e-buildrel-gate" edge="1" parent="1" source="build-rel" target="gate-build-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-build-dev → Error (No) -->
+        <mxCell id="e-gbd-err" edge="1" parent="1" source="gate-build-dev" target="err-build-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;dashed=1;"
+          value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-build-rel → Error (No) -->
+        <mxCell id="e-gbr-err" edge="1" parent="1" source="gate-build-rel" target="err-build-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;dashed=1;"
+          value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-build-dev → deploy-dev (Sí) -->
+        <mxCell id="e-gbd-deploy" edge="1" parent="1" source="gate-build-dev" target="deploy-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2E7D32;"
+          value="Sí">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-build-rel → deploy-rel (Sí) -->
+        <mxCell id="e-gbr-deploy" edge="1" parent="1" source="gate-build-rel" target="deploy-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2E7D32;"
+          value="Sí">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- deploy-dev → end-dev -->
+        <mxCell id="e-deploy-enddev" edge="1" parent="1" source="deploy-dev" target="end-dev"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2E7D32;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- deploy-rel → gate-rollout -->
+        <mxCell id="e-deploy-rollout" edge="1" parent="1" source="deploy-rel" target="gate-rollout"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-rollout → Rollback (No) -->
+        <mxCell id="e-rollout-rollback" edge="1" parent="1" source="gate-rollout" target="rollback"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;dashed=1;"
+          value="No / Timeout">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- gate-rollout → end-rel (Sí) -->
+        <mxCell id="e-rollout-end" edge="1" parent="1" source="gate-rollout" target="end-rel"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2E7D32;"
+          value="Sí">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
