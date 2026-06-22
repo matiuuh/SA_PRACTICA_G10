@@ -259,7 +259,7 @@ jobs:
           # VITE_API_GATEWAY_URL apunta al Ingress del cluster K3s con el prefijo /api
           build-args: |
             VITE_API_GATEWAY_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
-            VITE_RESERVAS_WS_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
+            VITE_RESERVAS_WS_URL=${{ secrets.RESERVAS_WS_URL }}
           tags: |
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
