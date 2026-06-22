@@ -23,7 +23,7 @@ import { Transaccion } from './pagos/entities/transaccion.entity';
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_NAME', 'pagos_service'),
         entities: [MetodoPago, EstadoPago, Pago, Transaccion],
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     PagosModule,

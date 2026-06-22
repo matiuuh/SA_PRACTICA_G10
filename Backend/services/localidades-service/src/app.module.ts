@@ -29,7 +29,7 @@ import { JwtStrategy } from './common/strategies/jwt.strategy';
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_NAME', 'localidades_service'),
         entities: [Ciudad, Cine],
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     LocalidadesModule,
