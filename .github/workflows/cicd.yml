@@ -159,13 +159,19 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Normalizar REGISTRY_HOST
+        run: |
+          CLEAN_HOST="$(printf '%s' '${{ secrets.REGISTRY_HOST }}' | tr -d '\r\n\t ')"
+          echo "REGISTRY_HOST_CLEAN=$CLEAN_HOST" >> $GITHUB_ENV
+          echo "Registry host normalizado."
+
       # ─── Configurar buildx para registry HTTP (Zot sin TLS) ──────────
       # Zot corre en HTTP (puerto 5000). Escribimos el config de buildkit
       # a un archivo (evita problemas de parsing TOML con secrets inline)
       # y se lo pasamos a buildx como archivo.
       - name: Crear config de buildkit para registry HTTP
         run: |
-          printf '[registry."%s"]\n  http = true\n  insecure = true\n' "${{ secrets.REGISTRY_HOST }}" > /tmp/buildkitd.toml
+          printf '[registry."%s"]\n  http = true\n  insecure = true\n' "$REGISTRY_HOST_CLEAN" > /tmp/buildkitd.toml
           echo "=== Config buildkit ==="
           cat /tmp/buildkitd.toml
 
@@ -175,12 +181,11 @@ jobs:
           driver: docker-container
           buildkitd-config: /tmp/buildkitd.toml
 
-      - name: Login al Registry Privado (Harbor / Zot)
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.REGISTRY_HOST }}
-          username: ${{ secrets.REGISTRY_USER }}
-          password: ${{ secrets.REGISTRY_PASS }}
+      - name: Login manual al Registry Privado (Zot por HTTP)
+        run: |
+          echo "${{ secrets.REGISTRY_PASS }}" | docker login "http://$REGISTRY_HOST_CLEAN" \
+            --username "${{ secrets.REGISTRY_USER }}" \
+            --password-stdin
 
       - name: Build y push auth-service
         uses: docker/build-push-action@v6
@@ -188,8 +193,8 @@ jobs:
           context: ./Backend/services/auth-service
           push: true
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-auth-service:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-auth-service:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-auth-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-auth-service:${{ steps.vars.outputs.sha_short }}
 
       - name: Build y push localidades-service
         uses: docker/build-push-action@v6
@@ -197,8 +202,8 @@ jobs:
           context: ./Backend/services/localidades-service
           push: true
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-localidades-service:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-localidades-service:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-localidades-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-localidades-service:${{ steps.vars.outputs.sha_short }}
 
       - name: Build y push funciones-service
         uses: docker/build-push-action@v6
@@ -206,8 +211,8 @@ jobs:
           context: ./Backend/services/funciones-service
           push: true
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-funciones-service:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-funciones-service:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-funciones-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-funciones-service:${{ steps.vars.outputs.sha_short }}
 
       - name: Build y push reservas-service
         uses: docker/build-push-action@v6
@@ -215,8 +220,8 @@ jobs:
           context: ./Backend/services/reservas-service
           push: true
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-reservas-service:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-reservas-service:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-reservas-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-reservas-service:${{ steps.vars.outputs.sha_short }}
 
       - name: Build y push pagos-service
         uses: docker/build-push-action@v6
@@ -224,8 +229,8 @@ jobs:
           context: ./Backend/services/pagos-service
           push: true
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-pagos-service:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-pagos-service:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-pagos-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-pagos-service:${{ steps.vars.outputs.sha_short }}
 
       - name: Build y push api-gateway
         uses: docker/build-push-action@v6
@@ -233,8 +238,8 @@ jobs:
           context: ./api-gateway
           push: true
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-api-gateway:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-api-gateway:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-api-gateway:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-api-gateway:${{ steps.vars.outputs.sha_short }}
 
       - name: Build y push frontend
         uses: docker/build-push-action@v6
@@ -246,8 +251,8 @@ jobs:
             VITE_API_GATEWAY_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
             VITE_RESERVAS_WS_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
           tags: |
-            ${{ secrets.REGISTRY_HOST }}/filmstars-frontend:latest
-            ${{ secrets.REGISTRY_HOST }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
 
       - name: Notificar fallo de build
         if: failure()
