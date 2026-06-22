@@ -960,7 +960,7 @@
 | **Nombre** | Escanear Ticket |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador escanear el ticket de un cliente para validar su compra. |
-| **Precondiciones** | El administrador tiene una sesión activa. El cliente tiene un ticket de compra. |
+| **Precondiciones** | El administrador tiene una sesión activa. El cliente tiene un ticket de compra. El administrador tiene accesso al boleto de compra mediante la busqueda avanzada o proporcionada por el usuario luego de escanear el codigo QR |
 | **Postcondiciones** | El ticket queda validado y el cliente puede ingresar al cine. |
 
 **Flujo principal:**
