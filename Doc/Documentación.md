@@ -46,6 +46,9 @@ Integrantes:
 ### CI/CD
 - [Integracion y entrega continua](./CICD/cicd.md)
 
+### Arquitectura del cluster
+- [Arquitectura del cluster](./arquitecturaCluster.md)
+
 
 ## Introduccion
 
