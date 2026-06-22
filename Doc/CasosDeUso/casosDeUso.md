@@ -20,6 +20,12 @@
 
 **CDU05**: **Gestión de cines y salas**: Permite al administrador gestionar las sedes de cine y las salas
 
+**CDU06**: **Escanéo y Validación de ticket**: Permite al administrador escanear y validar los tickets de los clientes.
+
+**CDU07**: **Búsqueda Manual de Boletos de Contingencia**: Permite al administrador buscar boletos de manualmente como plan de contingencia.
+
+**CDU08**: **Manejo de incidentes**: Permite al administrador manejar incidentes que ocurran en el cine, y al cliente crear dichos incidentes.
+
 # Casos de uso expandidos
 ## Registro y manejo de autenticación
 
@@ -935,6 +941,160 @@
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FA-01 | El administrador cancela | El sistema mantiene la sala sin cambios. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
+
+## Escanéo y Validación de Ticket
+
+![CDU006](./img/Practica-CDU006.drawio.svg)
+
+### CDU-006.1: Escanear Ticket
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-006.1 |
+| **Nombre** | Escanear Ticket |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador escanear el ticket de un cliente para validar su compra. |
+| **Precondiciones** | El administrador tiene una sesión activa. El cliente tiene un ticket de compra. |
+| **Postcondiciones** | El ticket queda validado y el cliente puede ingresar al cine. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Selecciona la opción de "Validación" desde su panel principal. |
+| 2 | Sistema | Muestra la interfaz de escaneo. |
+| 3 | Administrador | Sube el documento del cliente para escanear el ticket. |
+| 4 | Sistema | Muestra un mensaje sobre el estado de subir el documento|
+| 5 | Administrador | Pulsa el botón de "Validar" |
+| 6 | Sistema | Valida el ticket y muestra el resultado. |
+| 7 | Sistema | Muestra confirmación de validación. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El ticket ya fue usado | El sistema muestra un mensaje informando que el boleto ya fue usado. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
+
+---
+
+### Búsqueda Manual de Boletos de Contingencia
+
+![CDU007](./img/Practica-CDU007.drawio.svg)
+
+### CDU-007.1: Buscar Boletos de Contingencia
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-007.1 |
+| **Nombre** | Buscar Boletos de Contingencia |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador buscar boletos manualmente como plan de contingencia por diferentes criterios. |
+| **Precondiciones** | El administrador tiene una sesión activa, el sistema de escanéo no funciona y el cliente tiene la descarga de su boleto. |
+| **Postcondiciones** | Se valida el boleto que coincide con los criterios de búsqueda. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Selecciona la opción de "Búsqueda avanzada" desde su panel principal. |
+| 2 | Sistema | Muestra la interfaz de búsqueda. |
+| 3 | Administrador | Ingresa opcionalmente los criterios de búsqueda como ID o código QR, Película, Estado, Fecha desde, Fecha hasta y presiona el botón de "Buscar". |
+| 4 | Sistema | Realiza la búsqueda. |
+| 5 | Sistema | Muestra el boleto encontrado. |
+| 6 | Administrador | Selecciona la opción de "Validar" para validar el boleto. |
+| 7 | Sistema | Muestra un mensaje para confirmar la acción |
+| 8 | Administrador | Confirma la acción |
+| 9 | Sistema | Valida el boleto y muestra el resultado. |
+| 10 | Sistema | Muestra confirmación de validación. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | No se encuentran resultados | El sistema muestra un mensaje indicando que no se encontraron boletos. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
+
+## Manejo de Incidentes
+
+![CDU008](./img/Practica-CDU008.drawio.svg)
+
+### CDU-008.1: Ingresar un incidente
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-008.1 |
+| **Nombre** | Ingresar un incidente |
+| **Actor** | Cliente |
+| **Descripción** | Permite al cliente ingresar un incidente manualmente. |
+| **Precondiciones** | El cliente tiene una sesión activa. |
+| **Postcondiciones** | Se registra el incidente. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Cliente | Selecciona la opción de "Incidencias" desde su panel principal. |
+| 2 | Sistema | Muestra la interfaz de ingreso de incidente. |
+| 3 | Cliente | Ingresa los datos del incidente: Tipo, Asunto y Descripción; Luego preciona "Enviar Incidencia". |
+| 4 | Sistema | Realiza el ingreso del incidente. |
+| 5 | Sistema | Muestra el incidente ingresado junto a anteriores incidentes (si los hay) en la sección de "Mis Incidencias". |
+| 6 | Cliente | Puede ver el incidente junto a su estado y respuesta la cual aplica cuando el administrador lo responda. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El cliente no presiona "Enviar incidencia" | El sistema no registra ninguna incidencia. |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
+
+### CDU-008.2: Responder un incidente
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-008.2 |
+| **Nombre** | Responder un incidente |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador responder un incidente. |
+| **Precondiciones** | El administrador tiene una sesión activa y hay almenos un incidente no respondido en el sistema. |
+| **Postcondiciones** | Se registra la respuesta del incidente. |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Selecciona la opción de "Incidencias" desde su panel principal. |
+| 2 | Sistema | Muestra la interfaz de respuesta de incidente. |
+| 3 | Administrador | Ingresa un un comentario para resolver el problema; Luego preciona "Responder y cerrar". |
+| 4 | Sistema | Realiza el ingreso de la respuesta. |
+| 6 | Administrador | Puede ver la respuesta junto a su estado y respuesta la cual aplica cuando el administrador lo responda, filtrando por estados de incidencias. |
+
+**Flujos alternativos:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FA-01 | El administrador no presiona "Enviar respuesta" | El sistema no registra ninguna respuesta. |
 
 **Flujos de excepción:**
 

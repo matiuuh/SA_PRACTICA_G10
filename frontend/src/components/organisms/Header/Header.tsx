@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaBars,
   FaCity,
@@ -10,11 +11,10 @@ import {
   FaUser,
   FaUserPlus,
 } from 'react-icons/fa';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Button from '../../atoms/Button/Button';
 import { authService } from '../../../services/auth.service';
 import { localidadesService } from '../../../services/localidades.service';
-import type { Cine, Ciudad } from '../../../types/localidades.types';
-import Button from '../../atoms/Button/Button';
+import type { Ciudad, Cine } from '../../../types/localidades.types';
 
 const CITY_STORAGE_KEY = 'selectedCity';
 const CINEMA_STORAGE_KEY = 'selectedCinema';
@@ -155,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({ lockLocationSelection = false }) => {
         <FaStar className="text-cinema-gold-500 text-xs absolute -top-1 -right-2" />
       </div>
       <span className="font-bold text-xl text-white">
-        Film<span className="text-cinema-red-500">Calificacion</span>
+        Film<span className="text-cinema-red-500">Stars</span>
       </span>
     </div>
   );

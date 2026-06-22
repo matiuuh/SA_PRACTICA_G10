@@ -1,3 +1,5 @@
+// src/pages/PanelUser/PanelUser.tsx
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
@@ -9,6 +11,8 @@ import ModalHorarios from '../../components/organisms/ModalHorarios/ModalHorario
 import ModalPago, { type DatosPago } from '../../components/organisms/ModalPago/ModalPago';
 import ModalConfirmacion from '../../components/organisms/ModalConfirmacion/ModalConfirmacion';
 import Toast from '../../components/atoms/Toast/Toast';
+import HistorialCompras from '../../components/organisms/HistorialCompras/HistorialCompras';
+import MisIncidencias from '../../components/organisms/MisIncidencias/MisIncidencias';
 import { authService } from '../../services/auth.service';
 import { funcionesService } from '../../services/funciones.service';
 import { pagosService } from '../../services/pagos.service';
@@ -27,7 +31,8 @@ const CINEMA_STORAGE_KEY = 'selectedCinema';
 const SELECTION_EVENT = 'filmstars-selection-changed';
 
 interface BoletaGenerada {
-  id: string;
+  id: string;           // UUID del boleto para descarga
+  codigoQr: string;     // Código QR para mostrar
   pelicula: string;
   horario: string;
   fecha: string;
@@ -263,7 +268,8 @@ const PanelUser = () => {
         }
 
         const boleta: BoletaGenerada = {
-          id: boleto.codigoQr,
+          id: boleto.id,                    // UUID para descarga
+          codigoQr: boleto.codigoQr,        // Código QR para mostrar
           pelicula: compraData?.pelicula.titulo || '',
           horario: compraData?.funcion.hora || '',
           fecha: compraData?.funcion.fecha || '',
@@ -401,6 +407,10 @@ const PanelUser = () => {
             </button>
           </div>
         );
+      case 'historial':
+        return <HistorialCompras />;
+      case 'incidencias':
+        return <MisIncidencias />;
       default:
         return null;
     }

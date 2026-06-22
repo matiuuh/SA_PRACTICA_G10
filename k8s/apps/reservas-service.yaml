@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reservas-service
+  namespace: filmstars
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: reservas-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: reservas-service
+    spec:
+      imagePullSecrets:
+        - name: registry-credentials
+      containers:
+        - name: reservas-service
+          image: ${REGISTRY_HOST}/filmstars-reservas-service:${IMAGE_TAG}
+          ports:
+            - containerPort: 3004
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: reservas-service-config
+                  key: PORT
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: reservas-service-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-config
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-config
+                  key: DB_USERNAME
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: reservas-service-config
+                  key: DB_NAME
+            - name: FUNCIONES_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-config
+                  key: FUNCIONES_SERVICE_URL
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: JWT_SECRET
+            # RABBITMQ_URL se construye interpolando los secrets ya definidos arriba.
+            # Kubernetes resuelve $(VAR) desde env vars del mismo contenedor.
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: RABBITMQ_PASS
+            - name: RABBITMQ_URL
+              value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@rabbitmq:5672"
+          readinessProbe:
+            tcpSocket:
+              port: 3004
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3004
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reservas-service
+  namespace: filmstars
+spec:
+  selector:
+    app: reservas-service
+  type: ClusterIP
+  ports:
+    - port: 3004
+      targetPort: 3004

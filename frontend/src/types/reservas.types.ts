@@ -3,6 +3,9 @@ export interface ReservaAsiento {
   fila: string;
   numero: number;
   idFuncionExterna: string;
+  estadoOperativo?: 'DISPONIBLE' | 'RESERVADO' | 'EN_USO';
+  estadoVisual?: 'LIBRE' | 'EN_PROCESO' | 'POR_VALIDAR' | 'VALIDADO' | 'OCUPADO';
+  estadoAdministrativo?: 'COMPRADO' | 'VALIDADO' | 'OTRO';
   ocupado?: boolean;
   propio?: boolean;
 }

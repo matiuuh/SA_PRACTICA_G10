@@ -15,7 +15,10 @@ const Toast: React.FC<ToastProps> = ({
   onClose 
 }) => {
   const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     const timer = setTimeout(() => {

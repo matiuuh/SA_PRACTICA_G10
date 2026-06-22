@@ -76,6 +76,7 @@ services:
       DB_NAME: reservas_service
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       JWT_SECRET: ${JWT_SECRET}
+      FUNCIONES_SERVICE_URL: http://funciones-service:3003
     ports:
       - '3004:3004'
     depends_on:

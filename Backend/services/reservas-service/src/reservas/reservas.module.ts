@@ -11,6 +11,16 @@ import { Reserva } from './entities/reserva.entity';
 import { ReservasGateway } from './reservas.gateway';
 import { RabbitMqService } from './rabbitmq.service';
 import { ReservasPaymentsConsumer } from './reservas-payments.consumer';
+import { HttpFuncionCatalogClient } from './clients/http-funcion-catalog.client';
+import { FUNCION_CATALOG_CLIENT } from './interfaces/funcion-snapshot.interface';
+import { TicketHistoryService } from './services/ticket-history.service';
+import { AdminTicketSearchService } from './services/admin-ticket-search.service';
+import { TicketValidationService } from './services/ticket-validation.service';
+import { TicketDownloadService } from './services/ticket-download.service';
+import { PdfTicketDocumentGenerator } from './services/pdf-ticket-document.generator';
+import { TICKET_DOCUMENT_GENERATOR } from './interfaces/ticket-document-generator.interface';
+import { Incidencia } from './entities/incidencia.entity';
+import { IncidenciasService } from './services/incidencias.service';
 
 @Module({
   imports: [
@@ -21,6 +31,7 @@ import { ReservasPaymentsConsumer } from './reservas-payments.consumer';
       Reserva,
       ReservaDetalle,
       Boleto,
+      Incidencia,
     ]),
   ],
   controllers: [ReservasController],
@@ -29,6 +40,21 @@ import { ReservasPaymentsConsumer } from './reservas-payments.consumer';
     RabbitMqService,
     ReservasPaymentsConsumer,
     ReservasGateway,
+    TicketHistoryService,
+    AdminTicketSearchService,
+    TicketValidationService,
+    TicketDownloadService,
+    PdfTicketDocumentGenerator,
+    IncidenciasService,
+    HttpFuncionCatalogClient,
+    {
+      provide: FUNCION_CATALOG_CLIENT,
+      useExisting: HttpFuncionCatalogClient,
+    },
+    {
+      provide: TICKET_DOCUMENT_GENERATOR,
+      useExisting: PdfTicketDocumentGenerator,
+    },
   ],
   exports: [ReservasService],
 })

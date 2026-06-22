@@ -17,7 +17,6 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateCiudadDto } from './dto/create-ciudad.dto';
 import { CreateCineDto } from './dto/create-cine.dto';
-import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateCineDto } from './dto/update-cine.dto';
 import { LocalidadesService } from './localidades.service';
 
@@ -27,7 +26,11 @@ export class LocalidadesController {
 
   @Get('health')
   health() {
-    return { status: 'ok', service: 'localidades-service', timestamp: new Date().toISOString() };
+    return {
+      status: 'ok',
+      service: 'localidades-service',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get('ciudades')
@@ -65,6 +68,11 @@ export class LocalidadesController {
     return this.localidadesService.findCines();
   }
 
+  @Get('cines/:id')
+  findCineById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.localidadesService.findCineById(id);
+  }
+
   @Post('ciudades')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMINISTRADOR')
@@ -95,32 +103,5 @@ export class LocalidadesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removeCine(@Param('id', ParseUUIDPipe) id: string) {
     return this.localidadesService.removeCine(id);
-  }
-
-
-
-
-  // Métodos adicionales al LocalidadesController
-
-@Get('cines/:id')
-findCineById(@Param('id', ParseUUIDPipe) id: string) {
-  return this.localidadesService.findCineById(id);
-}
-
-@Get('salas')
-findSalas() {
-  return this.localidadesService.findSalas();
-}
-
-@Get('salas/:id')
-findSalaById(@Param('id', ParseUUIDPipe) id: string) {
-  return this.localidadesService.findSalaById(id);
-}
-
-  @Post('salas')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMINISTRADOR')
-  createSala(@Body() createSalaDto: CreateSalaDto) {
-    return this.localidadesService.createSala(createSalaDto);
   }
 }
