@@ -70,7 +70,7 @@ const AdminValidacionBoletos = () => {
       
       setResultadoValidacion({
         success: true,
-        message: '✅ Boleto validado exitosamente',
+        message: ' Boleto validado exitosamente',
         boleto: result,
       });
       showValidationToast('Boleto validado correctamente', 'success');
@@ -80,7 +80,7 @@ const AdminValidacionBoletos = () => {
         : 'Error al validar el boleto';
       setResultadoValidacion({
         success: false,
-        message: `❌ ${mensaje}`,
+        message: ` ${mensaje}`,
       });
       showValidationToast(mensaje, 'error');
     } finally {

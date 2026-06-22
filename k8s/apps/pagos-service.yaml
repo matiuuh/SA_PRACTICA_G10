@@ -4,7 +4,7 @@ metadata:
   name: pagos-service
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: pagos-service
