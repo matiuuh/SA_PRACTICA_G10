@@ -159,6 +159,24 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      # ─── Configurar Docker para registry HTTP (Zot sin TLS) ──────────
+      # Zot corre en HTTP (puerto 5000). Docker por defecto usa HTTPS,
+      # por lo que hay que marcarlo como "insecure registry" para que
+      # permita conexiones HTTP sin cifrar.
+      - name: Configurar Docker para registry HTTP (Zot)
+        run: |
+          echo '{"insecure-registries":["${{ secrets.REGISTRY_HOST }}"]}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+          sleep 3
+
+      # ─── Configurar buildx para usar el Docker daemon (no buildkit) ──
+      # buildx por defecto usa buildkit que NO lee /etc/docker/daemon.json.
+      # Con driver: docker usamos el daemon que sí respeta insecure-registries.
+      - name: Configurar buildx con driver docker
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+
       - name: Login al Registry Privado (Harbor / Zot)
         uses: docker/login-action@v3
         with:
@@ -313,7 +331,7 @@ jobs:
       - name: Instalar kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: 'v1.29.0'
+          version: 'v1.35.5'
 
       - name: Configurar kubeconfig
         run: |
