@@ -227,6 +227,7 @@ Las tablas utilizadas para este módulo fueron:
 * Reservas
 * Reserva Detalle
 * Boletos
+* Incidencias
 
 ![alt text](03-ER_RESERVAS.png)
 
@@ -335,6 +336,45 @@ Relación:
 Reservas (1) -------- (1) Boletos
 ```
 
+
+### Tabla Incidencias
+
+La tabla **incidencias** almacena los reportes, problemas o sugerencias realizados por los usuarios sobre el sistema de reservas y compra de boletos.
+
+**Responsabilidades:**
+
+Registrar incidencias relacionadas con reservas
+
+Asociar incidencias a boletos específicos (cuando aplique)
+
+Dar seguimiento a problemas reportados
+
+Almacenar respuestas de administradores
+
+Tipos de incidencia:
+
+- PROBLEMA
+- SUGERENCIA
+- OTRO
+
+**Estados:**
+
+- PENDIENTE
+- RESPONDIDA
+
+```
+Incidencias (N) -------- (0..1) Reservas
+
+Incidencias (N) -------- (0..1) Boletos
+```
+
+```bash
+Nota: Las relaciones son opcionales, 
+ya que una incidencia puede 
+no estar asociada a una reserva o 
+boleto específico, pero cuando lo está 
+permite una trazabilidad más precisa del problema.
+```
 ---
 
 #### Relación con otros servicios

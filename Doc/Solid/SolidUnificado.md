@@ -936,4 +936,11 @@ Si el catálogo de funciones pasa a ser un servicio gRPC u otro protocolo, solo 
 
 ---
 
+>Imágenes de SOLID
+
+![S](./img-solid-2/01_S.png)
+![O](./img-solid-2/02_O.png)
+![L](./img-solid-2/03_L.png)
+![I](./img-solid-2/04_D.png)
+
 [Volver a Documentación](../Documentación.md)

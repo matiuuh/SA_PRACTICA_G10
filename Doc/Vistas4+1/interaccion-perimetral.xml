@@ -1,0 +1,286 @@
+<mxGraphModel dx="1228" dy="572" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ══ K3s CLUSTER ══ -->
+    <mxCell id="2" value="&lt;b&gt;Clúster K3s — AWS EC2 t3.medium (98.84.183.129)&lt;/b&gt;"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;verticalAlign=top;arcSize=2;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="10" y="70" width="807" height="760" as="geometry" />
+    </mxCell>
+
+    <!-- ══ namespace: ingress-nginx ══ -->
+    <mxCell id="3" value="&lt;i&gt;namespace: ingress-nginx&lt;/i&gt;"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f0ff;strokeColor=#9673a6;dashed=1;fontSize=9;verticalAlign=top;strokeWidth=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="240" y="88" width="347" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ══ namespace: filmstars ══ -->
+    <mxCell id="4" value="&lt;i&gt;namespace: filmstars&lt;/i&gt;"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0050ef;dashed=1;fontSize=9;verticalAlign=top;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="30" y="185" width="767" height="630" as="geometry" />
+    </mxCell>
+
+    <!-- ══ Internet ══ -->
+    <mxCell id="5" value="&lt;b&gt;Usuario / Internet&lt;/b&gt;"
+      style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;"
+      vertex="1" parent="1">
+      <mxGeometry x="338" y="10" width="150" height="45" as="geometry" />
+    </mxCell>
+
+    <!-- ══ Ingress Controller ══ -->
+    <mxCell id="6" value="&lt;b&gt;Ingress Controller (nginx)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;/ → frontend &amp;nbsp;|&amp;nbsp; /api/* → api-gateway (strip /api)&lt;/font&gt;"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="263" y="103" width="300" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══ Frontend ══ -->
+    <mxCell id="7" value="&lt;b&gt;frontend&lt;/b&gt;&lt;br&gt;:80 · React/Vite (nginx)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="50" y="245" width="175" height="55" as="geometry" />
+    </mxCell>
+
+    <!-- ══ API Gateway ══ -->
+    <mxCell id="8" value="&lt;b&gt;api-gateway&lt;/b&gt;&lt;br&gt;:3006 · NestJS/Express"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="570" y="245" width="185" height="55" as="geometry" />
+    </mxCell>
+
+    <!-- ══ auth-service ══ -->
+    <mxCell id="9" value="&lt;b&gt;auth-service&lt;/b&gt;&lt;br&gt;:3001 · NestJS"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="45" y="390" width="135" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══ localidades-service ══ -->
+    <mxCell id="10" value="&lt;b&gt;localidades-service&lt;/b&gt;&lt;br&gt;:3002 · NestJS"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="200" y="390" width="145" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══ funciones-service ══ -->
+    <mxCell id="11" value="&lt;b&gt;funciones-service&lt;/b&gt;&lt;br&gt;:3003 · NestJS"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="360" y="390" width="145" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══ reservas-service ══ -->
+    <mxCell id="12" value="&lt;b&gt;reservas-service&lt;/b&gt;&lt;br&gt;:3004 · NestJS + WS"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="520" y="390" width="145" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══ pagos-service ══ -->
+    <mxCell id="13" value="&lt;b&gt;pagos-service&lt;/b&gt;&lt;br&gt;:3005 · NestJS"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="675" y="390" width="110" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ══ RabbitMQ ══ -->
+    <mxCell id="14" value="&lt;b&gt;rabbitmq&lt;/b&gt;&lt;br&gt;:5672 AMQP · :15672 UI"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="510" y="530" width="185" height="55" as="geometry" />
+    </mxCell>
+
+    <!-- ══ External DB VM ══ -->
+    <mxCell id="15" value="&lt;b&gt;VM Bases de Datos — AWS EC2 (52.202.69.183)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;docker-compose.vm3.yml · PostgreSQL 15&lt;/font&gt;"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=11;verticalAlign=top;strokeWidth=2;arcSize=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="10" y="850" width="807" height="145" as="geometry" />
+    </mxCell>
+
+    <!-- ══ postgres-auth ══ -->
+    <mxCell id="16" value="&lt;b&gt;postgres-auth&lt;/b&gt;&lt;br&gt;:5433 · auth_service"
+      style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="30" y="895" width="130" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══ postgres-localidades ══ -->
+    <mxCell id="17" value="&lt;b&gt;postgres-localidades&lt;/b&gt;&lt;br&gt;:5434 · localidades_service"
+      style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="178" y="895" width="148" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══ postgres-funciones ══ -->
+    <mxCell id="18" value="&lt;b&gt;postgres-funciones&lt;/b&gt;&lt;br&gt;:5435 · funciones_db"
+      style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="344" y="895" width="138" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══ postgres-reservas ══ -->
+    <mxCell id="19" value="&lt;b&gt;postgres-reservas&lt;/b&gt;&lt;br&gt;:5436 · reservas_service"
+      style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="499" y="895" width="138" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══ postgres-pagos ══ -->
+    <mxCell id="20" value="&lt;b&gt;postgres-pagos&lt;/b&gt;&lt;br&gt;:5437 · pagos_service"
+      style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="654" y="895" width="130" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ══ LEYENDA ══ -->
+    <mxCell id="30" value="&lt;b&gt;Leyenda&lt;/b&gt;"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontStyle=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="45" y="620" width="80" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="31" value="Microservicio (NestJS)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="45" y="645" width="140" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="32" value="Message Broker"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="195" y="645" width="110" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="33" value="Base de datos (externa)"
+      style="shape=mxgraph.flowchart.database;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="315" y="645" width="130" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="34" value="Ingress Controller"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="455" y="645" width="110" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="35" value="API Gateway"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="575" y="645" width="90" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- ════ EDGES ════ -->
+
+    <!-- Internet → Ingress -->
+    <mxCell id="40" value="HTTP :80"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;fontColor=#9673a6;fontStyle=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="5" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Ingress → Frontend -->
+    <mxCell id="41" value="HTTP /"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;fontColor=#b85450;fontSize=9;"
+      edge="1" source="6" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Ingress → API Gateway -->
+    <mxCell id="42" value="HTTP /api"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=9;strokeWidth=2;"
+      edge="1" source="6" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- API Gateway → auth -->
+    <mxCell id="43" value=""
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;"
+      edge="1" source="8" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- API Gateway → localidades -->
+    <mxCell id="44" value=""
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;"
+      edge="1" source="8" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- API Gateway → funciones -->
+    <mxCell id="45" value=""
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;"
+      edge="1" source="8" target="11" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- API Gateway → reservas -->
+    <mxCell id="46" value=""
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;"
+      edge="1" source="8" target="12" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- API Gateway → pagos -->
+    <mxCell id="47" value=""
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;"
+      edge="1" source="8" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- reservas → funciones (HTTP sync) -->
+    <mxCell id="48" value="HTTP sync"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#FF8000;fontColor=#FF8000;dashed=1;fontSize=9;"
+      edge="1" source="12" target="11" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- reservas → RabbitMQ (AMQP publish) -->
+    <mxCell id="49" value="AMQP publish"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d6b656;fontColor=#d6b656;fontStyle=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="12" target="14" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- RabbitMQ → pagos (AMQP consume) -->
+    <mxCell id="50" value="AMQP consume"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d6b656;fontColor=#d6b656;fontStyle=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="14" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- auth → postgres-auth (cross-boundary, dashed) -->
+    <mxCell id="51" value=":5433"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#e65100;fontColor=#e65100;dashed=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="9" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- localidades → postgres-localidades -->
+    <mxCell id="52" value=":5434"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#e65100;fontColor=#e65100;dashed=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="10" target="17" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- funciones → postgres-funciones -->
+    <mxCell id="53" value=":5435"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#e65100;fontColor=#e65100;dashed=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="11" target="18" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- reservas → postgres-reservas -->
+    <mxCell id="54" value=":5436"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#e65100;fontColor=#e65100;dashed=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="12" target="19" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- pagos → postgres-pagos -->
+    <mxCell id="55" value=":5437"
+      style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#e65100;fontColor=#e65100;dashed=1;fontSize=9;strokeWidth=2;"
+      edge="1" source="13" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>
