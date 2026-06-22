@@ -181,11 +181,21 @@ jobs:
           driver: docker-container
           buildkitd-config: /tmp/buildkitd.toml
 
-      - name: Login manual al Registry Privado (Zot por HTTP)
+      - name: Escribir credenciales Docker para Zot
         run: |
-          echo "${{ secrets.REGISTRY_PASS }}" | docker login "http://$REGISTRY_HOST_CLEAN" \
-            --username "${{ secrets.REGISTRY_USER }}" \
-            --password-stdin
+          mkdir -p "$HOME/.docker"
+          AUTH_B64="$(printf '%s' '${{ secrets.REGISTRY_USER }}:${{ secrets.REGISTRY_PASS }}' | base64 -w0)"
+          cat > "$HOME/.docker/config.json" <<EOF
+          {
+            "auths": {
+              "$REGISTRY_HOST_CLEAN": {
+                "auth": "$AUTH_B64"
+              }
+            }
+          }
+          EOF
+          echo "=== Docker config ==="
+          cat "$HOME/.docker/config.json"
 
       - name: Build y push auth-service
         uses: docker/build-push-action@v6
