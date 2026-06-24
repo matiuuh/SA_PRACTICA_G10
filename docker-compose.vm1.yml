@@ -11,6 +11,7 @@ services:
       FUNCIONES_SERVICE_URL: http://${VM2_HOST}:3003
       RESERVAS_SERVICE_URL: http://${VM2_HOST}:3004
       PAGOS_SERVICE_URL: http://${VM2_HOST}:3005
+      ESCANEO_SERVICE_URL: http://${VM2_HOST}:3007
     ports:
       - '3006:3006'
     networks:

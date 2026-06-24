@@ -350,7 +350,7 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   const total = asientosSeleccionados.length * pelicula.precio;
 
   return (
-    <div className="cinema-card p-8">
+    <div className="cinema-card p-4 sm:p-8">
       <div className="bg-gradient-to-r from-cinema-dark-900 to-cinema-dark-800 rounded-xl p-6 mb-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">

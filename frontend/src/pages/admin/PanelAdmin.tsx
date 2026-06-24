@@ -2,13 +2,20 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaCity, FaExclamationCircle, FaFilm, FaTheaterMasks, FaQrcode } from 'react-icons/fa';
-import MainLayout from '../../components/templates/MainLayout/MainLayout';
+import {
+  FaCalendarAlt,
+  FaCity,
+  FaExclamationCircle,
+  FaExclamationTriangle,
+  FaFilm,
+  FaRedo,
+  FaTheaterMasks,
+} from 'react-icons/fa';
+import AdminLayout from '../../components/templates/AdminLayout/AdminLayout';
 import AdminPeliculas from '../../components/organisms/AdminPeliculas/AdminPeliculas';
 import AdminLocalidades from '../../components/organisms/AdminLocalidades/AdminLocalidades';
 import AdminFunciones from '../../components/organisms/AdminFunciones/AdminFunciones';
 import AdminSalas from '../../components/organisms/AdminSalas/AdminSalas';
-import AdminValidacionBoletos from '../../components/organisms/AdminValidacionBoletos/AdminValidacionBoletos';
 import AdminIncidencias from '../../components/organisms/AdminIncidencias/AdminIncidencias';
 import Toast from '../../components/atoms/Toast/Toast';
 import { authService } from '../../services/auth.service';
@@ -47,6 +54,14 @@ type AdminToast = {
   message: string;
   type: 'success' | 'error';
 };
+
+const ADMIN_NAVIGATION_ITEMS = [
+  { id: 'peliculas' as AdminTabType, label: 'Películas', description: 'Catálogo y estrenos', icon: FaFilm },
+  { id: 'localidades' as AdminTabType, label: 'Cines', description: 'Sedes y ubicaciones', icon: FaCity },
+  { id: 'salas' as AdminTabType, label: 'Salas', description: 'Espacios y capacidad', icon: FaTheaterMasks },
+  { id: 'funciones' as AdminTabType, label: 'Funciones', description: 'Horarios y precios', icon: FaCalendarAlt },
+  { id: 'incidencias' as AdminTabType, label: 'Incidencias', description: 'Soporte al cliente', icon: FaExclamationCircle },
+];
 
 const PanelAdmin = () => {
   const navigate = useNavigate();
@@ -348,59 +363,65 @@ const PanelAdmin = () => {
     }
   };
 
-  const tabs = [
-    { id: 'peliculas' as AdminTabType, label: 'Peliculas', icon: FaFilm },
-    { id: 'localidades' as AdminTabType, label: 'Cines', icon: FaCity },
-    { id: 'salas' as AdminTabType, label: 'Salas', icon: FaTheaterMasks },
-    { id: 'funciones' as AdminTabType, label: 'Funciones', icon: FaCalendarAlt },
-    { id: 'validacion' as AdminTabType, label: 'Validación', icon: FaQrcode },
-    { id: 'incidencias' as AdminTabType, label: 'Incidencias', icon: FaExclamationCircle },
-  ];
-
   if (loading) {
     return (
-      <MainLayout>
-        <div className="py-8 px-4 sm:px-6 lg:px-8">
+      <AdminLayout
+        activeSection={activeTab}
+        navigationItems={ADMIN_NAVIGATION_ITEMS}
+        onSectionChange={setActiveTab}
+        user={user}
+      >
+        <div className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-400">Cargando panel de administracion...</p>
+            <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-2 border-white/10 border-t-cinema-red-500" />
+            <p className="font-semibold text-gray-200">Preparando tu panel</p>
+            <p className="mt-1 text-sm text-gray-500">Cargando la información administrativa...</p>
           </div>
         </div>
-      </MainLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Panel de administracion</h1>
-          <p className="text-gray-400">Bienvenido, {user?.nombre || 'Administrador'}</p>
-          {error && <p className="text-cinema-red-500 mt-2">{error}</p>}
+    <AdminLayout
+      activeSection={activeTab}
+      navigationItems={ADMIN_NAVIGATION_ITEMS}
+      onSectionChange={setActiveTab}
+      user={user}
+    >
+      <section className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-cinema-gold-500">
+            Centro de operaciones
+          </p>
+          <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">Panel de administración</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Bienvenido, {user?.nombre || 'Administrador'}. Gestiona la operación de FilmStars desde un solo lugar.
+          </p>
         </div>
+      </section>
 
-        <div className="cinema-card p-1 mb-8 flex flex-wrap gap-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm font-medium ${
-                  isActive
-                    ? 'bg-cinema-red-500 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-cinema-dark-800'
-                }`}
-              >
-                <Icon />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+      {error && (
+        <div className="mb-6 flex flex-col gap-4 rounded-xl border border-cinema-red-500/25 bg-cinema-red-500/[0.08] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <FaExclamationTriangle className="mt-0.5 shrink-0 text-cinema-red-500" />
+            <div>
+              <p className="text-sm font-semibold text-white">No pudimos completar la última operación</p>
+              <p className="mt-0.5 text-sm text-gray-400">{error}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void cargarDatos()}
+            className="flex w-fit shrink-0 items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-gray-200 transition-colors hover:bg-white/[0.06]"
+          >
+            <FaRedo />
+            Reintentar
+          </button>
         </div>
+      )}
 
-        {/* Contenido */}
+      <div className="min-w-0">
         {activeTab === 'peliculas' && (
           <AdminPeliculas
             peliculas={peliculas}
@@ -442,17 +463,13 @@ const PanelAdmin = () => {
           />
         )}
 
-        {activeTab === 'validacion' && (
-          <AdminValidacionBoletos />
-        )}
-
         {activeTab === 'incidencias' && (
           <AdminIncidencias />
         )}
       </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </MainLayout>
+    </AdminLayout>
   );
 };
 

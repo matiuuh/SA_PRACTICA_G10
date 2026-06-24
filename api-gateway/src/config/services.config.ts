@@ -36,4 +36,10 @@ export const services: ServiceConfig[] = [
     routes: ['/api/pagos'],
     healthCheck: '/api/pagos/health',
   },
+  {
+    name: 'escaneo',
+    url: process.env.ESCANEO_SERVICE_URL || 'http://localhost:3007',
+    routes: ['/api/escaneo'],
+    healthCheck: '/api/escaneo/health',
+  },
 ];

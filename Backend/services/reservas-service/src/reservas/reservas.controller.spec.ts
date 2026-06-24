@@ -194,11 +194,11 @@ describe('ReservasController', () => {
   });
 
   describe('ticket validation', () => {
-    it('valida un codigo usando el administrador autenticado', () => {
-      controller.validateTicket(
-        { codigo: ' BOL-001 ' },
-        buildRequest(mockAdminUser),
-      );
+    it('valida un codigo recibido desde el servicio de escaneo', () => {
+      controller.validateScannedTicket({
+        codigo: ' BOL-001 ',
+        administradorId: 'admin-1',
+      });
 
       expect(mockTicketValidationService.validateByCode).toHaveBeenCalledWith(
         ' BOL-001 ',
@@ -218,15 +218,6 @@ describe('ReservasController', () => {
         '11111111-1111-4111-8111-111111111111',
         'admin-1',
       );
-    });
-
-    it('rechaza validacion sin usuario autenticado', () => {
-      expect(() =>
-        controller.validateTicket(
-          { codigo: 'BOL-001' },
-          buildRequest(undefined),
-        ),
-      ).toThrow(UnauthorizedException);
     });
   });
 
