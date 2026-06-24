@@ -62,6 +62,7 @@ export const endpoints = {
   funciones: '/api/funciones',
   reservas: '/api/reservas',
   pagos: '/api/pagos',
+  escaneo: '/api/escaneo',
 };
 
 export default api;

@@ -5,6 +5,7 @@ import Login from '../pages/Login'
 import Register from '../pages/Register'
 import PanelUser from '../pages/user/PanelUser'
 import PanelAdmin from '../pages/admin/PanelAdmin'
+import TicketScannerPage from '../pages/services/TicketScannerPage'
 import { authService } from '../services/auth.service'
 
 const ProtectedRoute = ({
@@ -52,6 +53,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute requiredRole="ADMINISTRADOR">
         <PanelAdmin />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/servicios/escaner-boletos',
+    element: (
+      <ProtectedRoute requiredRole="ADMINISTRADOR">
+        <TicketScannerPage />
       </ProtectedRoute>
     ),
   },

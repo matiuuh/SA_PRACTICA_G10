@@ -30,6 +30,7 @@ jobs:
           - funciones-service
           - reservas-service
           - pagos-service
+          - escaneo-service
     steps:
       - uses: actions/checkout@v4
 
@@ -111,6 +112,13 @@ jobs:
           context: ./Backend/services/pagos-service
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-pagos-service:latest
+
+      - name: Build y push escaneo-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/escaneo-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-escaneo-service:latest
 
       - name: Build y push api-gateway
         uses: docker/build-push-action@v6
@@ -242,6 +250,15 @@ jobs:
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-pagos-service:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-pagos-service:${{ steps.vars.outputs.sha_short }}
 
+      - name: Build y push escaneo-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/escaneo-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-escaneo-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-escaneo-service:${{ steps.vars.outputs.sha_short }}
+
       - name: Build y push api-gateway
         uses: docker/build-push-action@v6
         with:
@@ -292,7 +309,8 @@ jobs:
             "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}",
             "JWT_SECRET=${{ secrets.JWT_SECRET }}",
             "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}",
-            "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}"
+            "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}",
+            "INTERNAL_SERVICE_TOKEN=${{ secrets.INTERNAL_SERVICE_TOKEN }}"
           )
           [System.IO.File]::WriteAllLines(".env", $lines, $utf8NoBOM)
 
@@ -306,7 +324,7 @@ jobs:
           docker compose down --volumes
           $names = @(
             "rabbitmq",
-            "auth-service", "localidades-service", "funciones-service", "reservas-service", "pagos-service",
+            "auth-service", "localidades-service", "funciones-service", "reservas-service", "pagos-service", "escaneo-service",
             "api-gateway", "frontend",
             "postgres-auth", "postgres-localidades", "postgres-funciones", "postgres-reservas", "postgres-pagos"
           )
@@ -371,11 +389,17 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          INTERNAL_SERVICE_TOKEN: ${{ secrets.INTERNAL_SERVICE_TOKEN }}
         run: |
+          if [ -z "$INTERNAL_SERVICE_TOKEN" ]; then
+            echo "::error::Falta configurar el secret INTERNAL_SERVICE_TOKEN"
+            exit 1
+          fi
           export POSTGRES_PASSWORD_B64=$(echo -n "$POSTGRES_PASSWORD" | base64 -w0)
           export JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 -w0)
           export RABBITMQ_USER_B64=$(echo -n "$RABBITMQ_USER" | base64 -w0)
           export RABBITMQ_PASS_B64=$(echo -n "$RABBITMQ_PASS" | base64 -w0)
+          export INTERNAL_SERVICE_TOKEN_B64=$(echo -n "$INTERNAL_SERVICE_TOKEN" | base64 -w0)
           envsubst < k8s/secrets/app-secrets.yaml | kubectl apply -f -
 
       - name: Crear Secret de credenciales del Registry Privado
@@ -418,7 +442,7 @@ jobs:
       # ── 7. Verificacion de rollout con rollback automatico ────────────────
       - name: Verificar rollout y revertir en caso de fallo
         run: |
-          APP_DEPS="auth-service localidades-service funciones-service reservas-service pagos-service api-gateway frontend"
+          APP_DEPS="auth-service localidades-service funciones-service reservas-service pagos-service escaneo-service api-gateway frontend"
           FAILED=""
           for dep in $APP_DEPS; do
             echo "Verificando rollout de $dep..."

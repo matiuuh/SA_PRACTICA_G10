@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MainLayout from '../../components/templates/MainLayout/MainLayout';
-import UserProfileHeader from '../../components/organisms/UserProfileHeader/UserProfileHeader';
-import UserSubHeader from '../../components/organisms/UserSubHeader/UserSubHeader';
+import { FaArrowLeft, FaExclamationCircle, FaFilm, FaHistory } from 'react-icons/fa';
+import UserLayout from '../../components/templates/UserLayout/UserLayout';
 import Cartelera from '../../components/organisms/Cartelera/Cartelera';
+import CarteleraLocationFilter from '../../components/organisms/CarteleraLocationFilter/CarteleraLocationFilter';
 import SeleccionAsientos from '../../components/organisms/SeleccionAsientos/SeleccionAsientos';
 import ModalHorarios from '../../components/organisms/ModalHorarios/ModalHorarios';
 import ModalPago, { type DatosPago } from '../../components/organisms/ModalPago/ModalPago';
@@ -15,10 +15,12 @@ import HistorialCompras from '../../components/organisms/HistorialCompras/Histor
 import MisIncidencias from '../../components/organisms/MisIncidencias/MisIncidencias';
 import { authService } from '../../services/auth.service';
 import { funcionesService } from '../../services/funciones.service';
+import { localidadesService } from '../../services/localidades.service';
 import { pagosService } from '../../services/pagos.service';
 import { reservasService } from '../../services/reservas.service';
 import { type TabType } from '../../types/panel.types';
 import type { Funcion } from '../../types/funciones.types';
+import type { Cine, Ciudad } from '../../types/localidades.types';
 import type {
   CarteleraCategoria,
   CarteleraPelicula,
@@ -28,7 +30,12 @@ import type {
 
 const CITY_STORAGE_KEY = 'selectedCity';
 const CINEMA_STORAGE_KEY = 'selectedCinema';
-const SELECTION_EVENT = 'filmstars-selection-changed';
+
+const USER_NAVIGATION_ITEMS = [
+  { id: 'cartelera' as TabType, label: 'Cartelera', description: 'Películas y horarios', icon: FaFilm },
+  { id: 'historial' as TabType, label: 'Mis boletos', description: 'Compras y descargas', icon: FaHistory },
+  { id: 'incidencias' as TabType, label: 'Incidencias', description: 'Ayuda y seguimiento', icon: FaExclamationCircle },
+];
 
 interface BoletaGenerada {
   id: string;           // UUID del boleto para descarga
@@ -149,6 +156,10 @@ const PanelUser = () => {
   const [activeTab, setActiveTab] = useState<TabType>('cartelera');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedCinema, setSelectedCinema] = useState('');
+  const [cities, setCities] = useState<Ciudad[]>([]);
+  const [cinemas, setCinemas] = useState<Cine[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(true);
+  const [cinemasLoading, setCinemasLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPagoOpen, setModalPagoOpen] = useState(false);
   const [modalConfirmacionOpen, setModalConfirmacionOpen] = useState(false);
@@ -167,8 +178,6 @@ const PanelUser = () => {
   const [totalPago, setTotalPago] = useState(0);
   const [boletaGenerada, setBoletaGenerada] = useState<BoletaGenerada | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  const lockLocationSelection = activeTab === 'seleccion-asientos' && Boolean(compraData);
-
   useEffect(() => {
     document.title = 'Mi Panel | FilmStars';
 
@@ -177,23 +186,96 @@ const PanelUser = () => {
       return;
     }
 
-    const syncSelection = () => {
-      setSelectedCity(localStorage.getItem(CITY_STORAGE_KEY) || '');
-      setSelectedCinema(localStorage.getItem(CINEMA_STORAGE_KEY) || '');
+    const loadCities = async () => {
+      setCitiesLoading(true);
+
+      try {
+        const loadedCities = await localidadesService.getCiudades();
+        const savedCity = localStorage.getItem(CITY_STORAGE_KEY);
+        const validSavedCity = savedCity && loadedCities.some((city) => city.id === savedCity)
+          ? savedCity
+          : '';
+
+        setCities(loadedCities);
+        setSelectedCity(validSavedCity);
+
+        if (!validSavedCity) {
+          localStorage.removeItem(CITY_STORAGE_KEY);
+          localStorage.removeItem(CINEMA_STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('No se pudieron cargar las ciudades', error);
+        setCities([]);
+      } finally {
+        setCitiesLoading(false);
+      }
     };
 
-    syncSelection();
-    window.addEventListener(SELECTION_EVENT, syncSelection);
-
-    return () => {
-      window.removeEventListener(SELECTION_EVENT, syncSelection);
-    };
+    void loadCities();
   }, [navigate]);
+
+  useEffect(() => {
+    if (!selectedCity) {
+      setCinemas([]);
+      setSelectedCinema('');
+      return;
+    }
+
+    const loadCinemas = async () => {
+      setCinemasLoading(true);
+
+      try {
+        const loadedCinemas = await localidadesService.getCinesByCiudad(selectedCity);
+        const savedCinema = localStorage.getItem(CINEMA_STORAGE_KEY);
+        const validSavedCinema = savedCinema && loadedCinemas.some((cinema) => cinema.id === savedCinema)
+          ? savedCinema
+          : '';
+
+        setCinemas(loadedCinemas);
+        setSelectedCinema(validSavedCinema);
+
+        if (!validSavedCinema) localStorage.removeItem(CINEMA_STORAGE_KEY);
+      } catch (error) {
+        console.error('No se pudieron cargar los cines', error);
+        setCinemas([]);
+        setSelectedCinema('');
+      } finally {
+        setCinemasLoading(false);
+      }
+    };
+
+    void loadCinemas();
+  }, [selectedCity]);
 
   useEffect(() => {
     setCarteleraPage(1);
     setCategoriaActiva('todos');
   }, [selectedCinema]);
+
+  const handleCityChange = (cityId: string) => {
+    setSelectedCity(cityId);
+    setSelectedCinema('');
+    setCarteleraPage(1);
+
+    if (cityId) {
+      localStorage.setItem(CITY_STORAGE_KEY, cityId);
+    } else {
+      localStorage.removeItem(CITY_STORAGE_KEY);
+    }
+
+    localStorage.removeItem(CINEMA_STORAGE_KEY);
+  };
+
+  const handleCinemaChange = (cinemaId: string) => {
+    setSelectedCinema(cinemaId);
+    setCarteleraPage(1);
+
+    if (cinemaId) {
+      localStorage.setItem(CINEMA_STORAGE_KEY, cinemaId);
+    } else {
+      localStorage.removeItem(CINEMA_STORAGE_KEY);
+    }
+  };
 
   useEffect(() => {
     if (!selectedCinema) {
@@ -240,7 +322,6 @@ const PanelUser = () => {
     });
     setModalOpen(false);
     setSelectedPelicula(null);
-    setActiveTab('seleccion-asientos');
   };
 
   const handleConfirmarSeleccionAsientos = (asientos: UserAsiento[], total: number) => {
@@ -341,72 +422,119 @@ const PanelUser = () => {
     setActiveTab('cartelera');
   };
 
+  const handleSectionChange = (tab: TabType) => {
+    if (compraData) {
+      setCompraData(null);
+      setAsientosSeleccionados([]);
+      setTotalPago(0);
+    }
+
+    setActiveTab(tab);
+  };
+
+  const handleBackToCartelera = () => {
+    setCompraData(null);
+    setAsientosSeleccionados([]);
+    setTotalPago(0);
+    setActiveTab('cartelera');
+  };
+
   const renderCartelera = () => {
+    const locationFilter = (
+      <CarteleraLocationFilter
+        cities={cities}
+        cinemas={cinemas}
+        selectedCity={selectedCity}
+        selectedCinema={selectedCinema}
+        citiesLoading={citiesLoading}
+        cinemasLoading={cinemasLoading}
+        onCityChange={handleCityChange}
+        onCinemaChange={handleCinemaChange}
+      />
+    );
+
     if (carteleraLoading) {
       return (
-        <div className="cinema-card p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinema-gold-500 mx-auto" />
-          <p className="text-gray-400 mt-4">Cargando cartelera...</p>
-        </div>
+        <>
+          {locationFilter}
+          <div className="cinema-card p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinema-gold-500 mx-auto" />
+            <p className="text-gray-400 mt-4">Cargando cartelera...</p>
+          </div>
+        </>
       );
     }
 
     if (carteleraError) {
       return (
-        <div className="cinema-card p-6 text-center">
-          <p className="text-red-400">{carteleraError}</p>
-        </div>
+        <>
+          {locationFilter}
+          <div className="cinema-card p-6 text-center">
+            <p className="text-red-400">{carteleraError}</p>
+          </div>
+        </>
       );
     }
 
     return (
-      <Cartelera
-        peliculas={peliculas}
-        meta={carteleraMeta}
-        onPageChange={setCarteleraPage}
-        onVerHorarios={handleVerHorarios}
-        selectedCity={selectedCity}
-        selectedCinema={selectedCinema}
-        categoriaActiva={categoriaActiva}
-        onCategoriaChange={(cat) => { setCategoriaActiva(cat); setCarteleraPage(1); }}
-      />
+      <>
+        {locationFilter}
+        <Cartelera
+          peliculas={peliculas}
+          meta={carteleraMeta}
+          onPageChange={setCarteleraPage}
+          onVerHorarios={handleVerHorarios}
+          selectedCity={selectedCity}
+          selectedCinema={selectedCinema}
+          categoriaActiva={categoriaActiva}
+          onCategoriaChange={(cat) => { setCategoriaActiva(cat); setCarteleraPage(1); }}
+        />
+      </>
     );
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'cartelera':
-        return renderCartelera();
-      case 'seleccion-asientos':
         if (compraData) {
           return (
-            <SeleccionAsientos
-              pelicula={{
-                titulo: compraData.pelicula.titulo,
-                horario: compraData.funcion.hora,
-                fecha: compraData.funcion.fecha,
-                funcionId: compraData.funcion.id,
-                capacidadSala: compraData.funcion.capacidadSala,
-                precio: compraData.funcion.precio,
-              }}
-              onConfirmarSeleccion={handleConfirmarSeleccionAsientos}
-            />
+            <div className="space-y-5">
+              <div className="flex flex-col gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={handleBackToCartelera}
+                  className="flex w-fit items-center gap-2 text-sm font-semibold text-gray-300 transition-colors hover:text-white"
+                >
+                  <FaArrowLeft />
+                  Volver a cartelera
+                </button>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="rounded-full bg-cinema-red-500 px-2.5 py-1 font-bold text-white">1</span>
+                  <span>Película y horario</span>
+                  <span className="h-px w-5 bg-gray-700" />
+                  <span className="rounded-full bg-cinema-gold-500 px-2.5 py-1 font-bold text-black">2</span>
+                  <span className="text-gray-300">Asientos</span>
+                  <span className="h-px w-5 bg-gray-700" />
+                  <span className="rounded-full bg-gray-800 px-2.5 py-1 font-bold text-gray-500">3</span>
+                  <span>Pago</span>
+                </div>
+              </div>
+              <SeleccionAsientos
+                pelicula={{
+                  titulo: compraData.pelicula.titulo,
+                  horario: compraData.funcion.hora,
+                  fecha: compraData.funcion.fecha,
+                  funcionId: compraData.funcion.id,
+                  capacidadSala: compraData.funcion.capacidadSala,
+                  precio: compraData.funcion.precio,
+                }}
+                onConfirmarSeleccion={handleConfirmarSeleccionAsientos}
+              />
+            </div>
           );
         }
 
-        return (
-          <div className="cinema-card p-6 text-center">
-            <p className="text-gray-400">
-              Primero selecciona una pelicula y un horario desde la cartelera.
-            </p>
-            <button
-              onClick={() => setActiveTab('cartelera')}
-              className="mt-4 bg-cinema-red-500 text-white px-4 py-2 rounded-lg"
-            >
-              Ir a Cartelera
-            </button>
-          </div>
-        );
+        return renderCartelera();
       case 'historial':
         return <HistorialCompras />;
       case 'incidencias':
@@ -418,13 +546,32 @@ const PanelUser = () => {
 
   return (
     <>
-      <MainLayout lockLocationSelection={lockLocationSelection}>
-        <div className="w-full">
-          <UserProfileHeader />
-          <UserSubHeader activeTab={activeTab} onTabChange={setActiveTab} />
-          <div className="mt-6">{renderContent()}</div>
-        </div>
-      </MainLayout>
+      <UserLayout
+        activeSection={activeTab}
+        navigationItems={USER_NAVIGATION_ITEMS}
+        onSectionChange={handleSectionChange}
+        pageTitle={compraData ? 'Selección de asientos' : undefined}
+        user={user}
+      >
+        {!compraData && (
+          <section className="mb-6">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-cinema-gold-500">
+              Tu experiencia FilmStars
+            </p>
+            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
+              {activeTab === 'cartelera' && 'Encuentra tu próxima película'}
+              {activeTab === 'historial' && 'Tus compras y boletos'}
+              {activeTab === 'incidencias' && 'Centro de ayuda'}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {activeTab === 'cartelera' && 'Elige dónde quieres ver cine y descubre las funciones disponibles.'}
+              {activeTab === 'historial' && 'Consulta, filtra y descarga los boletos de tus compras.'}
+              {activeTab === 'incidencias' && 'Envíanos una solicitud y consulta el estado de tus casos.'}
+            </p>
+          </section>
+        )}
+        {renderContent()}
+      </UserLayout>
 
       <ModalHorarios
         pelicula={selectedPelicula}

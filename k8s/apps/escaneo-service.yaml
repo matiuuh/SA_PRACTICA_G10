@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: escaneo-service
+  namespace: filmstars
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: escaneo-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: escaneo-service
+    spec:
+      imagePullSecrets:
+        - name: registry-credentials
+      containers:
+        - name: escaneo-service
+          image: ${REGISTRY_HOST}/filmstars-escaneo-service:${IMAGE_TAG}
+          ports:
+            - containerPort: 3007
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: escaneo-service-config
+                  key: PORT
+            - name: RESERVAS_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-config
+                  key: RESERVAS_SERVICE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: INTERNAL_SERVICE_TOKEN
+          readinessProbe:
+            httpGet:
+              path: /api/escaneo/health
+              port: 3007
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/escaneo/health
+              port: 3007
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: escaneo-service
+  namespace: filmstars
+spec:
+  selector:
+    app: escaneo-service
+  type: ClusterIP
+  ports:
+    - port: 3007
+      targetPort: 3007
