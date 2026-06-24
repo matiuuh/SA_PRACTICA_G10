@@ -16,5 +16,9 @@
 | RNF-12 | Control de accesos | El sistema debe identificar de forma precisa el estado de un boleto, para no autorizar accesos a las salas de cine de forma duplicada | Seguridad |
 | RNF-13 | Validación de boletos de forma manual | El sistema debe permitir al administrador validar un boleto de forma manual ante cualquier altercado con el sistema de escaneo | Disponibilidad |
 | RNF-14 | Manejo de secrets | El sistema debe manejar de forma segura los secrets de la aplicación, como las contraseñas de las bases de datos y las claves de API, en general la directivas de seguridad. | Seguridad |
+| RNF-15 | Infraestructura como código | El aprovisionamiento de los recursos en la nube debe realizarse de forma automatizada mediante Terraform, permitiendo recrear entornos completos de manera consistente y repetible. | Mantenibilidad |
+| RNF-16 | Gestión de configuración | La instalación, configuración y endurecimiento del software base en los servidores debe automatizarse mediante Ansible, sin intervención manual en cada nodo. | Mantenibilidad |
+| RNF-17 | Observabilidad centralizada | El sistema debe exponer métricas operativas para su recolección por Prometheus y visualización en Grafana mediante tableros dinámicos accesibles para el equipo administrador. | Operabilidad |
+| RNF-18 | Monitoreo en tiempo real | Los tableros de observabilidad deben actualizarse con una latencia máxima de 5 segundos bajo carga normal para reflejar el estado actual del sistema. | Rendimiento |
 
 [Volver a Documentacion](../Documentación.md)
