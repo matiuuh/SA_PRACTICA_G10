@@ -1,0 +1,46 @@
+---
+- name: Create Zot configuration directory
+  ansible.builtin.file:
+    path: /etc/zot
+    state: directory
+    mode: "0755"
+
+- name: Create Zot data directory
+  ansible.builtin.file:
+    path: /var/lib/zot
+    state: directory
+    mode: "0755"
+    owner: ubuntu
+    group: ubuntu
+
+- name: Deploy Zot configuration file
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /etc/zot/config.json
+    mode: "0644"
+
+- name: Generate htpasswd entry for registry user
+  ansible.builtin.shell:
+    cmd: >
+      docker run --rm httpd:2.4-alpine
+      htpasswd -nbB {{ zot_user }} {{ zot_pass }}
+  register: htpasswd_entry
+  changed_when: true
+
+- name: Write htpasswd file for Zot authentication
+  ansible.builtin.copy:
+    content: "{{ htpasswd_entry.stdout }}\n"
+    dest: /etc/zot/htpasswd
+    mode: "0600"
+
+- name: Run Zot registry container
+  community.docker.docker_container:
+    name: zot-registry
+    image: ghcr.io/project-zot/zot-linux-amd64:latest
+    state: started
+    restart_policy: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - /etc/zot:/etc/zot:ro
+      - /var/lib/zot:/var/lib/registry

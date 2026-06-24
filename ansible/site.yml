@@ -1,0 +1,9 @@
+---
+# Main entry point. In CI/CD, individual playbooks are invoked directly:
+#   develop → ansible/playbooks/configure_develop.yml
+#   release → ansible/playbooks/configure_release.yml
+- name: Configure FilmStars develop environment
+  import_playbook: playbooks/configure_develop.yml
+
+- name: Configure FilmStars release environment
+  import_playbook: playbooks/configure_release.yml
