@@ -66,6 +66,11 @@ spec:
                 secretKeyRef:
                   name: filmstars-secrets
                   key: JWT_SECRET
+            - name: INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: INTERNAL_SERVICE_TOKEN
             # RABBITMQ_URL se construye interpolando los secrets ya definidos arriba.
             # Kubernetes resuelve $(VAR) desde env vars del mismo contenedor.
             - name: RABBITMQ_USER

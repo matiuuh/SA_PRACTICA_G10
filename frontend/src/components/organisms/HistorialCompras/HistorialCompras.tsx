@@ -104,7 +104,7 @@ const HistorialCompras = () => {
     try {
       const result = await boletosService.getHistorial(page, meta.limit, filtros);
       setBoletos(result.data);
-      setMeta(result.meta);
+      setMeta({ ...result.meta, totalPages: Math.max(1, result.meta.totalPages) });
     } catch (err) {
       console.error('Error al cargar el historial:', err);
       setError('No se pudo cargar el historial de compras. Intenta de nuevo.');
@@ -241,8 +241,9 @@ const HistorialCompras = () => {
       )}
 
       {/* Paginación */}
-      {meta.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
+      <div className="mt-6 flex flex-col gap-3 border-t border-gray-700 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm text-gray-500">Mostrando {boletos.length} de {meta.total} boletos</span>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => cambiarPagina(meta.page - 1)}
             disabled={meta.page === 1}
@@ -261,7 +262,7 @@ const HistorialCompras = () => {
             Siguiente
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

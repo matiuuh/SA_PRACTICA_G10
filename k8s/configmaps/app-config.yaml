@@ -21,6 +21,7 @@ data:
   FUNCIONES_SERVICE_URL: "http://funciones-service:3003"
   RESERVAS_SERVICE_URL: "http://reservas-service:3004"
   PAGOS_SERVICE_URL: "http://pagos-service:3005"
+  ESCANEO_SERVICE_URL: "http://escaneo-service:3007"
   FRONTEND_URL: "http://frontend:80"
 
   # RabbitMQ
@@ -90,6 +91,15 @@ data:
   DB_HOST: "52.202.69.183"
   DB_PORT: "5437"
   DB_NAME: "pagos_service"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: escaneo-service-config
+  namespace: filmstars
+data:
+  PORT: "3007"
 
 ---
 apiVersion: v1

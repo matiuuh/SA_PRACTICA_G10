@@ -55,7 +55,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
   ];
 
   const paginaActual = meta.page;
-  const totalPaginas = meta.totalPages;
+  const totalPaginas = Math.max(1, meta.totalPages);
 
   // Funciones de navegación
   const goToFirstPage = () => onPageChange(1);
@@ -112,7 +112,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
           <div className="flex items-center gap-2">
             <FaInfoCircle className="text-yellow-500" />
             <p className="text-yellow-500 text-sm">
-              Selecciona una ciudad y un cine en el menu superior para ver la cartelera disponible.
+              Usa los filtros de ubicación de esta sección para seleccionar una ciudad y un cine.
             </p>
           </div>
         </div>
@@ -154,8 +154,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
         </p>
       </div>
 
-      {/* Grid de películas - 5 columnas fijas */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {peliculas.map((pelicula) => {
           const badge = getCategoriaBadge(pelicula.categoria);
           const BadgeIcon = badge.icon;
@@ -237,8 +236,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
       </div>
 
       {/* Componente de Paginación */}
-      {meta.total > 0 && (
-        <div className="mt-12 mb-8">
+      <div className="mt-12 mb-8">
           <div className="flex justify-center items-center gap-2 flex-wrap">
             {/* Botón Primera Página */}
             <button
@@ -307,8 +305,7 @@ const Cartelera: React.FC<CarteleraProps> = ({
               Página {paginaActual} de {totalPaginas}
             </p>
           </div>
-        </div>
-      )}
+      </div>
 
       {peliculas.length === 0 && (
         <div className="text-center py-16">

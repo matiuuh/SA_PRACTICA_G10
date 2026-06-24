@@ -32,6 +32,22 @@ services:
     networks:
       - filmstars-network
 
+  escaneo-service:
+    build:
+      context: ./services/escaneo-service
+    container_name: escaneo-service-remote
+    environment:
+      PORT: 3007
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret}
+      RESERVAS_SERVICE_URL: http://reservas-service:3004
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change_this_internal_secret}
+    ports:
+      - "3007:3007"
+    depends_on:
+      - reservas-service
+    networks:
+      - filmstars-network
+
   pagos-service:
     build:
       context: ./services/pagos-service

@@ -1,38 +1,35 @@
 // src/components/organisms/AdminValidacionBoletos/AdminValidacionBoletos.tsx
 
-import { useCallback, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import {
   FaQrcode,
   FaSearch,
-  FaCheckCircle,
   FaSpinner,
   FaChevronLeft,
   FaChevronRight,
   FaRedo,
   FaTicketAlt,
-  FaUpload,
 } from 'react-icons/fa';
 import { reservasService } from '../../../services/reservas.service';
+import { escaneoService } from '../../../services/escaneo.service';
 import { boletosService } from '../../../services/boletos.service';
 import Toast from '../../atoms/Toast/Toast';
 import TicketQr from '../../atoms/TicketQr/TicketQr';
 import AdminSeatMiniMap from '../AdminSeatMiniMap/AdminSeatMiniMap';
+import TicketCameraScanner from '../TicketCameraScanner/TicketCameraScanner';
 import type { BoletoValidacion, AdminBusquedaBoletosFiltros } from '../../../types/admin.types';
-import { readQrFromTicketFile } from '../../../utils/readQrFromTicketFile';
 
 const AdminValidacionBoletos = () => {
-  const [codigoEscaneado, setCodigoEscaneado] = useState('');
+  const [activeMode, setActiveMode] = useState<'scanner' | 'manual'>('scanner');
   const [validando, setValidando] = useState(false);
-  const [leyendoArchivo, setLeyendoArchivo] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [scannerResetKey, setScannerResetKey] = useState(0);
   const [resultadoValidacion, setResultadoValidacion] = useState<{
     success: boolean;
     message: string;
     boleto?: BoletoValidacion;
   } | null>(null);
 
-  const [busquedaActiva, setBusquedaActiva] = useState(false);
   const [filtros, setFiltros] = useState<AdminBusquedaBoletosFiltros>({
     page: 1,
     limit: 10,
@@ -54,11 +51,11 @@ const AdminValidacionBoletos = () => {
     setShowToast(true);
   };
 
-  const handleValidarCodigo = useCallback(async (codigo?: string) => {
-    const codigoAValidar = codigo?.trim() || codigoEscaneado.trim();
+  const handleValidarCodigo = useCallback(async (codigo: string) => {
+    const codigoAValidar = codigo.trim();
 
     if (!codigoAValidar) {
-      showValidationToast('Ingresa un código QR para validar.', 'error');
+      showValidationToast('No se pudo leer un código QR válido.', 'error');
       return;
     }
 
@@ -66,11 +63,11 @@ const AdminValidacionBoletos = () => {
     setResultadoValidacion(null);
 
     try {
-      const result = await reservasService.validarBoleto(codigoAValidar);
+      const result = await escaneoService.validarBoleto(codigoAValidar);
       
       setResultadoValidacion({
         success: true,
-        message: ' Boleto validado exitosamente',
+        message: 'Boleto validado exitosamente',
         boleto: result,
       });
       showValidationToast('Boleto validado correctamente', 'success');
@@ -80,40 +77,21 @@ const AdminValidacionBoletos = () => {
         : 'Error al validar el boleto';
       setResultadoValidacion({
         success: false,
-        message: ` ${mensaje}`,
+        message: mensaje,
       });
       showValidationToast(mensaje, 'error');
     } finally {
       setValidando(false);
     }
-  }, [codigoEscaneado]);
+  }, []);
 
-  const handleArchivoBoleto = useCallback(async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
+  const handleCodigoDetectado = useCallback((codigo: string) => {
+    void handleValidarCodigo(codigo);
+  }, [handleValidarCodigo]);
 
-    if (!file) return;
-
-    setLeyendoArchivo(true);
-
-    try {
-      const codigo = await readQrFromTicketFile(file);
-      setCodigoEscaneado(codigo);
-      setResultadoValidacion(null);
-      showValidationToast(
-        'Código QR leído correctamente. Presiona Validar para continuar.',
-        'success',
-      );
-    } catch (error: unknown) {
-      const message = error instanceof Error
-        ? error.message
-        : 'No se pudo leer el código QR del archivo.';
-      showValidationToast(message, 'error');
-    } finally {
-      setLeyendoArchivo(false);
-    }
+  const handleEscanearOtro = useCallback(() => {
+    setResultadoValidacion(null);
+    setScannerResetKey((current) => current + 1);
   }, []);
 
   const handleBuscarBoletos = useCallback(async (
@@ -146,7 +124,10 @@ const AdminValidacionBoletos = () => {
 
       const result = await reservasService.buscarBoletosAdmin(params);
       setFiltros(nextFilters);
-      setResultadosBusqueda(result);
+      setResultadosBusqueda({
+        ...result,
+        meta: { ...result.meta, totalPages: Math.max(1, result.meta.totalPages) },
+      });
     } catch (error: unknown) {
       const message = isAxiosError<{ message?: string }>(error)
         ? error.response?.data?.message || 'Error al buscar boletos'
@@ -185,11 +166,6 @@ const AdminValidacionBoletos = () => {
             ),
           }
         : current);
-      setResultadoValidacion({
-        success: true,
-        message: 'Boleto validado manualmente',
-        boleto: boletoActualizado,
-      });
       showValidationToast('Boleto validado manualmente', 'success');
       await handleBuscarBoletos({
         page: resultadosBusqueda?.meta.page ?? 1,
@@ -359,77 +335,106 @@ const AdminValidacionBoletos = () => {
         </div>
       </div>
 
-      <div className="bg-cinema-dark-900/50 rounded-xl p-5 border border-gray-700">
-        <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-          <FaQrcode className="text-cinema-gold-500" />
-          Escaneo rápido
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="Ingresa el código QR del boleto..."
-            value={codigoEscaneado}
-            onChange={(e) => setCodigoEscaneado(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void handleValidarCodigo(); }}
-            className="flex-1 px-4 py-2.5 bg-cinema-dark-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-cinema-gold-500 focus:outline-none text-sm"
-          />
-          <button
-            onClick={() => void handleValidarCodigo()}
-            disabled={validando || leyendoArchivo}
-            className="px-6 py-2.5 bg-cinema-red-500 hover:bg-cinema-red-600 text-white rounded-lg font-semibold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {validando ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
-            Validar
-          </button>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
-            onChange={(event) => void handleArchivoBoleto(event)}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={leyendoArchivo || validando}
-            className="flex items-center gap-2 rounded-lg border border-cinema-gold-500/40 bg-cinema-gold-500/10 px-4 py-2 text-sm font-semibold text-cinema-gold-400 transition-colors hover:bg-cinema-gold-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {leyendoArchivo ? <FaSpinner className="animate-spin" /> : <FaUpload />}
-            {leyendoArchivo ? 'Leyendo boleto...' : 'Subir boleto'}
-          </button>
-          <p className="text-xs text-gray-500">
-            PDF, PNG, JPG o WEBP.
-          </p>
-        </div>
-
-        {resultadoValidacion && (
-          <div className={`mt-4 p-4 rounded-xl border ${
-            resultadoValidacion.success
-              ? 'bg-green-500/10 border-green-500/40'
-              : 'bg-red-500/10 border-red-500/40'
-          }`}>
-            <p className={`font-semibold ${resultadoValidacion.success ? 'text-green-400' : 'text-red-400'}`}>
-              {resultadoValidacion.message}
-            </p>
-            {resultadoValidacion.boleto && renderBoletoDetalle(resultadoValidacion.boleto, true)}
-          </div>
-        )}
-      </div>
-
-      <div className="bg-cinema-dark-900/50 rounded-xl p-5 border border-gray-700">
+      <div
+        role="tablist"
+        aria-label="Método de validación"
+        className="grid grid-cols-2 gap-1 rounded-xl border border-gray-700 bg-cinema-dark-900/70 p-1"
+      >
         <button
-          onClick={() => setBusquedaActiva(!busquedaActiva)}
-          className="flex items-center gap-2 text-white font-semibold hover:text-cinema-gold-500 transition-colors"
+          id="ticket-scanner-tab"
+          type="button"
+          role="tab"
+          aria-controls="ticket-scanner-panel"
+          aria-selected={activeMode === 'scanner'}
+          onClick={() => setActiveMode('scanner')}
+          className={`flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
+            activeMode === 'scanner'
+              ? 'bg-cinema-red-500 text-white shadow-lg shadow-cinema-red-500/20'
+              : 'text-gray-400 hover:bg-cinema-dark-800 hover:text-white'
+          }`}
+        >
+          <FaQrcode />
+          Escanear boleto
+        </button>
+        <button
+          id="ticket-manual-tab"
+          type="button"
+          role="tab"
+          aria-controls="ticket-manual-panel"
+          aria-selected={activeMode === 'manual'}
+          onClick={() => setActiveMode('manual')}
+          className={`flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
+            activeMode === 'manual'
+              ? 'bg-cinema-gold-500 text-cinema-dark-900 shadow-lg shadow-cinema-gold-500/20'
+              : 'text-gray-400 hover:bg-cinema-dark-800 hover:text-white'
+          }`}
         >
           <FaSearch />
-          {busquedaActiva ? 'Ocultar búsqueda avanzada' : 'Búsqueda avanzada'}
+          Validación manual
         </button>
+      </div>
 
-        {busquedaActiva && (
-          <form onSubmit={handleSubmitBusqueda} className="mt-4 space-y-4">
+      {activeMode === 'scanner' && (
+        <div
+          id="ticket-scanner-panel"
+          role="tabpanel"
+          aria-labelledby="ticket-scanner-tab"
+          className="bg-cinema-dark-900/50 rounded-xl p-5 border border-gray-700"
+        >
+          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <FaQrcode className="text-cinema-gold-500" />
+            Cámara de acceso
+          </h3>
+
+          {!resultadoValidacion && (
+            <TicketCameraScanner
+              disabled={validando}
+              resetKey={scannerResetKey}
+              onDetected={handleCodigoDetectado}
+            />
+          )}
+
+          {resultadoValidacion && (
+            <div className={`p-4 rounded-xl border ${
+              resultadoValidacion.success
+                ? 'bg-green-500/10 border-green-500/40'
+                : 'bg-red-500/10 border-red-500/40'
+            }`}>
+              <p className={`font-semibold ${resultadoValidacion.success ? 'text-green-400' : 'text-red-400'}`}>
+                {resultadoValidacion.message}
+              </p>
+              {resultadoValidacion.boleto && renderBoletoDetalle(resultadoValidacion.boleto, true)}
+              <button
+                type="button"
+                onClick={handleEscanearOtro}
+                className="mt-4 flex items-center gap-2 rounded-lg bg-cinema-gold-500 px-4 py-2 text-sm font-bold text-cinema-dark-900 transition-colors hover:bg-cinema-gold-400"
+              >
+                <FaRedo />
+                Escanear otro boleto
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeMode === 'manual' && (
+        <div
+          id="ticket-manual-panel"
+          role="tabpanel"
+          aria-labelledby="ticket-manual-tab"
+          className="bg-cinema-dark-900/50 rounded-xl p-5 border border-gray-700"
+        >
+          <div className="mb-4">
+            <h3 className="flex items-center gap-2 font-semibold text-white">
+              <FaSearch className="text-cinema-gold-500" />
+              Buscar boleto
+            </h3>
+            <p className="mt-1 text-xs text-gray-400">
+              Localiza un boleto por sus datos y valida el acceso manualmente.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmitBusqueda} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="block text-gray-400 text-xs mb-1">ID o Código QR</label>
@@ -531,8 +536,7 @@ const AdminValidacionBoletos = () => {
                   </div>
                 )}
 
-                {resultadosBusqueda.meta.totalPages > 1 && (
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-700">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-700 pt-3">
                     <button
                       onClick={() => handleCambiarPagina(resultadosBusqueda.meta.page - 1)}
                       disabled={resultadosBusqueda.meta.page === 1}
@@ -550,8 +554,7 @@ const AdminValidacionBoletos = () => {
                     >
                       Siguiente <FaChevronRight className="text-xs" />
                     </button>
-                  </div>
-                )}
+                </div>
               </div>
             )}
 
@@ -569,8 +572,8 @@ const AdminValidacionBoletos = () => {
               </div>
             )}
           </form>
-        )}
-      </div>
+        </div>
+      )}
 
       {showToast && (
         <Toast message={toastMessage} type={toastType} onClose={() => setShowToast(false)} />

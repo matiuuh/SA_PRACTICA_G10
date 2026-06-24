@@ -357,7 +357,7 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
 
   if (loadingCatalogos) {
     return (
-      <div className="cinema-card p-6">
+      <div className="cinema-card p-4 sm:p-6">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinema-gold-500"></div>
         </div>
@@ -370,12 +370,12 @@ const AdminPeliculas: React.FC<AdminPeliculasProps> = ({ peliculas, onAgregar, o
 
   return (
     <>
-      <div className="cinema-card p-6">
+      <div className="cinema-card p-4 sm:p-6">
         <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
           <h2 className="text-xl font-bold text-white">Gestión de Películas</h2>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-cinema-red-500 px-4 py-2 text-white transition-all hover:bg-cinema-red-600 sm:w-auto"
           >
             <FaPlus />
             Agregar Película
