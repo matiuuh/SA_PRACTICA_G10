@@ -17,7 +17,7 @@ resource "aws_security_group" "develop" {
   vpc_id      = module.networking.vpc_id
 
   ingress {
-    description = "SSH — Ansible and CI/CD access"
+    description = "SSH - Ansible and CI/CD access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -80,7 +80,7 @@ module "compute" {
 
   instances = {
     "develop-server" = {
-      instance_type = "t3.medium"
+      instance_type = "t3.small"
       volume_size   = 30
     }
   }

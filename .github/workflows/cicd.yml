@@ -141,12 +141,12 @@ jobs:
   # ════════════════════════════════════════════════════════════════════════════
   # FASE 2b — BUILD & PUSH A DOCKERHUB  (solo rama develop)
   # Publica imagenes con tag :latest para el entorno de staging en EC2.
-  # Corre en PARALELO con terraform-develop.
+  # Depende de terraform-develop para obtener la IP publica del servidor.
   # ════════════════════════════════════════════════════════════════════════════
   build-push-develop:
     name: "Fase 2 · Build & Push a DockerHub (develop)"
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, terraform-develop]
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
@@ -212,8 +212,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://localhost:3006
-            VITE_RESERVAS_WS_URL=http://localhost:3004
+            VITE_API_GATEWAY_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3006
+            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3004
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
       - name: Notificar fallo de build
