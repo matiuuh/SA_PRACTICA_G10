@@ -1,49 +1,27 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# Ingress Controller — nginx-ingress (instalable en K3s con):
-#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml
+# PUBLIC_HOST se inyecta en el pipeline de release como:
+#   <k3s_master_ip>.sslip.io
 #
-# Traefik (default K3s): cambiar ingressClassName: traefik y eliminar
-# la anotación nginx.ingress.kubernetes.io/rewrite-target.
-#
-# Routing:
-#   /socket.io/*  →  reservas-service:3004 (Socket.IO / WebSockets)
-#   /api/*        →  api-gateway:3006      (se preserva el prefijo /api)
-#   /*            →  frontend:80
-# ──────────────────────────────────────────────────────────────────────────────
-
-# Ingress para el API Gateway preservando el prefijo /api
+# sslip.io resuelve automaticamente ese hostname a la IP publica, por lo que
+# no se necesita comprar dominio. cert-manager emite un certificado valido con
+# Let's Encrypt y el navegador habilita getUserMedia para la camara.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: api-gateway-ingress
-  namespace: filmstars
-spec:
-  ingressClassName: nginx
-  rules:
-    - http:
-        paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: api-gateway
-                port:
-                  number: 3006
-
----
-# Ingress para Socket.IO / WebSockets de reservas-service
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: reservas-ws-ingress
+  name: filmstars-ingress
   namespace: filmstars
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-http01
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - ${PUBLIC_HOST}
+      secretName: filmstars-tls
   rules:
-    - http:
+    - host: ${PUBLIC_HOST}
+      http:
         paths:
           - path: /socket.io
             pathType: Prefix
@@ -52,19 +30,13 @@ spec:
                 name: reservas-service
                 port:
                   number: 3004
-
----
-# Ingress para el Frontend (catch-all, debe ir después del de la API)
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: frontend-ingress
-  namespace: filmstars
-spec:
-  ingressClassName: nginx
-  rules:
-    - http:
-        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 3006
           - path: /
             pathType: Prefix
             backend:

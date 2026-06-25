@@ -51,7 +51,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s etcd peer communication (intra-cluster)"
+    description = "K3s - etcd peer communication (intra-cluster)"
     from_port   = 2379
     to_port     = 2380
     protocol    = "tcp"
@@ -59,7 +59,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s kubelet and controller-manager (intra-cluster)"
+    description = "K3s - kubelet and controller-manager (intra-cluster)"
     from_port   = 10250
     to_port     = 10252
     protocol    = "tcp"
@@ -67,7 +67,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s Flannel VXLAN overlay (intra-cluster)"
+    description = "K3s - Flannel VXLAN overlay (intra-cluster)"
     from_port   = 8472
     to_port     = 8472
     protocol    = "udp"

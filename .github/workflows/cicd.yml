@@ -323,8 +323,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3006
-            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3004
+            VITE_API_GATEWAY_URL=
+            VITE_RESERVAS_WS_URL=
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
       - name: Notificar fallo de build
@@ -572,8 +572,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ needs.terraform-release.outputs.k3s_master_ip }}/api
-            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-release.outputs.k3s_master_ip }}/socket.io
+            VITE_API_GATEWAY_URL=
+            VITE_RESERVAS_WS_URL=
           tags: |
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
@@ -634,7 +634,9 @@ jobs:
           ansible-playbook ansible/playbooks/configure_release.yml \
             -i /tmp/inventory-release.ini \
             --extra-vars "zot_user=${{ secrets.REGISTRY_USER }} \
-              zot_pass=${{ secrets.REGISTRY_PASS }}"
+              zot_pass=${{ secrets.REGISTRY_PASS }} \
+              grafana_admin_user=${{ secrets.GRAFANA_ADMIN_USER }} \
+              grafana_admin_password=${{ secrets.GRAFANA_ADMIN_PASSWORD }}"
 
       - name: Subir kubeconfig como artifact para deploy-k3s
         uses: actions/upload-artifact@v4
@@ -683,6 +685,24 @@ jobs:
       - name: Verificar conexion al cluster
         run: kubectl cluster-info
 
+      - name: Instalar ingress-nginx
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml
+          kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
+
+      - name: Instalar cert-manager
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml
+          kubectl wait --for=condition=Established crd/clusterissuers.cert-manager.io --timeout=120s
+          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=180s
+          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=180s
+          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=180s
+
+      - name: Configurar ClusterIssuer de Let's Encrypt
+        env:
+          LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL || 'filmstars@example.com' }}
+        run: envsubst < k8s/cert-manager/cluster-issuer.yaml | kubectl apply -f -
+
       - name: Aplicar Namespace
         run: kubectl apply -f k8s/namespace.yaml
 
@@ -727,7 +747,13 @@ jobs:
           done
 
       - name: Aplicar Ingress
-        run: kubectl apply -f k8s/ingress/
+        env:
+          PUBLIC_HOST: "${{ needs.terraform-release.outputs.k3s_master_ip }}.sslip.io"
+        run: |
+          for f in k8s/ingress/*.yaml; do
+            envsubst < "$f" | kubectl apply -f -
+          done
+          echo "Frontend HTTPS: https://${PUBLIC_HOST}"
 
       - name: Verificar rollout y revertir en caso de fallo
         run: |

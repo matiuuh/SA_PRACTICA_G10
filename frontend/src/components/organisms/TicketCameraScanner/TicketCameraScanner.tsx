@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaCamera, FaRedo, FaSpinner } from 'react-icons/fa';
-import { TicketScannerService } from '../../../services/ticket-scanner.service';
+import { TicketScannerService, SCANNER_ELEMENT_ID } from '../../../services/ticket-scanner.service';
 
 interface TicketCameraScannerProps {
   disabled?: boolean;
@@ -29,7 +29,6 @@ const cameraErrorMessage = (error: unknown): string => {
 };
 
 const TicketCameraScanner = ({ disabled = false, resetKey, onDetected }: TicketCameraScannerProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<TicketScannerService | null>(null);
   const onDetectedRef = useRef(onDetected);
   const [starting, setStarting] = useState(false);
@@ -48,7 +47,7 @@ const TicketCameraScanner = ({ disabled = false, resetKey, onDetected }: TicketC
   }, []);
 
   const startCamera = useCallback(async () => {
-    if (!videoRef.current || disabled) return;
+    if (disabled) return;
 
     stopCamera();
     setStarting(true);
@@ -58,7 +57,7 @@ const TicketCameraScanner = ({ disabled = false, resetKey, onDetected }: TicketC
     scannerRef.current = scanner;
 
     try {
-      await scanner.start(videoRef.current, (code) => {
+      await scanner.start(SCANNER_ELEMENT_ID, (code) => {
         setActive(false);
         onDetectedRef.current(code);
       });
@@ -90,16 +89,14 @@ const TicketCameraScanner = ({ disabled = false, resetKey, onDetected }: TicketC
   return (
     <div className="space-y-3">
       <div className="relative mx-auto aspect-[4/3] w-full max-w-2xl overflow-hidden rounded-2xl border border-cinema-gold-500/30 bg-black">
-        <video
-          ref={videoRef}
-          className="h-full w-full object-cover"
-          muted
-          playsInline
+        <div
+          id={SCANNER_ELEMENT_ID}
+          className="h-full w-full"
           aria-label="Vista de la cámara para escanear el código QR"
         />
 
         {!active && !error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-cinema-dark-900/90 text-gray-300">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-cinema-dark-900/90 text-gray-300">
             {starting || disabled ? (
               <FaSpinner className="animate-spin text-3xl text-cinema-gold-500" />
             ) : (

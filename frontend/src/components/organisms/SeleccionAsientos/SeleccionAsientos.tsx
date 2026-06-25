@@ -24,11 +24,28 @@ interface SeleccionAsientosProps {
 }
 
 const ROW_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const RESERVAS_WS_URL = (() => {
+const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
+const DEFAULT_SOCKET_IO_PATH = '/socket.io';
+
+const normalizeReservasWsEndpoint = (url: string) => {
+  const parsedUrl = new URL(url);
+  const path = parsedUrl.pathname === '/' ? DEFAULT_SOCKET_IO_PATH : parsedUrl.pathname.replace(/\/$/, '');
+
+  return {
+    origin: parsedUrl.origin,
+    path,
+  };
+};
+
+const RESERVAS_WS_ENDPOINT = (() => {
   const explicitWsUrl = import.meta.env.VITE_RESERVAS_WS_URL?.trim();
 
   if (explicitWsUrl) {
-    return explicitWsUrl;
+    try {
+      return normalizeReservasWsEndpoint(explicitWsUrl);
+    } catch {
+      // Ignore malformed env values and fall back to derived defaults.
+    }
   }
 
   const apiGatewayUrl = import.meta.env.VITE_API_GATEWAY_URL?.trim();
@@ -37,19 +54,35 @@ const RESERVAS_WS_URL = (() => {
     try {
       const parsedApiGatewayUrl = new URL(apiGatewayUrl);
 
-      if (['localhost', '127.0.0.1'].includes(parsedApiGatewayUrl.hostname)) {
-        return `${parsedApiGatewayUrl.protocol}//${parsedApiGatewayUrl.hostname}:3004`;
+      if (LOCAL_HOSTS.includes(parsedApiGatewayUrl.hostname) || parsedApiGatewayUrl.port === '3006') {
+        return {
+          origin: `${parsedApiGatewayUrl.protocol}//${parsedApiGatewayUrl.hostname}:3004`,
+          path: DEFAULT_SOCKET_IO_PATH,
+        };
       }
     } catch {
       // Ignore malformed env values and fall back to local defaults.
     }
   }
 
-  if (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
-    return `${window.location.protocol}//${window.location.hostname}:3004`;
+  if (typeof window !== 'undefined') {
+    if (LOCAL_HOSTS.includes(window.location.hostname)) {
+      return {
+        origin: `${window.location.protocol}//${window.location.hostname}:3004`,
+        path: DEFAULT_SOCKET_IO_PATH,
+      };
+    }
+
+    return {
+      origin: window.location.origin,
+      path: DEFAULT_SOCKET_IO_PATH,
+    };
   }
 
-  return 'http://localhost:3004';
+  return {
+    origin: 'http://localhost:3004',
+    path: DEFAULT_SOCKET_IO_PATH,
+  };
 })();
 
 const createSeatBlueprint = (capacidadSala: number) => {
@@ -160,7 +193,8 @@ const SeleccionAsientos: React.FC<SeleccionAsientosProps> = ({
   }, [loadAsientos]);
 
   useEffect(() => {
-    const reservasSocket = io(`${RESERVAS_WS_URL}/reservas`, {
+    const reservasSocket = io(`${RESERVAS_WS_ENDPOINT.origin}/reservas`, {
+      path: RESERVAS_WS_ENDPOINT.path,
       transports: ['websocket'],
     });
 
