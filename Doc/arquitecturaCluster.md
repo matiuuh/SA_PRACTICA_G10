@@ -83,19 +83,20 @@ Los recursos se definen con `requests` y `limits`.
 ### Ingress Controller 
 
 El Ingress Controller corre en el namespace `ingress-nginx` como un pod de sistema.
-Es el **único punto de entrada de tráfico externo** al clúster. Recibe el tráfico público
-que entregue la nube (HTTP o HTTPS) y aplica las siguientes reglas de enrutamiento:
+Es el **único punto de entrada de tráfico externo** al clúster. En release publica
+el sitio con TLS usando `https://<ip-publica>.sslip.io`, sin requerir un dominio
+comprado, y aplica las siguientes reglas de enrutamiento:
 
 ```
-Tráfico externo: https://<origen-publico>
+Tráfico externo: https://<ip-publica>.sslip.io
     │
-    ├─ GET /           → Service: frontend:80   (archivos estáticos React)
-    └─ GET /api/*      → Service: api-gateway:3006
+    ├─ GET /socket.io/* → Service: reservas-service:3004 (WebSockets)
+    ├─ GET /api/*       → Service: api-gateway:3006
+    └─ GET /            → Service: frontend:80   (archivos estáticos React)
 ```
 
-La anotación `nginx.ingress.kubernetes.io/rewrite-target: /$2` elimina el prefijo `/api`
-antes de reenviar la solicitud al api-gateway, de modo que éste recibe rutas limpias
-como `/auth/login`, `/funciones`, `/reservas`, etc.
+El prefijo `/api` se preserva porque el API Gateway enruta sus microservicios a partir
+de rutas como `/api/auth`, `/api/funciones` y `/api/reservas`.
 
 Ningún microservicio backend tiene un Ingress propio; toda comunicación externa
 pasa obligatoriamente por este único controlador.
