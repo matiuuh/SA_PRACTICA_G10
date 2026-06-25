@@ -2,8 +2,21 @@ name: CI/CD FilmStars
 
 # ──────────────────────────────────────────────────────────────────────────────
 # FLUJOS:
-#   develop → Test → Build/Push DockerHub   → Deploy Docker Compose (self-hosted)
-#   release → Test → Build/Push Harbor/Zot  → Deploy K3s AWS
+#   develop → Test → [Terraform Develop ‖ Build/Push DockerHub]
+#           → Ansible Deploy Docker Compose (EC2 AWS)
+#
+#   release → Test → Terraform Release
+#           → [Build/Push Zot ‖ Ansible K3s Setup]
+#           → Deploy K3s AWS
+#
+# Secrets de AWS/IaC requeridos (ademas de los existentes):
+#   AWS_ACCESS_KEY_ID      — credenciales AWS
+#   AWS_SECRET_ACCESS_KEY  — credenciales AWS
+#   AWS_REGION             — region AWS (ej: us-east-1)
+#   TF_STATE_BUCKET        — bucket S3 para el estado de Terraform
+#   TF_STATE_LOCK_TABLE    — tabla DynamoDB para el bloqueo de estado
+#   EC2_KEY_NAME           — nombre del key pair EC2 en AWS
+#   EC2_SSH_PRIVATE_KEY    — clave privada PEM para SSH a las instancias EC2
 # ──────────────────────────────────────────────────────────────────────────────
 on:
   push:
@@ -61,13 +74,79 @@ jobs:
           echo "::error::FASE 1 FALLIDA — ${{ matrix.service }} no alcanzo el 75% de cobertura minima requerida. Pipeline detenido."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2a — BUILD & PUSH A DOCKERHUB  (solo rama develop)
-  # Publica imagenes con tag :latest para el entorno de staging local.
+  # FASE 2a — TERRAFORM DEVELOP  (solo rama develop)
+  # Aprovisiona VPC, subnet, security group y EC2 t3.medium en AWS.
+  # Usa S3 como backend remoto con bloqueo DynamoDB.
+  # Corre en PARALELO con build-push-develop (ambos dependen solo de test).
+  # ════════════════════════════════════════════════════════════════════════════
+  terraform-develop:
+    name: "Fase 2 · Terraform – Infraestructura Develop (AWS)"
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    outputs:
+      server_ip: ${{ steps.tf_output.outputs.server_ip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Terraform Init
+        working-directory: terraform/environments/develop
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_STATE_LOCK_TABLE }}"
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/develop
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/develop
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_region=${{ secrets.AWS_REGION }}" \
+            -var="key_name=${{ secrets.EC2_KEY_NAME }}"
+
+      - name: Capturar IP del servidor develop
+        id: tf_output
+        working-directory: terraform/environments/develop
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: echo "server_ip=$(terraform output -raw develop_server_ip)" >> $GITHUB_OUTPUT
+
+      - name: Notificar fallo de Terraform develop
+        if: failure()
+        run: |
+          echo "::error::FASE 2 FALLIDA — Error al aprovisionar infraestructura develop con Terraform."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 2b — BUILD & PUSH A DOCKERHUB  (solo rama develop)
+  # Publica imagenes con tag :latest para el entorno de staging en EC2.
+  # Depende de terraform-develop para obtener la IP publica del servidor.
   # ════════════════════════════════════════════════════════════════════════════
   build-push-develop:
     name: "Fase 2 · Build & Push a DockerHub (develop)"
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, terraform-develop]
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
@@ -133,8 +212,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://localhost:3006
-            VITE_RESERVAS_WS_URL=http://localhost:3004
+            VITE_API_GATEWAY_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3006
+            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3004
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
       - name: Notificar fallo de build
@@ -143,23 +222,144 @@ jobs:
           echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en DockerHub. Pipeline detenido."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2b — BUILD & PUSH AL REGISTRY PRIVADO  (solo rama release)
-  # Publica imagenes con tag :latest y :<sha_corto> en Harbor/Zot.
-  # El SHA garantiza trazabilidad e inmutabilidad del artefacto desplegado.
-  #
-  # Secrets requeridos:
-  #   REGISTRY_HOST  — hostname del registry privado (ej: registry.filmstars.io)
-  #   REGISTRY_USER  — usuario de Harbor/Zot
-  #   REGISTRY_PASS  — contraseña de Harbor/Zot
-  #   K3S_INGRESS_HOST — IP o dominio publico del Ingress del cluster K3s
+  # FASE 3a — ANSIBLE DEPLOY DEVELOP  (solo rama develop)
+  # Configura la EC2 con Docker e instala/actualiza el stack via Docker Compose.
+  # El .env se genera desde ansible/templates/develop_env.j2 con los secrets.
+  # La IP del servidor viene del output de terraform-develop.
   # ════════════════════════════════════════════════════════════════════════════
-  build-push-release:
-    name: "Fase 2 · Build & Push a Registry Privado (release)"
+  ansible-develop:
+    name: "Fase 3 · Ansible – Configurar y Desplegar Develop (EC2)"
+    runs-on: ubuntu-latest
+    needs: [terraform-develop, build-push-develop]
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Ansible y colecciones requeridas
+        run: |
+          pip install ansible
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Configurar clave SSH para EC2
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/filmstars_ec2.pem
+          chmod 600 ~/.ssh/filmstars_ec2.pem
+
+      - name: Generar inventario Ansible dinamico
+        env:
+          SERVER_IP: ${{ needs.terraform-develop.outputs.server_ip }}
+        run: |
+          cat > /tmp/inventory-develop.ini << EOF
+          [develop_servers]
+          ${SERVER_IP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/filmstars_ec2.pem
+          EOF
+
+      - name: Ejecutar playbook configure_develop
+        env:
+          ANSIBLE_CONFIG: ansible/ansible.cfg
+        run: |
+          ansible-playbook ansible/playbooks/configure_develop.yml \
+            -i /tmp/inventory-develop.ini \
+            --extra-vars "project_root=$GITHUB_WORKSPACE \
+              dockerhub_username=${{ secrets.DOCKERHUB_USERNAME }} \
+              postgres_password=${{ secrets.POSTGRES_PASSWORD }} \
+              jwt_secret=${{ secrets.JWT_SECRET }} \
+              rabbitmq_user=${{ secrets.RABBITMQ_USER }} \
+              rabbitmq_pass=${{ secrets.RABBITMQ_PASS }} \
+              internal_service_token=${{ secrets.INTERNAL_SERVICE_TOKEN }}"
+
+      - name: Notificar fallo de despliegue develop
+        if: failure()
+        run: |
+          echo "::error::FASE 3 FALLIDA — Error al configurar o desplegar en el servidor develop EC2."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 2c — TERRAFORM RELEASE  (solo rama release)
+  # Aprovisiona K3s master, 2 workers y el registry Zot en AWS.
+  # Los outputs (IPs de EC2) alimentan los jobs de build y Ansible en paralelo.
+  # ════════════════════════════════════════════════════════════════════════════
+  terraform-release:
+    name: "Fase 2 · Terraform – Infraestructura Release (AWS)"
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/release'
     outputs:
+      k3s_master_ip:   ${{ steps.tf_output.outputs.k3s_master_ip }}
+      k3s_worker_1_ip: ${{ steps.tf_output.outputs.k3s_worker_1_ip }}
+      k3s_worker_2_ip: ${{ steps.tf_output.outputs.k3s_worker_2_ip }}
+      registry_ip:     ${{ steps.tf_output.outputs.registry_ip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Terraform Init
+        working-directory: terraform/environments/release
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_STATE_LOCK_TABLE }}"
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/release
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/release
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_region=${{ secrets.AWS_REGION }}" \
+            -var="key_name=${{ secrets.EC2_KEY_NAME }}"
+
+      - name: Capturar IPs del cluster y registry
+        id: tf_output
+        working-directory: terraform/environments/release
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: |
+          echo "k3s_master_ip=$(terraform output -raw k3s_master_ip)"     >> $GITHUB_OUTPUT
+          echo "k3s_worker_1_ip=$(terraform output -raw k3s_worker_1_ip)" >> $GITHUB_OUTPUT
+          echo "k3s_worker_2_ip=$(terraform output -raw k3s_worker_2_ip)" >> $GITHUB_OUTPUT
+          echo "registry_ip=$(terraform output -raw registry_ip)"         >> $GITHUB_OUTPUT
+
+      - name: Notificar fallo de Terraform release
+        if: failure()
+        run: |
+          echo "::error::FASE 2 FALLIDA — Error al aprovisionar infraestructura release con Terraform."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 3b — BUILD & PUSH AL REGISTRY PRIVADO  (solo rama release)
+  # Publica imagenes con tag :latest y :<sha_corto> en Zot (EC2 provisionada).
+  # REGISTRY_HOST se obtiene del output de terraform-release (IP:5000).
+  # Corre en PARALELO con ansible-release.
+  # ════════════════════════════════════════════════════════════════════════════
+  build-push-release:
+    name: "Fase 3 · Build & Push a Registry Privado (release)"
+    runs-on: ubuntu-latest
+    needs: [test, terraform-release]
+    if: github.ref == 'refs/heads/release'
+    outputs:
       sha_short: ${{ steps.vars.outputs.sha_short }}
+    env:
+      REGISTRY_HOST: "${{ needs.terraform-release.outputs.registry_ip }}:5000"
     steps:
       - uses: actions/checkout@v4
 
@@ -169,14 +369,11 @@ jobs:
 
       - name: Normalizar REGISTRY_HOST
         run: |
-          CLEAN_HOST="$(printf '%s' '${{ secrets.REGISTRY_HOST }}' | tr -d '\r\n\t ')"
+          CLEAN_HOST="$(printf '%s' '${{ env.REGISTRY_HOST }}' | tr -d '\r\n\t ')"
           echo "REGISTRY_HOST_CLEAN=$CLEAN_HOST" >> $GITHUB_ENV
-          echo "Registry host normalizado."
+          echo "Registry host normalizado: $CLEAN_HOST"
 
-      # ─── Configurar buildx para registry HTTP (Zot sin TLS) ──────────
-      # Zot corre en HTTP (puerto 5000). Escribimos el config de buildkit
-      # a un archivo (evita problemas de parsing TOML con secrets inline)
-      # y se lo pasamos a buildx como archivo.
+      # ─── Configurar buildx para registry HTTP (Zot sin TLS) ──────────────
       - name: Crear config de buildkit para registry HTTP
         run: |
           printf '[registry."%s"]\n  http = true\n  insecure = true\n' "$REGISTRY_HOST_CLEAN" > /tmp/buildkitd.toml
@@ -202,8 +399,6 @@ jobs:
             }
           }
           EOF
-          echo "=== Docker config ==="
-          cat "$HOME/.docker/config.json"
 
       - name: Build y push auth-service
         uses: docker/build-push-action@v6
@@ -273,10 +468,9 @@ jobs:
         with:
           context: ./frontend
           push: true
-          # VITE_API_GATEWAY_URL apunta al Ingress del cluster K3s con el prefijo /api
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
-            VITE_RESERVAS_WS_URL=${{ secrets.RESERVAS_WS_URL }}
+            VITE_API_GATEWAY_URL=http://${{ needs.terraform-release.outputs.k3s_master_ip }}/api
+            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-release.outputs.k3s_master_ip }}/socket.io
           tags: |
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
@@ -284,77 +478,93 @@ jobs:
       - name: Notificar fallo de build
         if: failure()
         run: |
-          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en el Registry Privado. Pipeline detenido."
+          echo "::error::FASE 3 FALLIDA — Error al construir o publicar las imagenes en el Registry Privado. Pipeline detenido."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3a — DEPLOY DOCKER COMPOSE  (solo rama develop)
-  # Corre en la maquina del equipo via self-hosted runner.
-  # Descarga las imagenes de DockerHub y levanta todos los servicios localmente.
+  # FASE 3c — ANSIBLE CONFIGURE RELEASE  (solo rama release)
+  # Instala K3s en master y workers; instala Zot en registry.
+  # El kubeconfig generado se guarda como artifact y lo consume deploy-k3s.
+  # Corre en PARALELO con build-push-release.
   # ════════════════════════════════════════════════════════════════════════════
-  deploy-develop:
-    name: "Fase 3 · Deploy Docker Compose – Staging (develop)"
-    runs-on: self-hosted
-    needs: build-push-develop
-    if: github.ref == 'refs/heads/develop'
+  ansible-release:
+    name: "Fase 3 · Ansible – Configurar K3s y Registry (release)"
+    runs-on: ubuntu-latest
+    needs: terraform-release
+    if: github.ref == 'refs/heads/release'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Crear archivo .env local
-        shell: powershell
+      - name: Instalar Ansible y colecciones requeridas
         run: |
-          $utf8NoBOM = New-Object System.Text.UTF8Encoding $false
-          $lines = @(
-            "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
-            "VITE_API_GATEWAY_URL=http://localhost:3006",
-            "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}",
-            "JWT_SECRET=${{ secrets.JWT_SECRET }}",
-            "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}",
-            "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}",
-            "INTERNAL_SERVICE_TOKEN=${{ secrets.INTERNAL_SERVICE_TOKEN }}"
-          )
-          [System.IO.File]::WriteAllLines(".env", $lines, $utf8NoBOM)
+          pip install ansible
+          ansible-galaxy collection install -r ansible/requirements.yml
 
-      - name: Pull imagenes desde DockerHub
-        run: docker compose pull
-
-      - name: Levantar servicios
-        shell: powershell
+      - name: Configurar clave SSH para EC2
         run: |
-          $ErrorActionPreference = 'Continue'
-          docker compose down --volumes
-          $names = @(
-            "rabbitmq",
-            "auth-service", "localidades-service", "funciones-service", "reservas-service", "pagos-service", "escaneo-service",
-            "api-gateway", "frontend",
-            "postgres-auth", "postgres-localidades", "postgres-funciones", "postgres-reservas", "postgres-pagos"
-          )
-          foreach ($name in $names) {
-            docker rm -f $name 2>&1 | Out-Null
-          }
-          docker compose up -d
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/filmstars_ec2.pem
+          chmod 600 ~/.ssh/filmstars_ec2.pem
 
-      - name: Limpiar imagenes antiguas
-        run: docker image prune -f
+      - name: Generar inventario Ansible dinamico
+        env:
+          MASTER_IP:   ${{ needs.terraform-release.outputs.k3s_master_ip }}
+          WORKER1_IP:  ${{ needs.terraform-release.outputs.k3s_worker_1_ip }}
+          WORKER2_IP:  ${{ needs.terraform-release.outputs.k3s_worker_2_ip }}
+          REGISTRY_IP: ${{ needs.terraform-release.outputs.registry_ip }}
+        run: |
+          cat > /tmp/inventory-release.ini << EOF
+          [k3s_master]
+          ${MASTER_IP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/filmstars_ec2.pem
+
+          [k3s_workers]
+          ${WORKER1_IP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/filmstars_ec2.pem
+          ${WORKER2_IP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/filmstars_ec2.pem
+
+          [registry]
+          ${REGISTRY_IP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/filmstars_ec2.pem
+
+          [k3s_cluster:children]
+          k3s_master
+          k3s_workers
+          EOF
+
+      - name: Ejecutar playbook configure_release
+        env:
+          ANSIBLE_CONFIG: ansible/ansible.cfg
+        run: |
+          ansible-playbook ansible/playbooks/configure_release.yml \
+            -i /tmp/inventory-release.ini \
+            --extra-vars "zot_user=${{ secrets.REGISTRY_USER }} \
+              zot_pass=${{ secrets.REGISTRY_PASS }}"
+
+      - name: Subir kubeconfig como artifact para deploy-k3s
+        uses: actions/upload-artifact@v4
+        with:
+          name: k3s-kubeconfig
+          path: /tmp/k3s-kubeconfig.yaml
+          retention-days: 1
+
+      - name: Notificar fallo de configuracion Ansible release
+        if: failure()
+        run: |
+          echo "::error::FASE 3 FALLIDA — Error al configurar el cluster K3s o el registry con Ansible."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3b — DEPLOY K3S AWS  (solo rama release)
+  # FASE 4 — DEPLOY K3S AWS  (solo rama release)
   # Aplica los manifiestos de k8s/ al cluster con kubectl.
   # Orden: namespace → configmaps → secrets → storage → infra → apps → ingress
   # Verifica rollout de cada deployment; en fallo ejecuta kubectl rollout undo.
-  #
-  # Secrets requeridos:
-  #   KUBECONFIG_RAW  — kubeconfig del cluster K3s en YAML plano
-  #                     (obtener en el master: cat /etc/rancher/k3s/k3s.yaml)
-  #                     Reemplazar 127.0.0.1 por la IP publica del nodo master.
+  # El kubeconfig proviene del artifact generado por ansible-release.
+  # REGISTRY_HOST y IMAGE_TAG provienen de los outputs de los jobs anteriores.
   # ════════════════════════════════════════════════════════════════════════════
   deploy-k3s:
-    name: "Fase 3 · Deploy K3s – Produccion AWS (release)"
+    name: "Fase 4 · Deploy K3s – Produccion AWS (release)"
     runs-on: ubuntu-latest
-    needs: build-push-release
+    needs: [build-push-release, ansible-release, terraform-release]
     if: github.ref == 'refs/heads/release'
     env:
-      REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
-      IMAGE_TAG: ${{ needs.build-push-release.outputs.sha_short }}
+      REGISTRY_HOST: "${{ needs.terraform-release.outputs.registry_ip }}:5000"
+      IMAGE_TAG:     ${{ needs.build-push-release.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v4
 
@@ -364,12 +574,16 @@ jobs:
         with:
           version: 'v1.35.5'
 
+      - name: Descargar kubeconfig generado por Ansible
+        uses: actions/download-artifact@v4
+        with:
+          name: k3s-kubeconfig
+          path: /tmp/
+
       - name: Configurar kubeconfig
         run: |
           mkdir -p ~/.kube
-          cat > ~/.kube/config <<'EOF'
-          ${{ secrets.KUBECONFIG_RAW }}
-          EOF
+          cp /tmp/k3s-kubeconfig.yaml ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Verificar conexion al cluster
@@ -385,10 +599,10 @@ jobs:
       # ── 2. Secrets de la aplicacion ───────────────────────────────────────
       - name: Aplicar Secrets de la aplicacion
         env:
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
-          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          POSTGRES_PASSWORD:      ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET:             ${{ secrets.JWT_SECRET }}
+          RABBITMQ_USER:          ${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS:          ${{ secrets.RABBITMQ_PASS }}
           INTERNAL_SERVICE_TOKEN: ${{ secrets.INTERNAL_SERVICE_TOKEN }}
         run: |
           if [ -z "$INTERNAL_SERVICE_TOKEN" ]; then
@@ -403,10 +617,12 @@ jobs:
           envsubst < k8s/secrets/app-secrets.yaml | kubectl apply -f -
 
       - name: Crear Secret de credenciales del Registry Privado
+        env:
+          REGISTRY_HOST_CLEAN: "${{ needs.terraform-release.outputs.registry_ip }}:5000"
         run: |
           kubectl create secret docker-registry registry-credentials \
             --namespace filmstars \
-            --docker-server=${{ secrets.REGISTRY_HOST }} \
+            --docker-server=${REGISTRY_HOST_CLEAN} \
             --docker-username=${{ secrets.REGISTRY_USER }} \
             --docker-password=${{ secrets.REGISTRY_PASS }} \
             --dry-run=client -o yaml | kubectl apply -f -
@@ -453,7 +669,7 @@ jobs:
             fi
           done
           if [ -n "$FAILED" ]; then
-            echo "::error::FASE 3 FALLIDA — Rollback ejecutado para:$FAILED"
+            echo "::error::FASE 4 FALLIDA — Rollback ejecutado para:$FAILED"
             exit 1
           fi
           echo "Todos los deployments estan saludables. Despliegue completado."
@@ -469,4 +685,4 @@ jobs:
       - name: Notificar fallo de despliegue
         if: failure()
         run: |
-          echo "::error::FASE 3 FALLIDA — Error en el despliegue a K3s. Revisar logs con: kubectl logs -n filmstars deploy/<nombre>"
+          echo "::error::FASE 4 FALLIDA — Error en el despliegue a K3s. Revisar logs con: kubectl logs -n filmstars deploy/<nombre>"

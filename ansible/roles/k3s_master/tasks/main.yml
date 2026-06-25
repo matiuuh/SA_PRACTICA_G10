@@ -1,0 +1,62 @@
+---
+- name: Check if K3s is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Install K3s server
+  ansible.builtin.shell:
+    cmd: |
+      curl -sfL https://get.k3s.io | sh -s - server \
+        --tls-san {{ ansible_host }} \
+        --write-kubeconfig-mode 644
+  environment:
+    INSTALL_K3S_CHANNEL: stable
+  when: not k3s_binary.stat.exists
+
+- name: Wait for K3s node-token file to appear
+  ansible.builtin.wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+    state: present
+    timeout: 120
+
+- name: Wait for K3s API server to be reachable on port 6443
+  ansible.builtin.wait_for:
+    host: localhost
+    port: 6443
+    state: started
+    timeout: 120
+
+- name: Read K3s node token from master
+  ansible.builtin.slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  register: k3s_token_raw
+
+- name: Set K3s token as a play fact
+  ansible.builtin.set_fact:
+    k3s_node_token: "{{ k3s_token_raw.content | b64decode | trim }}"
+
+- name: Read kubeconfig from master
+  ansible.builtin.slurp:
+    src: /etc/rancher/k3s/k3s.yaml
+  register: k3s_kubeconfig_raw
+
+- name: Replace 127.0.0.1 with the master public IP in kubeconfig
+  ansible.builtin.set_fact:
+    k3s_kubeconfig: "{{ k3s_kubeconfig_raw.content | b64decode | replace('127.0.0.1', ansible_host) }}"
+
+- name: Save kubeconfig to CI/CD runner for deploy-k3s job
+  ansible.builtin.copy:
+    content: "{{ k3s_kubeconfig }}"
+    dest: /tmp/k3s-kubeconfig.yaml
+    mode: "0600"
+  delegate_to: localhost
+  become: false
+
+- name: Save node token to CI/CD runner for worker provisioning
+  ansible.builtin.copy:
+    content: "{{ k3s_node_token }}"
+    dest: /tmp/k3s-node-token
+    mode: "0600"
+  delegate_to: localhost
+  become: false
