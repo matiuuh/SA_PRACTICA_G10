@@ -469,8 +469,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ needs.terraform-release.outputs.k3s_master_ip }}/api
-            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-release.outputs.k3s_master_ip }}/socket.io
+            VITE_API_GATEWAY_URL=
+            VITE_RESERVAS_WS_URL=
           tags: |
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}

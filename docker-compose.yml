@@ -280,8 +280,9 @@ services:
     build:
       context: ./frontend
       args:
-        # VITE_API_GATEWAY_URL se bake en el build; el browser lo accede desde el host
+        # Estas URLs se bakean en el build; el browser las accede desde el host.
         VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:3006}
+        VITE_RESERVAS_WS_URL: ${VITE_RESERVAS_WS_URL:-http://localhost:3004}
     container_name: frontend
     ports:
       - '5173:80'
