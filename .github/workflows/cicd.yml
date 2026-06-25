@@ -113,6 +113,14 @@ jobs:
           AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
         run: terraform validate
 
+      - name: Limpiar recurso obsoleto del state (aws_security_group.db)
+        working-directory: terraform/environments/develop
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: terraform state rm aws_security_group.db || true
+
       - name: Terraform Apply
         working-directory: terraform/environments/develop
         env:
