@@ -286,6 +286,7 @@ services:
     container_name: frontend
     ports:
       - '5173:443'
+      - '5174:80'
     depends_on:
       - api-gateway
     networks:
