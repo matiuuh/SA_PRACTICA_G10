@@ -38,6 +38,11 @@ Integrantes:
 - [Principios SOLID aplicados](./Solid/SolidUnificado.md)
 - [Despliegue Local](./Despligue/despliegue.md)
 
+### Infraestructura como Código y Observabilidad
+- [Terraform — IaC para aprovisionamiento de AWS](./JustificacionTecnologias/terraform.md)
+- [Ansible — Gestión de configuración y despliegue](./JustificacionTecnologias/ansible.md)
+- [Prometheus y Grafana — Stack de observabilidad](./JustificacionTecnologias/observabilidad.md)
+
 ### Kubernetes
 - [Justificación y estructura de manifiestos Kubernetes](./Kubernetes/kubernetes.md)
 - [Estrategia de despliegue Zero-Downtime y Rollback automatizado](./Kubernetes/zero-downtime.md)
