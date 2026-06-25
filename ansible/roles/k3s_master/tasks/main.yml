@@ -9,6 +9,7 @@
     cmd: |
       curl -sfL https://get.k3s.io | sh -s - server \
         --tls-san {{ ansible_host }} \
+        --disable traefik \
         --write-kubeconfig-mode 644
   environment:
     INSTALL_K3S_CHANNEL: stable

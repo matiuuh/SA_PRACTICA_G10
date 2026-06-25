@@ -589,6 +589,25 @@ jobs:
       - name: Verificar conexion al cluster
         run: kubectl cluster-info
 
+      - name: Instalar ingress-nginx
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml
+          kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
+
+      # ── cert-manager para TLS automatico con Let's Encrypt ───────────────
+      - name: Instalar cert-manager
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml
+          kubectl wait --for=condition=Established crd/clusterissuers.cert-manager.io --timeout=120s
+          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=180s
+          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=180s
+          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=180s
+
+      - name: Configurar ClusterIssuer de Let's Encrypt
+        env:
+          LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL || 'filmstars@example.com' }}
+        run: envsubst < k8s/cert-manager/cluster-issuer.yaml | kubectl apply -f -
+
       # ── 1. Namespace y ConfigMaps ─────────────────────────────────────────
       - name: Aplicar Namespace
         run: kubectl apply -f k8s/namespace.yaml
@@ -653,7 +672,13 @@ jobs:
 
       # ── 6. Ingress ────────────────────────────────────────────────────────
       - name: Aplicar Ingress
-        run: kubectl apply -f k8s/ingress/
+        env:
+          PUBLIC_HOST: "${{ needs.terraform-release.outputs.k3s_master_ip }}.sslip.io"
+        run: |
+          for f in k8s/ingress/*.yaml; do
+            envsubst < "$f" | kubectl apply -f -
+          done
+          echo "Frontend HTTPS: https://${PUBLIC_HOST}"
 
       # ── 7. Verificacion de rollout con rollback automatico ────────────────
       - name: Verificar rollout y revertir en caso de fallo
