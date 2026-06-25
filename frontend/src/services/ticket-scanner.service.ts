@@ -1,74 +1,59 @@
-import { BrowserQRCodeReader } from '@zxing/browser';
-
-export interface TicketScannerControls {
-  stop: () => void;
-}
+import { Html5Qrcode } from 'html5-qrcode';
 
 type TicketDetectedHandler = (code: string) => void;
 
+export const SCANNER_ELEMENT_ID = 'qr-reader-camera';
+
 /**
- * Encapsula el acceso a la cámara. La lectura ocurre completamente en el
- * navegador; ningún fotograma se envía al servidor.
+ * Encapsula el acceso a la cámara usando html5-qrcode.
+ * La lectura ocurre completamente en el navegador; no requiere HTTPS.
  */
 export class TicketScannerService {
-  private readonly reader = new BrowserQRCodeReader(undefined, {
-    delayBetweenScanAttempts: 150,
-    delayBetweenScanSuccess: 1000,
-  });
-
-  private controls: TicketScannerControls | null = null;
+  private scanner: Html5Qrcode | null = null;
   private detected = false;
   private stopped = true;
 
-  async start(video: HTMLVideoElement, onDetected: TicketDetectedHandler): Promise<void> {
+  async start(containerId: string, onDetected: TicketDetectedHandler): Promise<void> {
     this.stop();
     this.detected = false;
     this.stopped = false;
-
-    if (!window.isSecureContext) {
-      throw new Error('La cámara requiere abrir el sitio mediante HTTPS o desde localhost.');
-    }
 
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Este dispositivo o navegador no permite usar la cámara.');
     }
 
-    const constraints: MediaStreamConstraints = {
-      audio: false,
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
+    const scanner = new Html5Qrcode(containerId);
+    this.scanner = scanner;
+
+    await scanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 4 / 3,
       },
-    };
+      (decodedText) => {
+        if (this.detected || this.stopped) return;
 
-    const controls = await this.reader.decodeFromConstraints(
-      constraints,
-      video,
-      (result, _error, controls) => {
-        if (!result || this.detected) return;
-
-        const code = result.getText().trim();
+        const code = decodedText.trim();
         if (!code) return;
 
         this.detected = true;
-        controls.stop();
-        this.controls = null;
+        void this.stop();
         onDetected(code);
       },
+      () => {
+        // scan failure por frame — ignorar
+      },
     );
-
-    if (this.stopped || this.detected) {
-      controls.stop();
-      return;
-    }
-
-    this.controls = controls;
   }
 
   stop(): void {
     this.stopped = true;
-    this.controls?.stop();
-    this.controls = null;
+    const scanner = this.scanner;
+    this.scanner = null;
+    if (scanner) {
+      void scanner.stop().catch(() => undefined);
+    }
   }
 }
