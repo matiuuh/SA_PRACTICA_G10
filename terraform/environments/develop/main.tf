@@ -41,9 +41,9 @@ resource "aws_security_group" "develop" {
   }
 
   ingress {
-    description = "Frontend (nginx on port 5173)"
+    description = "Frontend HTTPS (5173) and HTTP redirect (5174)"
     from_port   = 5173
-    to_port     = 5173
+    to_port     = 5174
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
