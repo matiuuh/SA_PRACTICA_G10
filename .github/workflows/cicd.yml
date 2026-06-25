@@ -213,7 +213,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_GATEWAY_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3006
-            VITE_RESERVAS_WS_URL=http://${{ needs.terraform-develop.outputs.server_ip }}:3004
+            VITE_RESERVAS_WS_URL=ws://${{ needs.terraform-develop.outputs.server_ip }}:3004
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
       - name: Notificar fallo de build
