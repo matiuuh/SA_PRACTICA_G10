@@ -83,14 +83,14 @@ Los recursos se definen con `requests` y `limits`.
 ### Ingress Controller 
 
 El Ingress Controller corre en el namespace `ingress-nginx` como un pod de sistema.
-Es el **único punto de entrada de tráfico externo** al clúster. Escucha en el puerto 80
-de la IP pública del nodo y aplica las siguientes reglas de enrutamiento:
+Es el **único punto de entrada de tráfico externo** al clúster. Recibe el tráfico público
+que entregue la nube (HTTP o HTTPS) y aplica las siguientes reglas de enrutamiento:
 
 ```
-Tráfico externo: http://54.234.191.80
+Tráfico externo: https://<origen-publico>
     │
     ├─ GET /           → Service: frontend:80   (archivos estáticos React)
-    └─ GET /api/*      → Service: api-gateway:3006  (strip prefijo /api)
+    └─ GET /api/*      → Service: api-gateway:3006
 ```
 
 La anotación `nginx.ingress.kubernetes.io/rewrite-target: /$2` elimina el prefijo `/api`
@@ -167,7 +167,7 @@ El API Gateway actúa como fachada SOA. Sus responsabilidades son:
 #### `frontend` TypeScript / React 18 + Vite — servido por nginx
 - **Responsabilidad:** Interfaz de usuario. SPA que corre completamente en el navegador del cliente.
 - **Interacción perimetral:** El pod solo sirve archivos estáticos. Las llamadas a la API las hace el **navegador del usuario** directamente al Ingress (`/api/*`), no el pod.
-- **URL del API Gateway:** bakeada en el build como variable de entorno `VITE_API_GATEWAY_URL=http://98.84.183.129/api`.
+- **URL del API Gateway:** en release no se bakea una IP pública; el navegador usa el mismo origen seguro del frontend y envía las solicitudes a `/api/*` por medio del Ingress.
 
 ---
 
