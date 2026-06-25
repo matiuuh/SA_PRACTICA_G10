@@ -285,8 +285,7 @@ services:
         VITE_RESERVAS_WS_URL: ${VITE_RESERVAS_WS_URL:-ws://localhost:3004}
     container_name: frontend
     ports:
-      - '5173:443'
-      - '5174:80'
+      - '5173:80'
     depends_on:
       - api-gateway
     networks:
