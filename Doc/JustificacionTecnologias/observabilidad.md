@@ -470,5 +470,7 @@ Estos componentes no son accesibles en K3s de la misma forma que en un clúster 
 ## Capturas
 
 ![Cap001](./img/grafana/img_01.png)  
+![Cap002](./img/grafana/img_02.png) 
+![Cap003](./img/grafana/img_03.png)   
 
 [Volver a Documentación](../Documentación.md)
