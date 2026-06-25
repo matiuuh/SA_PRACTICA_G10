@@ -18,7 +18,7 @@ Servicio encargado del flujo de reservas y boletos.
 - `GET /api/reservas/boletos/:id`
 - `GET /api/reservas/mis-boletos?page=1&limit=10`
 - `GET /api/reservas/admin/boletos?identificador=&pelicula=&fechaDesde=&fechaHasta=&estado=`
-- `POST /api/reservas/boletos/validar`
+- `POST /api/reservas/internal/boletos/validar-escaneo` (solo `escaneo-service`)
 - `POST /api/reservas/boletos/:id/validar-manualmente`
 - `GET /api/reservas/boletos/:id/descargar`
 - `POST /api/reservas/asientos`
@@ -50,4 +50,3 @@ psql "$DATABASE_URL" -f db/migrations/004_admin_ticket_search_indexes.sql
 
 `FUNCIONES_SERVICE_URL` configura el origen de los datos históricos de función,
 película y sala guardados al emitir un boleto.
-

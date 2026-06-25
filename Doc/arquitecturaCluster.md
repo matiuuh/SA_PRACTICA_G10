@@ -51,6 +51,7 @@ Los recursos se definen con `requests` y `limits`.
 | `funciones-service` | TypeScript / NestJS 11 | 1 | 100m | 500m | 128 Mi | 512 Mi |
 | `reservas-service` | TypeScript / NestJS 11 | 1 | 100m | 500m | 128 Mi | 512 Mi |
 | `pagos-service` | TypeScript / NestJS 11 | 1 | 100m | 500m | 128 Mi | 512 Mi |
+| `escaneo-service` | TypeScript / NestJS 11 | 1 | 50m | 250m | 64 Mi | 256 Mi |
 | `api-gateway` | TypeScript / NestJS 10 + Express | 1 | 100m | 500m | 128 Mi | 256 Mi |
 | `frontend` | TypeScript / React + Vite (servido por nginx) | 1 | 50m | 200m | 64 Mi | 128 Mi |
 
@@ -69,9 +70,9 @@ Los recursos se definen con `requests` y `limits`.
 
 | | CPU Requests | CPU Limits | RAM Requests | RAM Limits |
 |-|-------------|-----------|-------------|-----------|
-| **Apps** | 650m | 3.200m | 832 Mi | 2.944 Mi |
+| **Apps** | 700m | 3.450m | 896 Mi | 3.200 Mi |
 | **Infra** | 600m | 3.000m | 1.408 Mi | 2.816 Mi |
-| **Total aplicación** | **1.250m (62%)** | 6.200m | **2.240 Mi (56%)** | 5.760 Mi |
+| **Total aplicación** | **1.300m (65%)** | 6.450m | **2.304 Mi (56%)** | 6.016 Mi |
 | **Disponible en nodo** | 2.000m | 2.000m | 4.096 Mi | 4.096 Mi |
 
 
@@ -82,19 +83,20 @@ Los recursos se definen con `requests` y `limits`.
 ### Ingress Controller 
 
 El Ingress Controller corre en el namespace `ingress-nginx` como un pod de sistema.
-Es el **único punto de entrada de tráfico externo** al clúster. Escucha en el puerto 80
-de la IP pública del nodo y aplica las siguientes reglas de enrutamiento:
+Es el **único punto de entrada de tráfico externo** al clúster. En release publica
+el sitio con TLS usando `https://<ip-publica>.sslip.io`, sin requerir un dominio
+comprado, y aplica las siguientes reglas de enrutamiento:
 
 ```
-Tráfico externo: http://54.234.191.80
+Tráfico externo: https://<ip-publica>.sslip.io
     │
-    ├─ GET /           → Service: frontend:80   (archivos estáticos React)
-    └─ GET /api/*      → Service: api-gateway:3006  (strip prefijo /api)
+    ├─ GET /socket.io/* → Service: reservas-service:3004 (WebSockets)
+    ├─ GET /api/*       → Service: api-gateway:3006
+    └─ GET /            → Service: frontend:80   (archivos estáticos React)
 ```
 
-La anotación `nginx.ingress.kubernetes.io/rewrite-target: /$2` elimina el prefijo `/api`
-antes de reenviar la solicitud al api-gateway, de modo que éste recibe rutas limpias
-como `/auth/login`, `/funciones`, `/reservas`, etc.
+El prefijo `/api` se preserva porque el API Gateway enruta sus microservicios a partir
+de rutas como `/api/auth`, `/api/funciones` y `/api/reservas`.
 
 Ningún microservicio backend tiene un Ingress propio; toda comunicación externa
 pasa obligatoriamente por este único controlador.
@@ -118,6 +120,7 @@ El API Gateway actúa como fachada SOA. Sus responsabilidades son:
 | `/funciones/*` | funciones-service | `funciones-service.filmstars.svc.cluster.local` | 3003 |
 | `/reservas/*` | reservas-service | `reservas-service.filmstars.svc.cluster.local` | 3004 |
 | `/pagos/*` | pagos-service | `pagos-service.filmstars.svc.cluster.local` | 3005 |
+| `/escaneo/*` | escaneo-service | `escaneo-service.filmstars.svc.cluster.local` | 3007 |
 
 ### Microservicios — detalle por pod
 
@@ -156,10 +159,16 @@ El API Gateway actúa como fachada SOA. Sus responsabilidades son:
 - **Persistencia:** PostgreSQL propio (`postgres-pagos`, base de datos `pagos_service`).
 - **Comunicación:** AMQP asíncrono entrante + HTTP síncrono entrante.
 
+#### `escaneo-service` TypeScript / NestJS 11
+- **Responsabilidad:** Autenticar al operador y coordinar la validación de códigos QR leídos por cámara.
+- **Interacción perimetral:** Recibe solicitudes desde el API Gateway y consume el endpoint interno protegido de `reservas-service`.
+- **Persistencia:** No posee base de datos; la transacción del boleto pertenece al dominio de Reservas.
+- **Comunicación:** HTTP síncrono entrante y saliente. La llamada interna usa `INTERNAL_SERVICE_TOKEN`.
+
 #### `frontend` TypeScript / React 18 + Vite — servido por nginx
 - **Responsabilidad:** Interfaz de usuario. SPA que corre completamente en el navegador del cliente.
 - **Interacción perimetral:** El pod solo sirve archivos estáticos. Las llamadas a la API las hace el **navegador del usuario** directamente al Ingress (`/api/*`), no el pod.
-- **URL del API Gateway:** bakeada en el build como variable de entorno `VITE_API_GATEWAY_URL=http://98.84.183.129/api`.
+- **URL del API Gateway:** en release no se bakea una IP pública; el navegador usa el mismo origen seguro del frontend y envía las solicitudes a `/api/*` por medio del Ingress.
 
 ---
 
@@ -225,8 +234,9 @@ dinámicamente por el StorageClass `local-path` de K3s (almacenamiento en disco 
 | ConfigMap | `funciones-service-config` | Puerto 3003, DB_HOST, DB_NAME |
 | ConfigMap | `reservas-service-config` | Puerto 3004, DB_HOST, DB_NAME |
 | ConfigMap | `pagos-service-config` | Puerto 3005, DB_HOST, DB_NAME |
+| ConfigMap | `escaneo-service-config` | Puerto 3007 |
 | ConfigMap | `api-gateway-config` | Puerto 3006 |
-| Secret | `filmstars-secrets` | POSTGRES_PASSWORD, JWT_SECRET, RABBITMQ_USER, RABBITMQ_PASS |
+| Secret | `filmstars-secrets` | POSTGRES_PASSWORD, JWT_SECRET, RABBITMQ_USER, RABBITMQ_PASS, INTERNAL_SERVICE_TOKEN |
 | Secret | `registry-credentials` | Credenciales de acceso al registry privado Zot (imagePullSecret) |
 
 Ningún Deployment contiene variables de entorno con valores sensibles hardcodeados.

@@ -3,7 +3,23 @@
 import axios from 'axios';
 import { clearStoredSession, isTokenExpired } from './auth-token';
 
-export const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3006';
+const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
+
+const resolveApiGatewayUrl = () => {
+  const explicitApiGatewayUrl = import.meta.env.VITE_API_GATEWAY_URL?.trim();
+
+  if (explicitApiGatewayUrl) {
+    return explicitApiGatewayUrl;
+  }
+
+  if (typeof window !== 'undefined' && LOCAL_HOSTS.includes(window.location.hostname)) {
+    return `http://${window.location.hostname}:3006`;
+  }
+
+  return '';
+};
+
+export const API_GATEWAY_URL = resolveApiGatewayUrl();
 
 export const api = axios.create({
   baseURL: API_GATEWAY_URL,
@@ -62,6 +78,7 @@ export const endpoints = {
   funciones: '/api/funciones',
   reservas: '/api/reservas',
   pagos: '/api/pagos',
+  escaneo: '/api/escaneo',
 };
 
 export default api;

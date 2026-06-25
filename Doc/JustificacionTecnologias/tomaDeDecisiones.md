@@ -28,14 +28,15 @@ Este documento justifica las decisiones de infraestructura tomadas para el entor
 
 **¿Qué?** Se eligió **NGINX Ingress Controller** como controlador de enrutamiento HTTP externo sobre K3s.
 
-**¿Por qué?** K3s incluye Traefik como controlador de Ingress por defecto, pero el proyecto requería `rewrite-target` con expresiones regulares para despojar el prefijo `/api` antes de reenviar las peticiones al `api-gateway`. La anotación `nginx.ingress.kubernetes.io/rewrite-target` y el uso de grupos de captura en la ruta (`(/|$)(.*)`) están documentados, son ampliamente usados y se comportan de forma predecible. Migrar esa misma lógica a Traefik habría requerido un `Middleware` adicional con una configuración distinta y menos familiar para el equipo. NGINX Ingress Controller se instala con un único `kubectl apply` sobre K3s y coexiste sin conflictos desactivando Traefik.
+**¿Por qué?** K3s incluye Traefik como controlador de Ingress por defecto, pero el proyecto usa NGINX Ingress Controller para mantener un punto de entrada explicito y consistente con los manifiestos del clúster. Esto simplifica la integración con cert-manager, permite emitir TLS con Let's Encrypt y centraliza las reglas de `/api`, `/socket.io` y `/` en un único recurso de Ingress. NGINX Ingress Controller se instala con un único `kubectl apply` sobre K3s y coexiste sin conflictos desactivando Traefik.
 
 **¿Para qué?** El NGINX Ingress Controller actúa como punto de entrada único al clúster desde Internet. Expone dos reglas definidas en `k8s/ingress/ingress.yaml`:
 
-- **`/api(/|$)(.*)`** → redirige al `api-gateway` en el puerto `3006`, eliminando el prefijo `/api` antes de que la petición llegue al servicio. Esto permite que el frontend construya URLs con `/api/...` sin que el `api-gateway` tenga que conocer ese prefijo.
+- **`/api/*`** → redirige al `api-gateway` en el puerto `3006`, preservando el prefijo `/api` que el gateway utiliza para enrutar internamente.
+- **`/socket.io/*`** → redirige al `reservas-service` en el puerto `3004` para WebSockets.
 - **`/`** → redirige al `frontend` en el puerto `80`, sirviendo la aplicación React para cualquier ruta no capturada por la regla anterior.
 
-Este esquema centraliza el control de tráfico, evita exponer puertos individuales de cada servicio al exterior y permite en el futuro agregar reglas adicionales (rate limiting, TLS, autenticación a nivel de gateway) sin modificar los microservicios.
+Este esquema centraliza el control de tráfico, evita exponer puertos individuales de cada servicio al exterior y permite servir el frontend por HTTPS sin comprar un dominio usando el host gratuito `<ip-publica>.sslip.io`.
 
 ---
 

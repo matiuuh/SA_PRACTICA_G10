@@ -61,6 +61,11 @@ spec:
                 configMapKeyRef:
                   name: filmstars-config
                   key: PAGOS_SERVICE_URL
+            - name: ESCANEO_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-config
+                  key: ESCANEO_SERVICE_URL
           readinessProbe:
             tcpSocket:
               port: 3006

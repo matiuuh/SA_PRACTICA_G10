@@ -22,5 +22,7 @@
 | RF-18 | Alta | Validación de boleto | El sistema debe permitir al administrador validar boletos mediante el escaneo del código QR, verificando la autenticidad del boleto y registrando la entrada al cine lo que automáticamente cambia el estado del boleto. |
 | RF-19 | Alta | Validación del boleto manual | El sistema debe permitir al administrador validar boletos de manera manual ingresando el número de confirmación del boleto o filtros y verificando la autenticidad del boleto y registrando la entrada al cine lo que automáticamente cambia el estado del boleto. |
 | RF-20 | Alta | Manejo de incidencias | El sistema debe permitir al usuario notificar cualquier altercado en el servicio y debe permitir al administrador responder dicha queja o asunto. |
+| RF-21 | Alta | Monitoreo Operativo | El sistema debe permitir al administrador consultar en tiempo real el comportamiento del sistema de boletos mediante tableros centralizados y métricas operativas. |
+
 
 [Volver a Documentacion](../Documentación.md)

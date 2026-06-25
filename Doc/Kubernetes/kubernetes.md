@@ -461,12 +461,13 @@ spec:
 
 ## 6. Ingress
 
-El `Ingress` es el punto de entrada HTTP/HTTPS externo al clúster. Para FilmStars se utiliza el **Ingress Controller nginx** y se definen dos reglas:
+El `Ingress` es el punto de entrada HTTP/HTTPS externo al clúster. Para FilmStars se utiliza el **Ingress Controller nginx** con TLS automatico mediante cert-manager y Let's Encrypt. En release el host publico se construye como `<ip-publica>.sslip.io`, por lo que no se requiere comprar un dominio.
 
 ```yaml
 # k8s/ingress/ingress.yaml
-# /api/* → api-gateway:3006  (nginx elimina el prefijo /api)
-# /*     → frontend:80
+# /socket.io/* → reservas-service:3004
+# /api/*       → api-gateway:3006
+# /*           → frontend:80
 ```
 
 La arquitectura de routing garantiza que **todo el tráfico de usuario pase por el API Gateway** antes de llegar a los microservicios, lo que centraliza la autenticación JWT y el control de acceso.
