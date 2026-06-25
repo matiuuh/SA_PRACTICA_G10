@@ -44,3 +44,11 @@
   roles:
     - docker
     - zot_registry
+
+# ── Phase 6: configure monitoring stack on K3s master ───────────────────────
+- name: Configure Prometheus and Grafana on K3s
+  hosts: k3s_master
+  become: true
+  gather_facts: true
+  roles:
+    - monitoring_stack
