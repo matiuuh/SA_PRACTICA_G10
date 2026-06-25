@@ -1,22 +1,24 @@
 name: CI/CD FilmStars
 
 # ──────────────────────────────────────────────────────────────────────────────
-# FLUJOS:
-#   develop → Test → [Terraform Develop ‖ Build/Push DockerHub]
-#           → Ansible Deploy Docker Compose (EC2 AWS)
+# ARQUITECTURA:
+#   VM compartida de BDs: 1 t3.small con postgres (5433-5437) + RabbitMQ (5672)
 #
-#   release → Test → Terraform Release
-#           → [Build/Push Zot ‖ Ansible K3s Setup]
-#           → Deploy K3s AWS
+#   develop → Test → Terraform Shared → [Terraform Develop ‖ Ansible DB]
+#           → Build/Push DockerHub → Ansible Deploy Apps (EC2 AWS)
 #
-# Secrets de AWS/IaC requeridos (ademas de los existentes):
-#   AWS_ACCESS_KEY_ID      — credenciales AWS
-#   AWS_SECRET_ACCESS_KEY  — credenciales AWS
-#   AWS_REGION             — region AWS (ej: us-east-1)
-#   TF_STATE_BUCKET        — bucket S3 para el estado de Terraform
-#   TF_STATE_LOCK_TABLE    — tabla DynamoDB para el bloqueo de estado
-#   EC2_KEY_NAME           — nombre del key pair EC2 en AWS
-#   EC2_SSH_PRIVATE_KEY    — clave privada PEM para SSH a las instancias EC2
+#   release → Test → Terraform Shared → [Terraform Release ‖ Ansible DB]
+#           → [Build/Push Zot ‖ Ansible K3s Setup] → Deploy K3s AWS
+#
+# Secrets requeridos:
+#   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
+#   TF_STATE_BUCKET, TF_STATE_LOCK_TABLE
+#   EC2_KEY_NAME, EC2_SSH_PRIVATE_KEY
+#   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
+#   REGISTRY_USER, REGISTRY_PASS
+#   POSTGRES_PASSWORD, JWT_SECRET
+#   RABBITMQ_USER, RABBITMQ_PASS
+#   INTERNAL_SERVICE_TOKEN
 # ──────────────────────────────────────────────────────────────────────────────
 on:
   push:
@@ -29,7 +31,6 @@ jobs:
 
   # ════════════════════════════════════════════════════════════════════════════
   # FASE 1 — TEST (ambas ramas)
-  # Obligatorio en release: cobertura mínima del 75%.
   # ════════════════════════════════════════════════════════════════════════════
   test:
     name: "Fase 1 · Test ${{ matrix.service }}"
@@ -70,22 +71,132 @@ jobs:
 
       - name: Notificar fallo de tests
         if: failure()
-        run: |
-          echo "::error::FASE 1 FALLIDA — ${{ matrix.service }} no alcanzo el 75% de cobertura minima requerida. Pipeline detenido."
+        run: echo "::error::FASE 1 FALLIDA — ${{ matrix.service }} no alcanzo el 75% de cobertura minima requerida."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2a — TERRAFORM DEVELOP  (solo rama develop)
-  # Aprovisiona VPC, subnet, security group y EC2 t3.medium en AWS.
-  # Usa S3 como backend remoto con bloqueo DynamoDB.
-  # Corre en PARALELO con build-push-develop (ambos dependen solo de test).
+  # FASE 2 — TERRAFORM SHARED (ambas ramas)
+  # Crea/actualiza la VPC compartida y la VM de bases de datos.
   # ════════════════════════════════════════════════════════════════════════════
-  terraform-develop:
-    name: "Fase 2 · Terraform – Infraestructura Develop (AWS)"
+  terraform-shared:
+    name: "Fase 2 · Terraform – Infraestructura Compartida (DB VM)"
     runs-on: ubuntu-latest
     needs: test
+    outputs:
+      db_server_ip:         ${{ steps.tf_output.outputs.db_server_ip }}
+      db_server_private_ip: ${{ steps.tf_output.outputs.db_server_private_ip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Terraform Init
+        working-directory: terraform/environments/shared
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_STATE_LOCK_TABLE }}"
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/shared
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/shared
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_region=${{ secrets.AWS_REGION }}" \
+            -var="key_name=${{ secrets.EC2_KEY_NAME }}"
+
+      - name: Capturar outputs de la infraestructura compartida
+        id: tf_output
+        working-directory: terraform/environments/shared
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
+        run: |
+          echo "db_server_ip=$(terraform output -raw db_server_ip)"                 >> $GITHUB_OUTPUT
+          echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
+
+      - name: Notificar fallo de Terraform shared
+        if: failure()
+        run: echo "::error::FASE 2 FALLIDA — Error al aprovisionar la infraestructura compartida."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 3 — ANSIBLE DB (ambas ramas)
+  # Instala Docker en la VM de BDs y levanta postgres + RabbitMQ.
+  # Idempotente: no destruye datos en despliegues sucesivos.
+  # ════════════════════════════════════════════════════════════════════════════
+  ansible-db:
+    name: "Fase 3 · Ansible – Configurar VM de Bases de Datos"
+    runs-on: ubuntu-latest
+    needs: terraform-shared
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Ansible y colecciones requeridas
+        run: |
+          pip install ansible
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Configurar clave SSH para EC2
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/filmstars_ec2.pem
+          chmod 600 ~/.ssh/filmstars_ec2.pem
+
+      - name: Generar inventario Ansible para DB VM
+        env:
+          DB_IP: ${{ needs.terraform-shared.outputs.db_server_ip }}
+        run: |
+          cat > /tmp/inventory-db.ini << EOF
+          [db_servers]
+          ${DB_IP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/filmstars_ec2.pem
+          EOF
+
+      - name: Ejecutar playbook configure_db
+        env:
+          ANSIBLE_CONFIG: ansible/ansible.cfg
+        run: |
+          ansible-playbook ansible/playbooks/configure_db.yml \
+            -i /tmp/inventory-db.ini \
+            --extra-vars "project_root=$GITHUB_WORKSPACE \
+              postgres_password=${{ secrets.POSTGRES_PASSWORD }} \
+              rabbitmq_user=${{ secrets.RABBITMQ_USER }} \
+              rabbitmq_pass=${{ secrets.RABBITMQ_PASS }}"
+
+      - name: Notificar fallo de configuracion DB
+        if: failure()
+        run: echo "::error::FASE 3 FALLIDA — Error al configurar la VM de bases de datos."
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 3a — TERRAFORM DEVELOP  (solo rama develop)
+  # Crea la VM de aplicaciones en la VPC compartida.
+  # Corre en PARALELO con ansible-db.
+  # ════════════════════════════════════════════════════════════════════════════
+  terraform-develop:
+    name: "Fase 3 · Terraform – VM Develop (AWS)"
+    runs-on: ubuntu-latest
+    needs: terraform-shared
     if: github.ref == 'refs/heads/develop'
     outputs:
-      server_ip: ${{ steps.tf_output.outputs.server_ip }}
+      server_ip:            ${{ steps.tf_output.outputs.server_ip }}
+      db_server_private_ip: ${{ steps.tf_output.outputs.db_server_private_ip }}
     steps:
       - uses: actions/checkout@v4
 
@@ -122,31 +233,31 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ secrets.AWS_REGION }}" \
-            -var="key_name=${{ secrets.EC2_KEY_NAME }}"
+            -var="key_name=${{ secrets.EC2_KEY_NAME }}" \
+            -var="tf_state_bucket=${{ secrets.TF_STATE_BUCKET }}"
 
-      - name: Capturar IP del servidor develop
+      - name: Capturar IPs del servidor develop
         id: tf_output
         working-directory: terraform/environments/develop
         env:
           AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
-        run: echo "server_ip=$(terraform output -raw develop_server_ip)" >> $GITHUB_OUTPUT
+        run: |
+          echo "server_ip=$(terraform output -raw develop_server_ip)"               >> $GITHUB_OUTPUT
+          echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
 
       - name: Notificar fallo de Terraform develop
         if: failure()
-        run: |
-          echo "::error::FASE 2 FALLIDA — Error al aprovisionar infraestructura develop con Terraform."
+        run: echo "::error::FASE 3 FALLIDA — Error al aprovisionar la VM develop."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2b — BUILD & PUSH A DOCKERHUB  (solo rama develop)
-  # Publica imagenes con tag :latest para el entorno de staging en EC2.
-  # Depende de terraform-develop para obtener la IP publica del servidor.
+  # FASE 3b — BUILD & PUSH A DOCKERHUB  (solo rama develop)
   # ════════════════════════════════════════════════════════════════════════════
   build-push-develop:
-    name: "Fase 2 · Build & Push a DockerHub (develop)"
+    name: "Fase 3 · Build & Push a DockerHub (develop)"
     runs-on: ubuntu-latest
-    needs: [test, terraform-develop]
+    needs: [terraform-develop]
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
@@ -218,19 +329,16 @@ jobs:
 
       - name: Notificar fallo de build
         if: failure()
-        run: |
-          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en DockerHub. Pipeline detenido."
+        run: echo "::error::FASE 3 FALLIDA — Error al construir o publicar las imagenes en DockerHub."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3a — ANSIBLE DEPLOY DEVELOP  (solo rama develop)
-  # Configura la EC2 con Docker e instala/actualiza el stack via Docker Compose.
-  # El .env se genera desde ansible/templates/develop_env.j2 con los secrets.
-  # La IP del servidor viene del output de terraform-develop.
+  # FASE 4 — ANSIBLE DEPLOY DEVELOP  (solo rama develop)
+  # Espera que ansible-db haya terminado antes de desplegar los microservicios.
   # ════════════════════════════════════════════════════════════════════════════
   ansible-develop:
-    name: "Fase 3 · Ansible – Configurar y Desplegar Develop (EC2)"
+    name: "Fase 4 · Ansible – Desplegar Apps Develop (EC2)"
     runs-on: ubuntu-latest
-    needs: [terraform-develop, build-push-develop]
+    needs: [ansible-db, terraform-develop, build-push-develop]
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
@@ -263,6 +371,7 @@ jobs:
             -i /tmp/inventory-develop.ini \
             --extra-vars "project_root=$GITHUB_WORKSPACE \
               dockerhub_username=${{ secrets.DOCKERHUB_USERNAME }} \
+              db_host=${{ needs.terraform-develop.outputs.db_server_private_ip }} \
               postgres_password=${{ secrets.POSTGRES_PASSWORD }} \
               jwt_secret=${{ secrets.JWT_SECRET }} \
               rabbitmq_user=${{ secrets.RABBITMQ_USER }} \
@@ -271,24 +380,24 @@ jobs:
 
       - name: Notificar fallo de despliegue develop
         if: failure()
-        run: |
-          echo "::error::FASE 3 FALLIDA — Error al configurar o desplegar en el servidor develop EC2."
+        run: echo "::error::FASE 4 FALLIDA — Error al desplegar las apps en el servidor develop EC2."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2c — TERRAFORM RELEASE  (solo rama release)
-  # Aprovisiona K3s master, 2 workers y el registry Zot en AWS.
-  # Los outputs (IPs de EC2) alimentan los jobs de build y Ansible en paralelo.
+  # FASE 3c — TERRAFORM RELEASE  (solo rama release)
+  # Crea el cluster K3s y el registry Zot en la VPC compartida.
+  # Corre en PARALELO con ansible-db.
   # ════════════════════════════════════════════════════════════════════════════
   terraform-release:
-    name: "Fase 2 · Terraform – Infraestructura Release (AWS)"
+    name: "Fase 3 · Terraform – K3s + Zot (AWS)"
     runs-on: ubuntu-latest
-    needs: test
+    needs: terraform-shared
     if: github.ref == 'refs/heads/release'
     outputs:
-      k3s_master_ip:   ${{ steps.tf_output.outputs.k3s_master_ip }}
-      k3s_worker_1_ip: ${{ steps.tf_output.outputs.k3s_worker_1_ip }}
-      k3s_worker_2_ip: ${{ steps.tf_output.outputs.k3s_worker_2_ip }}
-      registry_ip:     ${{ steps.tf_output.outputs.registry_ip }}
+      k3s_master_ip:        ${{ steps.tf_output.outputs.k3s_master_ip }}
+      k3s_worker_1_ip:      ${{ steps.tf_output.outputs.k3s_worker_1_ip }}
+      k3s_worker_2_ip:      ${{ steps.tf_output.outputs.k3s_worker_2_ip }}
+      registry_ip:          ${{ steps.tf_output.outputs.registry_ip }}
+      db_server_private_ip: ${{ steps.tf_output.outputs.db_server_private_ip }}
     steps:
       - uses: actions/checkout@v4
 
@@ -325,7 +434,8 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ secrets.AWS_REGION }}" \
-            -var="key_name=${{ secrets.EC2_KEY_NAME }}"
+            -var="key_name=${{ secrets.EC2_KEY_NAME }}" \
+            -var="tf_state_bucket=${{ secrets.TF_STATE_BUCKET }}"
 
       - name: Capturar IPs del cluster y registry
         id: tf_output
@@ -335,26 +445,23 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION:    ${{ secrets.AWS_REGION }}
         run: |
-          echo "k3s_master_ip=$(terraform output -raw k3s_master_ip)"     >> $GITHUB_OUTPUT
-          echo "k3s_worker_1_ip=$(terraform output -raw k3s_worker_1_ip)" >> $GITHUB_OUTPUT
-          echo "k3s_worker_2_ip=$(terraform output -raw k3s_worker_2_ip)" >> $GITHUB_OUTPUT
-          echo "registry_ip=$(terraform output -raw registry_ip)"         >> $GITHUB_OUTPUT
+          echo "k3s_master_ip=$(terraform output -raw k3s_master_ip)"               >> $GITHUB_OUTPUT
+          echo "k3s_worker_1_ip=$(terraform output -raw k3s_worker_1_ip)"           >> $GITHUB_OUTPUT
+          echo "k3s_worker_2_ip=$(terraform output -raw k3s_worker_2_ip)"           >> $GITHUB_OUTPUT
+          echo "registry_ip=$(terraform output -raw registry_ip)"                   >> $GITHUB_OUTPUT
+          echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
 
       - name: Notificar fallo de Terraform release
         if: failure()
-        run: |
-          echo "::error::FASE 2 FALLIDA — Error al aprovisionar infraestructura release con Terraform."
+        run: echo "::error::FASE 3 FALLIDA — Error al aprovisionar la infraestructura release."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3b — BUILD & PUSH AL REGISTRY PRIVADO  (solo rama release)
-  # Publica imagenes con tag :latest y :<sha_corto> en Zot (EC2 provisionada).
-  # REGISTRY_HOST se obtiene del output de terraform-release (IP:5000).
-  # Corre en PARALELO con ansible-release.
+  # FASE 4a — BUILD & PUSH AL REGISTRY PRIVADO  (solo rama release)
   # ════════════════════════════════════════════════════════════════════════════
   build-push-release:
-    name: "Fase 3 · Build & Push a Registry Privado (release)"
+    name: "Fase 4 · Build & Push a Registry Privado (release)"
     runs-on: ubuntu-latest
-    needs: [test, terraform-release]
+    needs: [terraform-release]
     if: github.ref == 'refs/heads/release'
     outputs:
       sha_short: ${{ steps.vars.outputs.sha_short }}
@@ -371,14 +478,10 @@ jobs:
         run: |
           CLEAN_HOST="$(printf '%s' '${{ env.REGISTRY_HOST }}' | tr -d '\r\n\t ')"
           echo "REGISTRY_HOST_CLEAN=$CLEAN_HOST" >> $GITHUB_ENV
-          echo "Registry host normalizado: $CLEAN_HOST"
 
-      # ─── Configurar buildx para registry HTTP (Zot sin TLS) ──────────────
       - name: Crear config de buildkit para registry HTTP
         run: |
           printf '[registry."%s"]\n  http = true\n  insecure = true\n' "$REGISTRY_HOST_CLEAN" > /tmp/buildkitd.toml
-          echo "=== Config buildkit ==="
-          cat /tmp/buildkitd.toml
 
       - name: Configurar buildx
         uses: docker/setup-buildx-action@v3
@@ -477,19 +580,15 @@ jobs:
 
       - name: Notificar fallo de build
         if: failure()
-        run: |
-          echo "::error::FASE 3 FALLIDA — Error al construir o publicar las imagenes en el Registry Privado. Pipeline detenido."
+        run: echo "::error::FASE 4 FALLIDA — Error al construir o publicar las imagenes en el Registry Privado."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3c — ANSIBLE CONFIGURE RELEASE  (solo rama release)
-  # Instala K3s en master y workers; instala Zot en registry.
-  # El kubeconfig generado se guarda como artifact y lo consume deploy-k3s.
-  # Corre en PARALELO con build-push-release.
+  # FASE 4b — ANSIBLE CONFIGURE RELEASE  (solo rama release)
   # ════════════════════════════════════════════════════════════════════════════
   ansible-release:
-    name: "Fase 3 · Ansible – Configurar K3s y Registry (release)"
+    name: "Fase 4 · Ansible – Configurar K3s y Registry (release)"
     runs-on: ubuntu-latest
-    needs: terraform-release
+    needs: [terraform-release]
     if: github.ref == 'refs/heads/release'
     steps:
       - uses: actions/checkout@v4
@@ -546,29 +645,24 @@ jobs:
 
       - name: Notificar fallo de configuracion Ansible release
         if: failure()
-        run: |
-          echo "::error::FASE 3 FALLIDA — Error al configurar el cluster K3s o el registry con Ansible."
+        run: echo "::error::FASE 4 FALLIDA — Error al configurar el cluster K3s o el registry con Ansible."
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 4 — DEPLOY K3S AWS  (solo rama release)
-  # Aplica los manifiestos de k8s/ al cluster con kubectl.
-  # Orden: namespace → configmaps → secrets → storage → infra → apps → ingress
-  # Verifica rollout de cada deployment; en fallo ejecuta kubectl rollout undo.
-  # El kubeconfig proviene del artifact generado por ansible-release.
-  # REGISTRY_HOST y IMAGE_TAG provienen de los outputs de los jobs anteriores.
+  # FASE 5 — DEPLOY K3S AWS  (solo rama release)
+  # Los ConfigMaps se generan con envsubst para inyectar la IP de la VM de BDs.
   # ════════════════════════════════════════════════════════════════════════════
   deploy-k3s:
-    name: "Fase 4 · Deploy K3s – Produccion AWS (release)"
+    name: "Fase 5 · Deploy K3s – Produccion AWS (release)"
     runs-on: ubuntu-latest
-    needs: [build-push-release, ansible-release, terraform-release]
+    needs: [build-push-release, ansible-release, ansible-db, terraform-release]
     if: github.ref == 'refs/heads/release'
     env:
-      REGISTRY_HOST: "${{ needs.terraform-release.outputs.registry_ip }}:5000"
-      IMAGE_TAG:     ${{ needs.build-push-release.outputs.sha_short }}
+      REGISTRY_HOST:        "${{ needs.terraform-release.outputs.registry_ip }}:5000"
+      IMAGE_TAG:            ${{ needs.build-push-release.outputs.sha_short }}
+      DB_SERVER_PRIVATE_IP: ${{ needs.terraform-release.outputs.db_server_private_ip }}
     steps:
       - uses: actions/checkout@v4
 
-      # ── kubectl ──────────────────────────────────────────────────────────
       - name: Instalar kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -589,14 +683,12 @@ jobs:
       - name: Verificar conexion al cluster
         run: kubectl cluster-info
 
-      # ── 1. Namespace y ConfigMaps ─────────────────────────────────────────
       - name: Aplicar Namespace
         run: kubectl apply -f k8s/namespace.yaml
 
-      - name: Aplicar ConfigMaps
-        run: kubectl apply -f k8s/configmaps/
+      - name: Aplicar ConfigMaps (con IP de DB VM inyectada)
+        run: envsubst '${DB_SERVER_PRIVATE_IP}' < k8s/configmaps/app-config.yaml | kubectl apply -f -
 
-      # ── 2. Secrets de la aplicacion ───────────────────────────────────────
       - name: Aplicar Secrets de la aplicacion
         env:
           POSTGRES_PASSWORD:      ${{ secrets.POSTGRES_PASSWORD }}
@@ -627,23 +719,6 @@ jobs:
             --docker-password=${{ secrets.REGISTRY_PASS }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # ── 3. Storage (PVCs) ────────────────────────────────────────────────
-      - name: Aplicar PersistentVolumeClaims
-        run: kubectl apply -f k8s/storage/
-
-      # ── 4. Infraestructura (bases de datos + RabbitMQ) ───────────────────
-      - name: Aplicar infraestructura
-        run: kubectl apply -f k8s/infra/
-
-      - name: Esperar que la infraestructura este lista
-        run: |
-          INFRA_DEPS="rabbitmq postgres-auth postgres-localidades postgres-funciones postgres-reservas postgres-pagos"
-          for dep in $INFRA_DEPS; do
-            echo "Esperando deployment/$dep..."
-            kubectl rollout status deployment/$dep -n filmstars --timeout=180s
-          done
-
-      # ── 5. Microservicios y Frontend ──────────────────────────────────────
       - name: Desplegar microservicios y frontend
         run: |
           for f in k8s/apps/*.yaml; do
@@ -651,11 +726,9 @@ jobs:
             envsubst < "$f" | kubectl apply -f -
           done
 
-      # ── 6. Ingress ────────────────────────────────────────────────────────
       - name: Aplicar Ingress
         run: kubectl apply -f k8s/ingress/
 
-      # ── 7. Verificacion de rollout con rollback automatico ────────────────
       - name: Verificar rollout y revertir en caso de fallo
         run: |
           APP_DEPS="auth-service localidades-service funciones-service reservas-service pagos-service escaneo-service api-gateway frontend"
@@ -669,10 +742,10 @@ jobs:
             fi
           done
           if [ -n "$FAILED" ]; then
-            echo "::error::FASE 4 FALLIDA — Rollback ejecutado para:$FAILED"
+            echo "::error::FASE 5 FALLIDA — Rollback ejecutado para:$FAILED"
             exit 1
           fi
-          echo "Todos los deployments estan saludables. Despliegue completado."
+          echo "Todos los deployments estan saludables."
 
       - name: Mostrar estado final del cluster
         if: always()
@@ -684,5 +757,4 @@ jobs:
 
       - name: Notificar fallo de despliegue
         if: failure()
-        run: |
-          echo "::error::FASE 4 FALLIDA — Error en el despliegue a K3s. Revisar logs con: kubectl logs -n filmstars deploy/<nombre>"
+        run: echo "::error::FASE 5 FALLIDA — Error en el despliegue a K3s."

@@ -7,3 +7,8 @@ output "instance_ids" {
   description = "Map of instance name to its EC2 instance ID"
   value       = { for k, v in aws_instance.this : k => v.id }
 }
+
+output "instance_private_ips" {
+  description = "Map of instance name to its private IP address (for intra-VPC communication)"
+  value       = { for k, v in aws_instance.this : k => v.private_ip }
+}

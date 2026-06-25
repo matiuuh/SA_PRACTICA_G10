@@ -36,34 +36,6 @@
         group: ubuntu
         mode: "0644"
 
-    - name: Create per-service DB init directories
-      ansible.builtin.file:
-        path: "/opt/filmstars/Backend/services/{{ item }}/db"
-        state: directory
-        owner: ubuntu
-        group: ubuntu
-        mode: "0755"
-      loop:
-        - auth-service
-        - localidades-service
-        - funciones-service
-        - reservas-service
-        - pagos-service
-
-    - name: Copy DB init SQL files
-      ansible.builtin.copy:
-        src: "{{ project_root }}/Backend/services/{{ item }}/db/init.sql"
-        dest: "/opt/filmstars/Backend/services/{{ item }}/db/init.sql"
-        owner: ubuntu
-        group: ubuntu
-        mode: "0644"
-      loop:
-        - auth-service
-        - localidades-service
-        - funciones-service
-        - reservas-service
-        - pagos-service
-
     - name: Create .env file from template
       ansible.builtin.template:
         src: "{{ project_root }}/ansible/templates/develop_env.j2"
@@ -72,9 +44,9 @@
         group: ubuntu
         mode: "0600"
 
-    - name: Stop and remove existing containers and volumes (fresh deploy)
+    - name: Stop and remove existing containers and orphans (fresh deploy)
       ansible.builtin.command:
-        cmd: docker compose down --volumes --remove-orphans
+        cmd: docker compose down --remove-orphans
         chdir: /opt/filmstars
       ignore_errors: true
 

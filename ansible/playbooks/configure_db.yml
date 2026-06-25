@@ -1,0 +1,76 @@
+---
+# ── Phase 1: wait for SSH ────────────────────────────────────────────────────
+- name: Wait for SSH connectivity on DB server
+  hosts: db_servers
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available (EC2 boot can take ~60s)
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 300
+
+# ── Phase 2: install Docker and deploy shared DB containers ──────────────────
+- name: Configure shared DB VM
+  hosts: db_servers
+  become: true
+  gather_facts: true
+
+  roles:
+    - common
+    - docker
+
+  tasks:
+    - name: Create DB root directory
+      ansible.builtin.file:
+        path: /opt/filmstars-db
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Create init SQL directory
+      ansible.builtin.file:
+        path: /opt/filmstars-db/init
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Copy init SQL files
+      ansible.builtin.copy:
+        src: "{{ project_root }}/Backend/services/{{ item.service }}/db/init.sql"
+        dest: "/opt/filmstars-db/init/{{ item.name }}.sql"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+      loop:
+        - { service: auth-service,        name: auth        }
+        - { service: localidades-service, name: localidades }
+        - { service: funciones-service,   name: funciones   }
+        - { service: reservas-service,    name: reservas    }
+        - { service: pagos-service,       name: pagos       }
+
+    - name: Copy docker-compose.db.yml
+      ansible.builtin.copy:
+        src: "{{ project_root }}/docker-compose.db.yml"
+        dest: /opt/filmstars-db/docker-compose.yml
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    - name: Create .env file from template
+      ansible.builtin.template:
+        src: "{{ project_root }}/ansible/templates/db_env.j2"
+        dest: /opt/filmstars-db/.env
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+
+    - name: Start DB containers (idempotent — preserves existing data)
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: /opt/filmstars-db
+
+    - name: Prune dangling images
+      ansible.builtin.command:
+        cmd: docker image prune -f
