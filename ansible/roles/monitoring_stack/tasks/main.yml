@@ -1,0 +1,125 @@
+---
+- name: Wait for K3s kubeconfig on master
+  ansible.builtin.wait_for:
+    path: /etc/rancher/k3s/k3s.yaml
+    state: present
+    timeout: 120
+
+- name: Check if ingress-nginx namespace exists
+  ansible.builtin.command:
+    cmd: kubectl get namespace ingress-nginx --ignore-not-found
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  register: ingress_namespace
+  changed_when: false
+
+- name: Install ingress-nginx controller when missing
+  ansible.builtin.command:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  when: ingress_namespace.stdout | trim == ""
+
+- name: Wait for ingress-nginx controller rollout
+  ansible.builtin.command:
+    cmd: kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=240s
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Create monitoring working directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+  loop:
+    - /opt/filmstars/monitoring
+    - /opt/filmstars/monitoring/configmaps
+    - /opt/filmstars/monitoring/infra
+    - /opt/filmstars/monitoring/apps
+    - /opt/filmstars/monitoring/storage
+    - /opt/filmstars/monitoring/secrets
+    - /opt/filmstars/monitoring/dashboards
+
+- name: Copy monitoring manifests to K3s master
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../k8s/monitoring/"
+    dest: /opt/filmstars/monitoring/
+    owner: ubuntu
+    group: ubuntu
+    mode: preserve
+
+- name: Ensure monitoring namespace exists
+  ansible.builtin.command:
+    cmd: kubectl apply -f /opt/filmstars/monitoring/namespace.yaml
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Create or update Grafana admin secret
+  ansible.builtin.shell:
+    cmd: |
+      kubectl create secret generic grafana-admin-secret \
+        --namespace monitoring \
+        --from-literal=admin-user='{{ grafana_admin_user }}' \
+        --from-literal=admin-password='{{ grafana_admin_password }}' \
+        --dry-run=client -o yaml | kubectl apply -f -
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  no_log: true
+
+- name: Apply monitoring configmaps except dashboard bundle
+  ansible.builtin.shell:
+    cmd: |
+      for manifest in /opt/filmstars/monitoring/configmaps/*.yaml; do
+        kubectl apply -f "$manifest"
+      done
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Create or update Grafana dashboards ConfigMap from JSON files
+  ansible.builtin.shell:
+    cmd: |
+      kubectl create configmap grafana-dashboards \
+        --namespace monitoring \
+        --from-file=/opt/filmstars/monitoring/dashboards \
+        --dry-run=client -o yaml | kubectl apply -f -
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Apply monitoring storage manifests
+  ansible.builtin.shell:
+    cmd: |
+      for manifest in /opt/filmstars/monitoring/storage/*.yaml; do
+        kubectl apply -f "$manifest"
+      done
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Apply monitoring infra manifests
+  ansible.builtin.shell:
+    cmd: |
+      for manifest in /opt/filmstars/monitoring/infra/*.yaml; do
+        kubectl apply -f "$manifest"
+      done
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Apply monitoring app manifests
+  ansible.builtin.shell:
+    cmd: |
+      for manifest in /opt/filmstars/monitoring/apps/*.yaml; do
+        kubectl apply -f "$manifest"
+      done
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Wait for monitoring deployments to roll out
+  ansible.builtin.shell:
+    cmd: |
+      kubectl rollout status deployment/prometheus -n monitoring --timeout=240s
+      kubectl rollout status deployment/kube-state-metrics -n monitoring --timeout=240s
+      kubectl rollout status deployment/grafana -n monitoring --timeout=240s
+      kubectl rollout status daemonset/node-exporter -n monitoring --timeout=240s
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml

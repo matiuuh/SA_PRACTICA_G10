@@ -535,7 +535,9 @@ jobs:
           ansible-playbook ansible/playbooks/configure_release.yml \
             -i /tmp/inventory-release.ini \
             --extra-vars "zot_user=${{ secrets.REGISTRY_USER }} \
-              zot_pass=${{ secrets.REGISTRY_PASS }}"
+              zot_pass=${{ secrets.REGISTRY_PASS }} \
+              grafana_admin_user=${{ secrets.GRAFANA_ADMIN_USER }} \
+              grafana_admin_password=${{ secrets.GRAFANA_ADMIN_PASSWORD }}"
 
       - name: Subir kubeconfig como artifact para deploy-k3s
         uses: actions/upload-artifact@v4
