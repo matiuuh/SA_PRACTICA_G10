@@ -19,9 +19,16 @@ RUN pnpm build || npm run build
 
 FROM nginx:alpine AS runner
 
+RUN apk add --no-cache openssl && \
+    mkdir -p /etc/nginx/certs && \
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+      -keyout /etc/nginx/certs/selfsigned.key \
+      -out    /etc/nginx/certs/selfsigned.crt \
+      -subj "/CN=filmstars-develop"
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
