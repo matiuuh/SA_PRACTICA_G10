@@ -18,7 +18,7 @@ resource "aws_security_group" "k3s" {
   vpc_id      = module.networking.vpc_id
 
   ingress {
-    description = "SSH — Ansible and CI/CD access"
+    description = "SSH - Ansible and CI/CD access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -26,7 +26,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "HTTP — nginx Ingress Controller"
+    description = "HTTP - nginx Ingress Controller"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -34,7 +34,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "HTTPS — nginx Ingress Controller"
+    description = "HTTPS - nginx Ingress Controller"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -42,7 +42,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s API server — kubectl and kubeconfig access"
+    description = "K3s API server - kubectl and kubeconfig access"
     from_port   = 6443
     to_port     = 6443
     protocol    = "tcp"
@@ -50,7 +50,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s — etcd peer communication (intra-cluster)"
+    description = "K3s - etcd peer communication (intra-cluster)"
     from_port   = 2379
     to_port     = 2380
     protocol    = "tcp"
@@ -58,7 +58,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s — kubelet and controller-manager (intra-cluster)"
+    description = "K3s - kubelet and controller-manager (intra-cluster)"
     from_port   = 10250
     to_port     = 10252
     protocol    = "tcp"
@@ -66,7 +66,7 @@ resource "aws_security_group" "k3s" {
   }
 
   ingress {
-    description = "K3s — Flannel VXLAN overlay (intra-cluster)"
+    description = "K3s - Flannel VXLAN overlay (intra-cluster)"
     from_port   = 8472
     to_port     = 8472
     protocol    = "udp"
@@ -102,7 +102,7 @@ resource "aws_security_group" "registry" {
   vpc_id      = module.networking.vpc_id
 
   ingress {
-    description = "SSH — Ansible access"
+    description = "SSH - Ansible access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -110,7 +110,7 @@ resource "aws_security_group" "registry" {
   }
 
   ingress {
-    description = "Zot HTTP registry — accessible from within the VPC"
+    description = "Zot HTTP registry - accessible from within the VPC"
     from_port   = 5000
     to_port     = 5000
     protocol    = "tcp"
