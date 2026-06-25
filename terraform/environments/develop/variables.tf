@@ -14,3 +14,8 @@ variable "allowed_ssh_cidr" {
   type        = string
   default     = "0.0.0.0/0"
 }
+
+variable "tf_state_bucket" {
+  description = "S3 bucket used for Terraform state (needed to read the shared environment outputs)"
+  type        = string
+}
