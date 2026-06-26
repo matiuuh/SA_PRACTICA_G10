@@ -347,7 +347,9 @@ jobs:
           done
 
       - name: Aplicar Ingress
-        run: kubectl apply -f k8s/ingress/
+        env:
+          PUBLIC_HOST: ${{ secrets.K3S_INGRESS_HOST }}.sslip.io
+        run: envsubst '${PUBLIC_HOST}' < k8s/ingress/ingress.yaml | kubectl apply -f -
 
       - name: Verificar rollout
         run: |
