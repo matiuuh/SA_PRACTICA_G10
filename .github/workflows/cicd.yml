@@ -158,8 +158,10 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: EC2_HOST
           script: |
             cd /opt/filmstars
+            grep -q '^FRONTEND_URL=' .env || echo "FRONTEND_URL=http://${EC2_HOST}:5173" >> .env
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
