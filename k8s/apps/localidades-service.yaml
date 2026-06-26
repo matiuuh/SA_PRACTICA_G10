@@ -4,7 +4,7 @@ metadata:
   name: localidades-service
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: localidades-service
@@ -39,7 +39,7 @@ spec:
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: filmstars-config
+                  name: localidades-service-config
                   key: DB_PORT
             - name: DB_USERNAME
               valueFrom:

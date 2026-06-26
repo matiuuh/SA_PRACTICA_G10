@@ -960,7 +960,7 @@
 | **Nombre** | Escanear Ticket |
 | **Actor** | Administrador |
 | **Descripción** | Permite al administrador escanear el ticket de un cliente para validar su compra. |
-| **Precondiciones** | El administrador tiene una sesión activa. El cliente tiene un ticket de compra. El administrador tiene accesso al boleto de compra mediante la busqueda avanzada o proporcionada por el usuario luego de escanear el codigo QR |
+| **Precondiciones** | El administrador tiene una sesión activa. El cliente tiene un ticket de compra. |
 | **Postcondiciones** | El ticket queda validado y el cliente puede ingresar al cine. |
 
 **Flujo principal:**
@@ -969,11 +969,9 @@
 |------|-------|--------|
 | 1 | Administrador | Selecciona la opción de "Validación" desde su panel principal. |
 | 2 | Sistema | Muestra la interfaz de escaneo. |
-| 3 | Administrador | Sube el documento del cliente para escanear el ticket. |
-| 4 | Sistema | Muestra un mensaje sobre el estado de subir el documento|
-| 5 | Administrador | Pulsa el botón de "Validar" |
-| 6 | Sistema | Valida el ticket y muestra el resultado. |
-| 7 | Sistema | Muestra confirmación de validación. |
+| 3 | Administrador | Escanea el código QR del ticket. |
+| 4 | Sistema | Procesa el escaneo. |
+| 5 | Sistema | Muestra confirmación de validación. |
 
 **Flujos alternativos:**
 
@@ -1101,5 +1099,35 @@
 | ID | Condición | Acción |
 |----|-----------|--------|
 | FE-01 | No hay conexión | El sistema muestra un mensaje de error. |
+
+## Consulta de rendimiento general del sistema
+
+### CDU-009.1: Consultar un dashboard de rendimiento
+
+![CDU009](./img/Practica-CDU009.drawio.svg)
+
+| Campo | Descripción |
+|-------|-------------|
+| **ID** | CDU-009.1 |
+| **Nombre** | Consultar un dashboard de rendimiento |
+| **Actor** | Administrador |
+| **Descripción** | Permite al administrador consultar un dashboard de rendimiento del sistema, mostrando métricas clave del estado del sistema de boletos. |
+| **Precondiciones** | El administrador tiene acceso y por lo tanto una sesión activa en graphana |
+| **Postcondiciones** | El administrador visualiza el dashboard con las métricas actualizadas |
+
+**Flujo principal:**
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1 | Administrador | Accede a la sección de dashboard desde la página principal de graphana. |
+| 2 | Sistema | Recupera y muestra las métricas clave del sistema |
+| 3 | Administrador | Visualiza las métricas y los gráficos para obtener información operativa |
+
+**Flujos de excepción:**
+
+| ID | Condición | Acción |
+|----|-----------|--------|
+| FE-01 | No hay conexión a la base de datos de métricas | El sistema muestra un mensaje de error indicando que no se pueden recuperar las métricas. |
+
 
 [Volver a Documentacion](../Documentación.md)

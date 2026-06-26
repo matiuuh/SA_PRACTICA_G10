@@ -21,6 +21,7 @@ import { PdfTicketDocumentGenerator } from './services/pdf-ticket-document.gener
 import { TICKET_DOCUMENT_GENERATOR } from './interfaces/ticket-document-generator.interface';
 import { Incidencia } from './entities/incidencia.entity';
 import { IncidenciasService } from './services/incidencias.service';
+import { InternalServiceGuard } from '../auth/internal-service.guard';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { IncidenciasService } from './services/incidencias.service';
     TicketDownloadService,
     PdfTicketDocumentGenerator,
     IncidenciasService,
+    InternalServiceGuard,
     HttpFuncionCatalogClient,
     {
       provide: FUNCION_CATALOG_CLIENT,

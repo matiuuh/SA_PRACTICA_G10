@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { InternalServiceGuard } from '../auth/internal-service.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateAsientoDto } from './dto/create-asiento.dto';
@@ -26,7 +27,7 @@ import { PaginateTicketHistoryDto } from './dto/paginate-ticket-history.dto';
 import { TicketHistoryService } from './services/ticket-history.service';
 import { SearchAdminTicketsDto } from './dto/search-admin-tickets.dto';
 import { AdminTicketSearchService } from './services/admin-ticket-search.service';
-import { ValidateTicketDto } from './dto/validate-ticket.dto';
+import { InternalValidateTicketDto } from './dto/internal-validate-ticket.dto';
 import { TicketValidationService } from './services/ticket-validation.service';
 import { TicketDownloadService } from './services/ticket-download.service';
 import { CreateIncidenciaDto } from './dto/create-incidencia.dto';
@@ -161,16 +162,12 @@ export class ReservasController {
     );
   }
 
-  @Post('boletos/validar')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMINISTRADOR')
-  validateTicket(
-    @Body() dto: ValidateTicketDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
+  @Post('internal/boletos/validar-escaneo')
+  @UseGuards(InternalServiceGuard)
+  validateScannedTicket(@Body() dto: InternalValidateTicketDto) {
     return this.ticketValidationService.validateByCode(
       dto.codigo,
-      getAuthenticatedUserId(request),
+      dto.administradorId,
     );
   }
 

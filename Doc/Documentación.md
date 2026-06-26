@@ -34,8 +34,18 @@ Integrantes:
 
 ### Justificacion de tecnologias y principios SOLID aplicados
 - [Justificacion de Tecnologías](./JustificacionTecnologias/justificacionTecnologias.md)
+- [Toma de decisiones de infraestructura](./JustificacionTecnologias/tomaDeDecisiones.md)
 - [Principios SOLID aplicados](./Solid/SolidUnificado.md)
 - [Despliegue Local](./Despligue/despliegue.md)
+
+### Infraestructura como Código y Observabilidad
+- [Terraform — IaC para aprovisionamiento de AWS](./JustificacionTecnologias/terraform.md)
+- [Ansible — Gestión de configuración y despliegue](./JustificacionTecnologias/ansible.md)
+- [Prometheus y Grafana — Stack de observabilidad](./JustificacionTecnologias/observabilidad.md)
+
+### Kubernetes
+- [Justificación y estructura de manifiestos Kubernetes](./Kubernetes/kubernetes.md)
+- [Estrategia de despliegue Zero-Downtime y Rollback automatizado](./Kubernetes/zero-downtime.md)
 
 ### Levantamiento del proyecto
 - [Cómo levantar frontend, backend y Docker Compose](./Levantamiento/levantamiento.md)
@@ -45,6 +55,9 @@ Integrantes:
 
 ### CI/CD
 - [Integracion y entrega continua](./CICD/cicd.md)
+
+### Arquitectura del cluster
+- [Arquitectura del cluster](./arquitecturaCluster.md)
 
 
 ## Introduccion

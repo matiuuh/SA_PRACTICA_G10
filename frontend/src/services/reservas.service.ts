@@ -34,19 +34,6 @@ class ReservasService {
     return response.data;
   }
 
-  // ========== NUEVOS MÉTODOS PARA VALIDACIÓN ==========
-
-  /**
-   * Valida un boleto por código QR (escaneo)
-   */
-  async validarBoleto(codigo: string): Promise<BoletoValidacion> {
-    const response = await api.post<BoletoValidacion>(
-      `${endpoints.reservas}/boletos/validar`,
-      { codigo }
-    );
-    return response.data;
-  }
-
   /**
    * Valida un boleto manualmente por ID (administrador)
    */

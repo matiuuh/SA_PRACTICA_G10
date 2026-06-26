@@ -1,0 +1,140 @@
+services:
+
+  # ─── Message broker ────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-db-network
+    restart: unless-stopped
+
+  # ─── Databases ─────────────────────────────────────────────────────
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: postgres-auth
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: auth_service
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata-auth:/var/lib/postgresql/data
+      - ./init/auth.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d auth_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-db-network
+    restart: unless-stopped
+
+  postgres-localidades:
+    image: postgres:15-alpine
+    container_name: postgres-localidades
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: localidades_service
+    ports:
+      - '5434:5432'
+    volumes:
+      - pgdata-localidades:/var/lib/postgresql/data
+      - ./init/localidades.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d localidades_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-db-network
+    restart: unless-stopped
+
+  postgres-funciones:
+    image: postgres:15-alpine
+    container_name: postgres-funciones
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: funciones_db
+    ports:
+      - '5435:5432'
+    volumes:
+      - pgdata-funciones:/var/lib/postgresql/data
+      - ./init/funciones.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d funciones_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-db-network
+    restart: unless-stopped
+
+  postgres-reservas:
+    image: postgres:15-alpine
+    container_name: postgres-reservas
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: reservas_service
+    ports:
+      - '5436:5432'
+    volumes:
+      - pgdata-reservas:/var/lib/postgresql/data
+      - ./init/reservas.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d reservas_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-db-network
+    restart: unless-stopped
+
+  postgres-pagos:
+    image: postgres:15-alpine
+    container_name: postgres-pagos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: pagos_service
+    ports:
+      - '5437:5432'
+    volumes:
+      - pgdata-pagos:/var/lib/postgresql/data
+      - ./init/pagos.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d pagos_service']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filmstars-db-network
+    restart: unless-stopped
+
+volumes:
+  rabbitmq-data:
+  pgdata-auth:
+  pgdata-localidades:
+  pgdata-funciones:
+  pgdata-reservas:
+  pgdata-pagos:
+
+networks:
+  filmstars-db-network:
+    driver: bridge

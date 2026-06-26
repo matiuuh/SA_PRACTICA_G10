@@ -2,13 +2,14 @@
 
 Esta carpeta agrupa los servicios del backend con enfoque SOA.
 
-## Servicios planeados
+## Servicios
 
 - `auth-service`
 - `localidades-service`
 - `funciones-service`
 - `reservas-service`
 - `pagos-service`
+- `escaneo-service`
 
 ## Convencion sugerida
 

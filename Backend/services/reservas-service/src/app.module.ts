@@ -32,7 +32,7 @@ import { Incidencia } from './reservas/entities/incidencia.entity';
           Boleto,
           Incidencia,
         ],
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     ReservasModule,

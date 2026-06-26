@@ -2,12 +2,97 @@
 
 ## Índice
 
+- [Preservación de principios SOLID en el sistema — visión general](#preservación-de-principios-solid-en-el-sistema--visión-general)
 - [Funcionalidad 1 — Microservicios generales (localidades, autenticación, pagos)](#funcionalidad-1--microservicios-generales-localidades-autenticación-pagos)
 - [Funcionalidad 2 — Módulo de administrador (localidades)](#funcionalidad-2--módulo-de-administrador-localidades)
 - [Funcionalidad 3 — Carga masiva de películas (CSV)](#funcionalidad-3--carga-masiva-de-películas-csv)
 - [Funcionalidad 4 — Generación y lectura de archivos de tickets/boletos](#funcionalidad-4--generación-y-lectura-de-archivos-de-ticketsboletos)
 - [Funcionalidad 5 — Ingreso y respuesta de incidencias](#funcionalidad-5--ingreso-y-respuesta-de-incidencias)
 - [Funcionalidad 6 — Validaciones de tickets del administrador](#funcionalidad-6--validaciones-de-tickets-del-administrador)
+
+---
+
+## Preservación de principios SOLID en el sistema — visión general
+
+Esta sección sintetiza cómo cada uno de los cinco principios SOLID se preservó de forma **transversal** en el sistema FilmStars, identificando los puntos críticos de diseño que los hacen efectivos en la práctica.
+
+---
+
+### S — Single Responsibility Principle (Responsabilidad Única)
+
+**Punto crítico:** la separación entre controlador, servicio y repositorio en cada microservicio.
+
+Todos los microservicios siguen el mismo patrón de tres capas: el **controlador** maneja únicamente el protocolo HTTP (recibir la petición, validar la entrada con DTOs decorados, devolver la respuesta), el **servicio** concentra la lógica de negocio sin saber nada de HTTP ni de base de datos, y el **repositorio** (inyectado por TypeORM) abstrae el acceso a datos.
+
+Este patrón se aplica sin excepciones. Cuando se necesitaron operaciones diferenciadas por actor (usuario vs. administrador), se crearon controladores distintos (`LocalidadesController` / `AdminLocalidadesController`) en lugar de sobrecargar uno solo. De igual forma, responsabilidades especializadas dentro de un mismo dominio se separaron en servicios distintos: `TicketDownloadService`, `TicketHistoryService`, `TicketValidationService` y `AdminTicketSearchService` existen como clases independientes dentro del servicio de reservas, cada una con una única razón para cambiar.
+
+**Por qué es un punto crítico:** un controlador que contiene lógica de negocio o acceso a datos directo se convierte en el punto de fallo más frecuente del sistema, ya que cualquier cambio en cualquier capa obliga a tocar el mismo archivo. La separación estricta de responsabilidades localiza el impacto de cada cambio.
+
+---
+
+### O — Open/Closed Principle (Abierto/Cerrado)
+
+**Punto crítico:** el `RolesGuard` basado en metadatos y los DTOs de actualización que extienden los de creación.
+
+El `RolesGuard` nunca necesita modificarse para añadir nuevos roles. Su diseño delega la decisión de autorización completamente al decorador `@Roles(...)`, que inyecta los roles requeridos como metadatos en el handler. Agregar un rol nuevo (`SUPERVISOR`, `SUPER_ADMINISTRADOR`) es tan simple como anotar el endpoint correspondiente.
+
+Los DTOs de actualización usan `PartialType(CreateXxxDto)` de NestJS, lo que los hace automáticamente extensibles: cualquier campo nuevo que se agregue al DTO de creación queda disponible como opcional en el de actualización sin modificar la clase derivada.
+
+La interfaz `TicketDocumentGenerator` cierra el servicio de descarga de boletos frente a cambios de formato: agregar soporte para HTML, DOCX o cualquier otro formato requiere solo una nueva implementación de la interfaz, sin tocar `TicketDownloadService`.
+
+**Por qué es un punto crítico:** los puntos de extensión más frecuentes en este sistema son la adición de roles de acceso y la incorporación de nuevos formatos o campos de negocio. El diseño cierra exactamente esos ejes frente a modificación.
+
+---
+
+### L — Liskov Substitution Principle (Sustitución de Liskov)
+
+**Punto crítico:** la jerarquía de estrategias de autenticación (`JwtStrategy` → `PassportStrategy`) y la interfaz `TicketDocumentGenerator`.
+
+`JwtStrategy` extiende `PassportStrategy` respetando completamente el contrato de Passport: implementa el método `validate` con la firma esperada y devuelve el objeto de usuario que todos los guards y controladores consumen a través de `request.user`. Si en el futuro se incorporara `OAuth2Strategy` u otra estrategia, los guards y controladores que dependen de `request.user.rol` seguirían funcionando sin ningún cambio.
+
+`PdfTicketDocumentGenerator` implementa `TicketDocumentGenerator`. `TicketDownloadService` depende únicamente de la interfaz: cualquier implementación concreta que respete el contrato `generate(ticket) → TicketDocument` es sustituible sin impacto en el servicio de descarga.
+
+**Por qué es un punto crítico:** la autenticación y la generación de documentos son los dos mecanismos más susceptibles de ser reemplazados o extendidos en el ciclo de vida del sistema. El diseño garantiza que esas sustituciones sean transparentes para los consumidores.
+
+---
+
+### I — Interface Segregation Principle (Segregación de Interfaces)
+
+**Punto crítico:** el sistema de DTOs por operación y por actor.
+
+En lugar de un DTO genérico que cubra todas las operaciones sobre una entidad, cada caso de uso tiene su propio contrato mínimo. Esto se aplica en tres dimensiones:
+
+- **Por operación:** `CreatePagoDto`, `CreateMetodoPagoDto` y `CreateEstadoPagoDto` son clases separadas en lugar de un DTO monolítico de pagos.
+- **Por actor:** `PaginateTicketHistoryDto` (usuario) y `SearchAdminTicketsDto` (administrador) son contratos distintos; el administrador recibe el campo `pelicula` que el usuario no necesita.
+- **Por etapa del proceso:** en la carga masiva de CSV, `CsvPeliculaRow`, `CreatePeliculaDto` y `PeliculasCsvImportResult` son interfaces separadas con responsabilidades de representación distintas.
+
+**Por qué es un punto crítico:** la segregación de interfaces en DTOs evita que los endpoints expongan campos innecesarios, reduce la superficie de ataque y permite que cada capa de validación (class-validator) opere sobre exactamente los campos que le corresponden.
+
+---
+
+### D — Dependency Inversion Principle (Inversión de Dependencias)
+
+**Punto crítico:** la inyección de dependencias de NestJS como mecanismo universal y el token `TICKET_DOCUMENT_GENERATOR`.
+
+Ningún servicio instancia sus dependencias directamente con `new`. Toda la construcción del grafo de dependencias es responsabilidad del contenedor IoC de NestJS, que inyecta `Repository<T>`, servicios relacionados y clientes HTTP a través de los constructores. Esto aplica de forma consistente a todos los microservicios.
+
+El caso más explícito de DIP avanzado es el token de inyección `TICKET_DOCUMENT_GENERATOR`: `TicketDownloadService` declara su dependencia sobre la abstracción `TicketDocumentGenerator`, no sobre `PdfTicketDocumentGenerator`. El módulo registra la implementación concreta en un único lugar. Cambiar el generador de documentos requiere modificar solo la declaración del proveedor en el módulo.
+
+El mismo patrón se aplica a `FUNCION_CATALOG_CLIENT` en `ReservasModule`: el servicio de reservas depende de la interfaz del cliente de catálogo, no de la implementación HTTP concreta, lo que permite reemplazar el protocolo de comunicación (REST por gRPC, por ejemplo) sin tocar la lógica de negocio.
+
+**Por qué es un punto crítico:** la inyección de dependencias es el mecanismo que hace que todos los demás principios SOLID sean verificables: permite reemplazar implementaciones en pruebas unitarias (con mocks), cambiar proveedores de datos y sustituir protocolos sin modificar la lógica de negocio. Es la base estructural sobre la que los demás principios son efectivos en producción.
+
+---
+
+### Tabla de preservación transversal
+
+| Principio | Mecanismo principal | Punto crítico del sistema |
+|-----------|--------------------|-----------------------------|
+| **S** | Patrón Controller → Service → Repository | Separación de actores en controladores distintos (`Admin*Controller`) |
+| **O** | `RolesGuard` + metadatos / `PartialType` / interfaces | Extensión de roles sin modificar el guard; nuevos formatos sin tocar `TicketDownloadService` |
+| **L** | `JwtStrategy` → `PassportStrategy` / `TicketDocumentGenerator` | Sustitución de estrategia de autenticación o generador de documentos sin impacto en consumidores |
+| **I** | DTOs por operación, por actor y por etapa | `PaginateTicketHistoryDto` vs `SearchAdminTicketsDto`; DTOs de CSV separados de DTOs de persistencia |
+| **D** | Contenedor IoC de NestJS / tokens de inyección | `TICKET_DOCUMENT_GENERATOR`, `FUNCION_CATALOG_CLIENT`; `Repository<T>` en todos los servicios |
 
 ---
 
@@ -935,5 +1020,12 @@ Si el catálogo de funciones pasa a ser un servicio gRPC u otro protocolo, solo 
 [Volver al índice](#índice)
 
 ---
+
+>Imágenes de SOLID
+
+![S](./img-solid-2/01_S.png)
+![O](./img-solid-2/02_O.png)
+![L](./img-solid-2/03_L.png)
+![I](./img-solid-2/04_D.png)
 
 [Volver a Documentación](../Documentación.md)

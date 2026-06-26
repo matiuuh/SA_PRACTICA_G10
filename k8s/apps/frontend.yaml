@@ -1,13 +1,14 @@
-# VITE_API_GATEWAY_URL se bake en tiempo de build (no en runtime).
-# El pipeline lo pasa como build-arg con la URL del Ingress:
-#   --build-arg VITE_API_GATEWAY_URL=http://<CLUSTER_IP>/api
+# Las URLs públicas del frontend se bakean en tiempo de build (no en runtime).
+# En release se dejan vacías para usar el mismo origen del navegador:
+#   API: /api/*
+#   WebSocket: /socket.io/*
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
   namespace: filmstars
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend

@@ -38,7 +38,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3006;
   await app.listen(port);
-  
+
   logger.log(`🚀 API Gateway running on http://localhost:${port}`);
   logger.log(`📡 CORS enabled for http://localhost:5173`);
 }
