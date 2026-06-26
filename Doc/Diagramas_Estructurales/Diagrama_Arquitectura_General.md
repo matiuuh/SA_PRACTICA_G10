@@ -6,11 +6,13 @@
 
 ### Descripción
 
-La arquitectura síncrona representa las operaciones en las que el usuario o administrador espera una respuesta inmediata. Ambos actores acceden al frontend desarrollado con React y Vite, el cual envía las solicitudes al API Gateway mediante HTTP/REST utilizando JWT. El gateway funciona como punto único de entrada y dirige cada petición hacia el microservicio responsable.
+La arquitectura síncrona representa las operaciones donde el usuario o administrador espera una respuesta inmediata del sistema. Ambos actores acceden al frontend desarrollado con React y Vite, y este envía las solicitudes al API Gateway mediante HTTP/REST utilizando JWT. El API Gateway centraliza el acceso y enruta cada petición hacia el microservicio correspondiente: autenticación/usuarios, funciones, reservas, pagos o localidades.
 
-En AWS, los componentes están distribuidos en tres máquinas virtuales EC2 administradas con Docker Compose. La primera contiene el frontend y el API Gateway; la segunda ejecuta los servicios de autenticación, funciones, reservas, pagos y localidades; y la tercera aloja una base de datos PostgreSQL independiente para cada dominio. Los microservicios se comunican con sus bases de datos mediante TCP, conservando la separación de responsabilidades y datos.
+En la rama `develop`, el despliegue se realiza sobre instancias EC2 en AWS usando Docker Compose. La máquina virtual principal contiene el frontend y el API Gateway; una segunda máquina ejecuta los microservicios NestJS; y una tercera máquina aloja las bases de datos PostgreSQL separadas por dominio. Cada servicio se comunica con su base de datos mediante TCP, manteniendo independencia entre módulos y evitando que un dominio dependa directamente de la información interna de otro.
 
-El proceso de CI/CD comienza cuando el desarrollador envía cambios a las ramas `develop` o `release` del repositorio GitHub. GitHub Actions ejecuta las pruebas unitarias con una cobertura mínima del 75 %, construye y publica las imágenes en Docker Hub y realiza el despliegue mediante SSH. La rama `release` despliega en AWS, mientras que `develop` utiliza un runner self-hosted para levantar el sistema completo en el ambiente local.
+En la rama `release`, la solución se despliega en un cluster K3s dentro de AWS. El tráfico HTTPS entra por Traefik Ingress Controller y se dirige al frontend, al API Gateway y a los pods de microservicios. Los servicios se ejecutan como pods dentro del nodo del cluster, mientras que las bases de datos PostgreSQL se mantienen en una máquina virtual independiente administrada con Docker Compose. Esta separación permite escalar y actualizar los servicios sin mezclar la capa de aplicación con la capa de persistencia.
+
+La observabilidad se apoya en Prometheus y Grafana para recolectar métricas y visualizar el comportamiento del sistema. El flujo de CI/CD inicia cuando el desarrollador envía cambios al repositorio GitHub en las ramas `develop` o `release`: GitHub Actions ejecuta pruebas unitarias con cobertura mínima del 75 %, construye las imágenes Docker, las publica en Docker Hub y activa el despliegue correspondiente. Terraform se utiliza para el aprovisionamiento de infraestructura y Ansible para tareas de configuración automatizada.
 
 ---
 
@@ -20,11 +22,13 @@ El proceso de CI/CD comienza cuando el desarrollador envía cambios a las ramas 
 
 ### Descripción
 
-La arquitectura asíncrona representa el procesamiento desacoplado de reservas, pagos y generación de boletos. El usuario inicia la operación desde el frontend y la solicitud llega al API Gateway. En la capa de servicios, RabbitMQ funciona como broker de mensajería y distribuye los eventos en colas para que sean procesados sin mantener bloqueada la petición original.
+La arquitectura asíncrona representa el procesamiento desacoplado de reservas, pagos y generación de boletos. El usuario inicia la operación desde el frontend y la solicitud llega al API Gateway, pero el procesamiento pesado no se resuelve completamente dentro de la misma petición. En su lugar, RabbitMQ actúa como broker de mensajería y distribuye eventos en colas especializadas para que los consumidores trabajen de forma independiente.
 
-Los consumidores especializados atienden cada proceso: el Worker Tickets genera el boleto final, el Worker Reservas confirma o libera los asientos y el Worker Pagos procesa la solicitud de pago. Estos consumidores interactúan con los servicios de reservas y pagos, que actualizan sus respectivas bases de datos PostgreSQL. El servicio de pagos también se comunica mediante HTTP con el componente de pago simulado.
+El flujo principal se divide en colas para tickets, reservas y pagos. El Worker Tickets genera el boleto final, el Worker Reservas confirma o libera asignaciones de asientos y el Worker Pagos procesa la solicitud de pago. Estos workers consumen mensajes desde RabbitMQ y coordinan actualizaciones con los servicios de reservas y pagos. El servicio de pagos también se comunica por HTTP con el componente de pago simulado, mientras que los cambios persistentes se almacenan en bases de datos PostgreSQL independientes.
 
-Esta separación permite que los mensajes permanezcan disponibles si un consumidor no está operativo temporalmente, facilitando la recuperación del proceso y reduciendo el acoplamiento entre servicios. Al igual que en la arquitectura síncrona, las imágenes Docker se generan mediante el pipeline de GitHub Actions, se almacenan en Docker Hub y se despliegan en AWS para `release` o en el entorno local para `develop`.
+En `develop`, los componentes se ejecutan en EC2 con Docker Compose: el frontend y el API Gateway se ubican en una máquina, RabbitMQ junto con los consumidores y microservicios asíncronos en otra, y las bases de datos PostgreSQL en una tercera. En `release`, la aplicación se ejecuta sobre K3s: Traefik recibe el tráfico HTTPS, el frontend, API Gateway, RabbitMQ, workers y servicios se despliegan como pods, y la persistencia permanece en una máquina virtual separada con PostgreSQL para reservas y pagos.
+
+El uso de mensajería permite que los eventos permanezcan disponibles aunque un consumidor no esté operativo temporalmente, favoreciendo la tolerancia a fallos y la recuperación del proceso. Al igual que en la arquitectura síncrona, el pipeline de GitHub Actions valida el código, construye imágenes Docker, las publica en Docker Hub y despliega según la rama utilizada. Prometheus y Grafana brindan observabilidad del estado de los servicios, colas y componentes desplegados.
 
 ---
 

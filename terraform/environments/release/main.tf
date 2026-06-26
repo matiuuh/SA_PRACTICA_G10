@@ -2,20 +2,21 @@ provider "aws" {
   region = var.aws_region
 }
 
-module "networking" {
-  source = "../../modules/networking"
-
-  environment        = "release"
-  vpc_cidr           = "10.2.0.0/16"
-  public_subnet_cidr = "10.2.1.0/24"
-  availability_zone  = "${var.aws_region}a"
+# ── Read shared state to get VPC and DB VM details ───────────────────────────
+data "terraform_remote_state" "shared" {
+  backend = "s3"
+  config = {
+    bucket = var.tf_state_bucket
+    key    = "filmstars/shared/terraform.tfstate"
+    region = var.aws_region
+  }
 }
 
 # ── Security group: K3s cluster nodes ────────────────────────────────────────
 resource "aws_security_group" "k3s" {
   name        = "filmstars-k3s-sg"
   description = "Security group for K3s master and worker nodes"
-  vpc_id      = module.networking.vpc_id
+  vpc_id      = data.terraform_remote_state.shared.outputs.vpc_id
 
   ingress {
     description = "SSH - Ansible and CI/CD access"
@@ -99,7 +100,7 @@ resource "aws_security_group" "k3s" {
 resource "aws_security_group" "registry" {
   name        = "filmstars-registry-sg"
   description = "Security group for the Zot OCI registry (HTTP, intra-VPC only)"
-  vpc_id      = module.networking.vpc_id
+  vpc_id      = data.terraform_remote_state.shared.outputs.vpc_id
 
   ingress {
     description = "SSH - Ansible access"
@@ -114,7 +115,7 @@ resource "aws_security_group" "registry" {
     from_port   = 5000
     to_port     = 5000
     protocol    = "tcp"
-    cidr_blocks = [module.networking.vpc_cidr]
+    cidr_blocks = [data.terraform_remote_state.shared.outputs.vpc_cidr]
   }
 
   egress {
@@ -137,7 +138,7 @@ module "k3s_compute" {
 
   environment        = "release"
   key_name           = var.key_name
-  subnet_id          = module.networking.public_subnet_id
+  subnet_id          = data.terraform_remote_state.shared.outputs.public_subnet_id
   security_group_ids = [aws_security_group.k3s.id]
 
   instances = {
@@ -162,7 +163,7 @@ module "registry_compute" {
 
   environment        = "release"
   key_name           = var.key_name
-  subnet_id          = module.networking.public_subnet_id
+  subnet_id          = data.terraform_remote_state.shared.outputs.public_subnet_id
   security_group_ids = [aws_security_group.registry.id]
 
   instances = {

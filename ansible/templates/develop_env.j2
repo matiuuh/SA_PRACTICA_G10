@@ -1,9 +1,10 @@
 DOCKERHUB_USERNAME={{ dockerhub_username }}
 VITE_API_GATEWAY_URL=http://{{ ansible_host }}:3006
-VITE_RESERVAS_WS_URL=http://{{ ansible_host }}:3004
+VITE_RESERVAS_WS_URL=ws://{{ ansible_host }}:3004
+DB_HOST={{ db_host }}
 POSTGRES_PASSWORD={{ postgres_password }}
 JWT_SECRET={{ jwt_secret }}
 RABBITMQ_USER={{ rabbitmq_user }}
 RABBITMQ_PASS={{ rabbitmq_pass }}
 INTERNAL_SERVICE_TOKEN={{ internal_service_token }}
-FRONTEND_URL=http://{{ ansible_host }}:5173
+FRONTEND_URL=https://{{ ansible_host }}:5173

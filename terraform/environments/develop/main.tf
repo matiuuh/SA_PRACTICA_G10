@@ -2,19 +2,20 @@ provider "aws" {
   region = var.aws_region
 }
 
-module "networking" {
-  source = "../../modules/networking"
-
-  environment        = "develop"
-  vpc_cidr           = "10.1.0.0/16"
-  public_subnet_cidr = "10.1.1.0/24"
-  availability_zone  = "${var.aws_region}a"
+# ── Read shared state to get VPC and DB VM details ───────────────────────────
+data "terraform_remote_state" "shared" {
+  backend = "s3"
+  config = {
+    bucket = var.tf_state_bucket
+    key    = "filmstars/shared/terraform.tfstate"
+    region = var.aws_region
+  }
 }
 
 resource "aws_security_group" "develop" {
   name        = "filmstars-develop-sg"
-  description = "Security group for FilmStars develop environment (all-in-one Docker Compose)"
-  vpc_id      = module.networking.vpc_id
+  description = "Security group for FilmStars develop environment (app services only, no DBs)"
+  vpc_id      = data.terraform_remote_state.shared.outputs.vpc_id
 
   ingress {
     description = "SSH - Ansible and CI/CD access"
@@ -83,7 +84,7 @@ module "compute" {
 
   environment        = "develop"
   key_name           = var.key_name
-  subnet_id          = module.networking.public_subnet_id
+  subnet_id          = data.terraform_remote_state.shared.outputs.public_subnet_id
   security_group_ids = [aws_security_group.develop.id]
 
   instances = {

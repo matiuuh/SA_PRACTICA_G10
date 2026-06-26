@@ -21,7 +21,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/filmstars-frontend:latest
     container_name: frontend
     ports:
-      - '5173:443'
+      - '5173:80'
     depends_on:
       - api-gateway
     networks:
