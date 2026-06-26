@@ -66,8 +66,16 @@ spec:
                 secretKeyRef:
                   name: filmstars-secrets
                   key: JWT_SECRET
-            # RABBITMQ_URL se construye interpolando los secrets ya definidos arriba.
-            # Kubernetes resuelve $(VAR) desde env vars del mismo contenedor.
+            - name: INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: filmstars-secrets
+                  key: INTERNAL_SERVICE_TOKEN
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: filmstars-config
+                  key: RABBITMQ_HOST
             - name: RABBITMQ_USER
               valueFrom:
                 secretKeyRef:
@@ -79,7 +87,7 @@ spec:
                   name: filmstars-secrets
                   key: RABBITMQ_PASS
             - name: RABBITMQ_URL
-              value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@rabbitmq:5672"
+              value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASS)@$(RABBITMQ_HOST):5672"
           readinessProbe:
             tcpSocket:
               port: 3004

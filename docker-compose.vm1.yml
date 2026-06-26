@@ -5,12 +5,13 @@ services:
     container_name: api-gateway
     environment:
       PORT: 3006
-      FRONTEND_URL: http://${VM1_HOST}:5173
+      FRONTEND_URL: https://${VM1_HOST}:5173
       AUTH_SERVICE_URL: http://${VM2_HOST}:3001
       LOCALIDADES_SERVICE_URL: http://${VM2_HOST}:3002
       FUNCIONES_SERVICE_URL: http://${VM2_HOST}:3003
       RESERVAS_SERVICE_URL: http://${VM2_HOST}:3004
       PAGOS_SERVICE_URL: http://${VM2_HOST}:3005
+      ESCANEO_SERVICE_URL: http://${VM2_HOST}:3007
     ports:
       - '3006:3006'
     networks:

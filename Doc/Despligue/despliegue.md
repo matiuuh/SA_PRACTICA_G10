@@ -5,7 +5,7 @@ A continuación se detallan los pasos para levantar el sistema, verificar su fun
 
 ### Requisitos
 - Docker Desktop instalado y corriendo
-- Puerto 3006, 5173 y 15672 libres en el host
+- Puertos 3006, 3007, 5173 y 15672 libres en el host
 
 ### Levantar todo con Docker Compose
 Desde la carpeta `Practica2/`:
@@ -34,6 +34,7 @@ curl http://localhost:3006/health
 curl http://localhost:3006/api/auth/health
 curl http://localhost:3006/api/localidades/health
 curl http://localhost:3006/api/funciones/health
+curl http://localhost:3006/api/escaneo/health
 ```
 
 ### Consulta de logs

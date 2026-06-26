@@ -1,9 +1,20 @@
 name: CI/CD FilmStars
 
 # ──────────────────────────────────────────────────────────────────────────────
-# FLUJOS:
-#   develop → Test → Build/Push DockerHub   → Deploy Docker Compose (self-hosted)
-#   release → Test → Build/Push Harbor/Zot  → Deploy K3s AWS
+# Infraestructura y configuracion se hacen manualmente con Terraform y Ansible.
+# Este pipeline solo construye imagenes, las publica y las despliega.
+#
+#   develop → Test → Build & Push DockerHub → SSH deploy en VM (docker compose)
+#   release → Test → Build & Push Zot       → kubectl apply en K3s
+#
+# Secrets requeridos:
+#   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
+#   EC2_HOST, EC2_SSH_PRIVATE_KEY
+#   REGISTRY_HOST, REGISTRY_USER, REGISTRY_PASS
+#   K3S_INGRESS_HOST, KUBECONFIG_B64
+#   DB_HOST  (IP privada VM de BDs, para inyectar en ConfigMaps de K3s)
+#   POSTGRES_PASSWORD, JWT_SECRET, RABBITMQ_USER, RABBITMQ_PASS
+#   INTERNAL_SERVICE_TOKEN
 # ──────────────────────────────────────────────────────────────────────────────
 on:
   push:
@@ -16,10 +27,9 @@ jobs:
 
   # ════════════════════════════════════════════════════════════════════════════
   # FASE 1 — TEST (ambas ramas)
-  # Obligatorio en release: cobertura mínima del 75%.
   # ════════════════════════════════════════════════════════════════════════════
   test:
-    name: "Fase 1 · Test ${{ matrix.service }}"
+    name: "Test ${{ matrix.service }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -30,6 +40,7 @@ jobs:
           - funciones-service
           - reservas-service
           - pagos-service
+          - escaneo-service
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +53,7 @@ jobs:
         working-directory: Backend/services/${{ matrix.service }}
         run: npm install --legacy-peer-deps
 
-      - name: Ejecutar tests con cobertura minima del 75%
+      - name: Ejecutar tests
         working-directory: Backend/services/${{ matrix.service }}
         run: npm run test:cov
 
@@ -54,17 +65,11 @@ jobs:
           path: Backend/services/${{ matrix.service }}/coverage/
           retention-days: 14
 
-      - name: Notificar fallo de tests
-        if: failure()
-        run: |
-          echo "::error::FASE 1 FALLIDA — ${{ matrix.service }} no alcanzo el 75% de cobertura minima requerida. Pipeline detenido."
-
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2a — BUILD & PUSH A DOCKERHUB  (solo rama develop)
-  # Publica imagenes con tag :latest para el entorno de staging local.
+  # FASE 2a — BUILD & PUSH A DOCKERHUB (solo develop)
   # ════════════════════════════════════════════════════════════════════════════
   build-push-develop:
-    name: "Fase 2 · Build & Push a DockerHub (develop)"
+    name: "Build & Push DockerHub (develop)"
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/develop'
@@ -112,6 +117,13 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-pagos-service:latest
 
+      - name: Build y push escaneo-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/escaneo-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-escaneo-service:latest
+
       - name: Build y push api-gateway
         uses: docker/build-push-action@v6
         with:
@@ -125,28 +137,40 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://localhost:3006
-            VITE_RESERVAS_WS_URL=http://localhost:3004
+            VITE_API_GATEWAY_URL=http://${{ secrets.EC2_HOST }}:3006
+            VITE_RESERVAS_WS_URL=ws://${{ secrets.EC2_HOST }}:3004
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filmstars-frontend:latest
 
-      - name: Notificar fallo de build
-        if: failure()
-        run: |
-          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en DockerHub. Pipeline detenido."
+  # ════════════════════════════════════════════════════════════════════════════
+  # FASE 3a — DEPLOY EN VM DEVELOP vía SSH (solo develop)
+  # Ansible ya dejó todo configurado: .env, docker-compose.yml, Docker.
+  # Aquí solo se halan las imágenes nuevas y se reinician los contenedores.
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-develop:
+    name: "Deploy VM Develop (docker compose)"
+    runs-on: ubuntu-latest
+    needs: build-push-develop
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: SSH deploy en VM develop
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: EC2_HOST
+          script: |
+            cd /opt/filmstars
+            grep -q '^FRONTEND_URL=' .env || echo "FRONTEND_URL=http://${EC2_HOST}:5173" >> .env
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
 
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 2b — BUILD & PUSH AL REGISTRY PRIVADO  (solo rama release)
-  # Publica imagenes con tag :latest y :<sha_corto> en Harbor/Zot.
-  # El SHA garantiza trazabilidad e inmutabilidad del artefacto desplegado.
-  #
-  # Secrets requeridos:
-  #   REGISTRY_HOST  — hostname del registry privado (ej: registry.filmstars.io)
-  #   REGISTRY_USER  — usuario de Harbor/Zot
-  #   REGISTRY_PASS  — contraseña de Harbor/Zot
-  #   K3S_INGRESS_HOST — IP o dominio publico del Ingress del cluster K3s
+  # FASE 2b — BUILD & PUSH A REGISTRY PRIVADO ZOT (solo release)
   # ════════════════════════════════════════════════════════════════════════════
   build-push-release:
-    name: "Fase 2 · Build & Push a Registry Privado (release)"
+    name: "Build & Push Registry Privado (release)"
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/release'
@@ -161,19 +185,12 @@ jobs:
 
       - name: Normalizar REGISTRY_HOST
         run: |
-          CLEAN_HOST="$(printf '%s' '${{ secrets.REGISTRY_HOST }}' | tr -d '\r\n\t ')"
-          echo "REGISTRY_HOST_CLEAN=$CLEAN_HOST" >> $GITHUB_ENV
-          echo "Registry host normalizado."
+          CLEAN="$(printf '%s' '${{ secrets.REGISTRY_HOST }}' | tr -d '\r\n\t ')"
+          echo "REGISTRY_HOST_CLEAN=$CLEAN" >> $GITHUB_ENV
 
-      # ─── Configurar buildx para registry HTTP (Zot sin TLS) ──────────
-      # Zot corre en HTTP (puerto 5000). Escribimos el config de buildkit
-      # a un archivo (evita problemas de parsing TOML con secrets inline)
-      # y se lo pasamos a buildx como archivo.
-      - name: Crear config de buildkit para registry HTTP
+      - name: Config buildkit para registry HTTP
         run: |
           printf '[registry."%s"]\n  http = true\n  insecure = true\n' "$REGISTRY_HOST_CLEAN" > /tmp/buildkitd.toml
-          echo "=== Config buildkit ==="
-          cat /tmp/buildkitd.toml
 
       - name: Configurar buildx
         uses: docker/setup-buildx-action@v3
@@ -181,21 +198,11 @@ jobs:
           driver: docker-container
           buildkitd-config: /tmp/buildkitd.toml
 
-      - name: Escribir credenciales Docker para Zot
+      - name: Credenciales Docker para Zot
         run: |
           mkdir -p "$HOME/.docker"
           AUTH_B64="$(printf '%s' '${{ secrets.REGISTRY_USER }}:${{ secrets.REGISTRY_PASS }}' | base64 -w0)"
-          cat > "$HOME/.docker/config.json" <<EOF
-          {
-            "auths": {
-              "$REGISTRY_HOST_CLEAN": {
-                "auth": "$AUTH_B64"
-              }
-            }
-          }
-          EOF
-          echo "=== Docker config ==="
-          cat "$HOME/.docker/config.json"
+          printf '{"auths":{"%s":{"auth":"%s"}}}' "$REGISTRY_HOST_CLEAN" "$AUTH_B64" > "$HOME/.docker/config.json"
 
       - name: Build y push auth-service
         uses: docker/build-push-action@v6
@@ -242,6 +249,15 @@ jobs:
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-pagos-service:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-pagos-service:${{ steps.vars.outputs.sha_short }}
 
+      - name: Build y push escaneo-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/services/escaneo-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-escaneo-service:latest
+            ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-escaneo-service:${{ steps.vars.outputs.sha_short }}
+
       - name: Build y push api-gateway
         uses: docker/build-push-action@v6
         with:
@@ -256,91 +272,30 @@ jobs:
         with:
           context: ./frontend
           push: true
-          # VITE_API_GATEWAY_URL apunta al Ingress del cluster K3s con el prefijo /api
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
-            VITE_RESERVAS_WS_URL=${{ secrets.RESERVAS_WS_URL }}
+            VITE_API_GATEWAY_URL=https://${{ secrets.K3S_INGRESS_HOST }}.sslip.io
+            VITE_RESERVAS_WS_URL=wss://${{ secrets.K3S_INGRESS_HOST }}.sslip.io/socket.io
           tags: |
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
 
-      - name: Notificar fallo de build
-        if: failure()
-        run: |
-          echo "::error::FASE 2 FALLIDA — Error al construir o publicar las imagenes en el Registry Privado. Pipeline detenido."
-
   # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3a — DEPLOY DOCKER COMPOSE  (solo rama develop)
-  # Corre en la maquina del equipo via self-hosted runner.
-  # Descarga las imagenes de DockerHub y levanta todos los servicios localmente.
-  # ════════════════════════════════════════════════════════════════════════════
-  deploy-develop:
-    name: "Fase 3 · Deploy Docker Compose – Staging (develop)"
-    runs-on: self-hosted
-    needs: build-push-develop
-    if: github.ref == 'refs/heads/develop'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Crear archivo .env local
-        shell: powershell
-        run: |
-          $utf8NoBOM = New-Object System.Text.UTF8Encoding $false
-          $lines = @(
-            "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
-            "VITE_API_GATEWAY_URL=http://localhost:3006",
-            "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}",
-            "JWT_SECRET=${{ secrets.JWT_SECRET }}",
-            "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}",
-            "RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}"
-          )
-          [System.IO.File]::WriteAllLines(".env", $lines, $utf8NoBOM)
-
-      - name: Pull imagenes desde DockerHub
-        run: docker compose pull
-
-      - name: Levantar servicios
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Continue'
-          docker compose down --volumes
-          $names = @(
-            "rabbitmq",
-            "auth-service", "localidades-service", "funciones-service", "reservas-service", "pagos-service",
-            "api-gateway", "frontend",
-            "postgres-auth", "postgres-localidades", "postgres-funciones", "postgres-reservas", "postgres-pagos"
-          )
-          foreach ($name in $names) {
-            docker rm -f $name 2>&1 | Out-Null
-          }
-          docker compose up -d
-
-      - name: Limpiar imagenes antiguas
-        run: docker image prune -f
-
-  # ════════════════════════════════════════════════════════════════════════════
-  # FASE 3b — DEPLOY K3S AWS  (solo rama release)
-  # Aplica los manifiestos de k8s/ al cluster con kubectl.
-  # Orden: namespace → configmaps → secrets → storage → infra → apps → ingress
-  # Verifica rollout de cada deployment; en fallo ejecuta kubectl rollout undo.
-  #
-  # Secrets requeridos:
-  #   KUBECONFIG_RAW  — kubeconfig del cluster K3s en YAML plano
-  #                     (obtener en el master: cat /etc/rancher/k3s/k3s.yaml)
-  #                     Reemplazar 127.0.0.1 por la IP publica del nodo master.
+  # FASE 3b — DEPLOY EN K3S (solo release)
+  # Ansible ya instaló K3s y Zot. Aquí solo se aplican los manifiestos.
+  # KUBECONFIG_B64 y DB_HOST se configuran manualmente como secrets de GitHub.
   # ════════════════════════════════════════════════════════════════════════════
   deploy-k3s:
-    name: "Fase 3 · Deploy K3s – Produccion AWS (release)"
+    name: "Deploy K3s (release)"
     runs-on: ubuntu-latest
     needs: build-push-release
     if: github.ref == 'refs/heads/release'
     env:
-      REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
-      IMAGE_TAG: ${{ needs.build-push-release.outputs.sha_short }}
+      REGISTRY_HOST:        ${{ secrets.REGISTRY_HOST }}
+      IMAGE_TAG:            ${{ needs.build-push-release.outputs.sha_short }}
+      DB_SERVER_PRIVATE_IP: ${{ secrets.DB_HOST }}
     steps:
       - uses: actions/checkout@v4
 
-      # ── kubectl ──────────────────────────────────────────────────────────
       - name: Instalar kubectl
         uses: azure/setup-kubectl@v4
         with:
@@ -349,36 +304,34 @@ jobs:
       - name: Configurar kubeconfig
         run: |
           mkdir -p ~/.kube
-          cat > ~/.kube/config <<'EOF'
-          ${{ secrets.KUBECONFIG_RAW }}
-          EOF
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
       - name: Verificar conexion al cluster
         run: kubectl cluster-info
 
-      # ── 1. Namespace y ConfigMaps ─────────────────────────────────────────
       - name: Aplicar Namespace
         run: kubectl apply -f k8s/namespace.yaml
 
       - name: Aplicar ConfigMaps
-        run: kubectl apply -f k8s/configmaps/
+        run: envsubst '${DB_SERVER_PRIVATE_IP}' < k8s/configmaps/app-config.yaml | kubectl apply -f -
 
-      # ── 2. Secrets de la aplicacion ───────────────────────────────────────
-      - name: Aplicar Secrets de la aplicacion
+      - name: Aplicar Secrets
         env:
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
-          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          POSTGRES_PASSWORD:      ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET:             ${{ secrets.JWT_SECRET }}
+          RABBITMQ_USER:          ${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS:          ${{ secrets.RABBITMQ_PASS }}
+          INTERNAL_SERVICE_TOKEN: ${{ secrets.INTERNAL_SERVICE_TOKEN }}
         run: |
           export POSTGRES_PASSWORD_B64=$(echo -n "$POSTGRES_PASSWORD" | base64 -w0)
           export JWT_SECRET_B64=$(echo -n "$JWT_SECRET" | base64 -w0)
           export RABBITMQ_USER_B64=$(echo -n "$RABBITMQ_USER" | base64 -w0)
           export RABBITMQ_PASS_B64=$(echo -n "$RABBITMQ_PASS" | base64 -w0)
+          export INTERNAL_SERVICE_TOKEN_B64=$(echo -n "$INTERNAL_SERVICE_TOKEN" | base64 -w0)
           envsubst < k8s/secrets/app-secrets.yaml | kubectl apply -f -
 
-      - name: Crear Secret de credenciales del Registry Privado
+      - name: Secret de credenciales del Registry
         run: |
           kubectl create secret docker-registry registry-credentials \
             --namespace filmstars \
@@ -387,62 +340,26 @@ jobs:
             --docker-password=${{ secrets.REGISTRY_PASS }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # ── 3. Storage (PVCs) ────────────────────────────────────────────────
-      - name: Aplicar PersistentVolumeClaims
-        run: kubectl apply -f k8s/storage/
-
-      # ── 4. Infraestructura (bases de datos + RabbitMQ) ───────────────────
-      - name: Aplicar infraestructura
-        run: kubectl apply -f k8s/infra/
-
-      - name: Esperar que la infraestructura este lista
-        run: |
-          INFRA_DEPS="rabbitmq postgres-auth postgres-localidades postgres-funciones postgres-reservas postgres-pagos"
-          for dep in $INFRA_DEPS; do
-            echo "Esperando deployment/$dep..."
-            kubectl rollout status deployment/$dep -n filmstars --timeout=180s
-          done
-
-      # ── 5. Microservicios y Frontend ──────────────────────────────────────
       - name: Desplegar microservicios y frontend
         run: |
           for f in k8s/apps/*.yaml; do
-            echo "Aplicando $f..."
             envsubst < "$f" | kubectl apply -f -
           done
 
-      # ── 6. Ingress ────────────────────────────────────────────────────────
       - name: Aplicar Ingress
-        run: kubectl apply -f k8s/ingress/
+        env:
+          PUBLIC_HOST: ${{ secrets.K3S_INGRESS_HOST }}.sslip.io
+        run: envsubst '${PUBLIC_HOST}' < k8s/ingress/ingress.yaml | kubectl apply -f -
 
-      # ── 7. Verificacion de rollout con rollback automatico ────────────────
-      - name: Verificar rollout y revertir en caso de fallo
+      - name: Verificar rollout
         run: |
-          APP_DEPS="auth-service localidades-service funciones-service reservas-service pagos-service api-gateway frontend"
-          FAILED=""
-          for dep in $APP_DEPS; do
-            echo "Verificando rollout de $dep..."
-            if ! kubectl rollout status deployment/$dep -n filmstars --timeout=120s; then
-              echo "::error::$dep fallo en el rollout. Ejecutando kubectl rollout undo..."
-              kubectl rollout undo deployment/$dep -n filmstars
-              FAILED="$FAILED $dep"
-            fi
+          for dep in auth-service localidades-service funciones-service reservas-service pagos-service escaneo-service api-gateway frontend; do
+            kubectl rollout status deployment/$dep -n filmstars --timeout=120s || \
+              (kubectl rollout undo deployment/$dep -n filmstars && exit 1)
           done
-          if [ -n "$FAILED" ]; then
-            echo "::error::FASE 3 FALLIDA — Rollback ejecutado para:$FAILED"
-            exit 1
-          fi
-          echo "Todos los deployments estan saludables. Despliegue completado."
 
-      - name: Mostrar estado final del cluster
+      - name: Estado final
         if: always()
         run: |
-          echo "=== Pods en namespace filmstars ==="
           kubectl get pods -n filmstars
-          echo "=== Ingress ==="
           kubectl get ingress -n filmstars
-
-      - name: Notificar fallo de despliegue
-        if: failure()
-        run: |
-          echo "::error::FASE 3 FALLIDA — Error en el despliegue a K3s. Revisar logs con: kubectl logs -n filmstars deploy/<nombre>"

@@ -38,7 +38,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
       const result = await localidadesService.getCinesPaginated({ page, limit: 10, search: search || undefined });
       setCines(result.data);
       setPaginaActual(result.meta.page);
-      setTotalPaginas(result.meta.totalPages);
+      setTotalPaginas(Math.max(1, result.meta.totalPages));
       setTotalCines(result.meta.total);
     } catch (error) {
       console.error('Error loading cines:', error);
@@ -164,8 +164,8 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
 
   return (
     <>
-      <div className="cinema-card p-6">
-        <div className="flex justify-between items-center mb-6">
+      <div className="cinema-card p-4 sm:p-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-bold text-white">Gestión de Cines</h2>
             <p className="text-sm text-gray-400 mt-1">
@@ -174,7 +174,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-cinema-red-500 px-4 py-2 text-white transition-all hover:bg-cinema-red-600 sm:w-auto"
           >
             <FaPlus />
             Agregar cine
@@ -236,8 +236,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
           </div>
         )}
 
-        {totalPaginas > 1 && (
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+        <div className="mt-6 flex flex-col gap-3 border-t border-gray-700 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-gray-400 text-sm">Mostrando {cines.length} de {totalCines} cines</p>
             <div className="flex items-center gap-2">
               <button
@@ -256,8 +255,7 @@ const AdminLocalidades: React.FC<AdminLocalidadesProps> = () => {
                 Siguiente <FaChevronRight className="text-xs" />
               </button>
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Modal de detalles para Cine */}

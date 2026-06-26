@@ -1,0 +1,54 @@
+---
+# ── Phase 1: wait for SSH on all nodes ──────────────────────────────────────
+- name: Wait for SSH connectivity on all nodes
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available (EC2 boot can take ~60s)
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 300
+
+# ── Phase 2: bootstrap all nodes with common packages ────────────────────────
+- name: Bootstrap all K3s and registry nodes
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - common
+
+# ── Phase 3: install and configure K3s master ────────────────────────────────
+- name: Configure K3s master node
+  hosts: k3s_master
+  become: true
+  gather_facts: true
+  roles:
+    - k3s_master
+
+# ── Phase 4: install K3s agents and join cluster ─────────────────────────────
+# k3s_master_ip is the first (only) host in the k3s_master inventory group.
+- name: Configure K3s worker nodes
+  hosts: k3s_workers
+  become: true
+  gather_facts: true
+  vars:
+    k3s_master_ip: "{{ groups['k3s_master'][0] }}"
+  roles:
+    - k3s_agent
+
+# ── Phase 5: configure Zot OCI registry ──────────────────────────────────────
+- name: Configure Zot OCI registry
+  hosts: registry
+  become: true
+  gather_facts: true
+  roles:
+    - docker
+    - zot_registry
+
+# ── Phase 6: configure monitoring stack on K3s master ───────────────────────
+- name: Configure Prometheus and Grafana on K3s
+  hosts: k3s_master
+  become: true
+  gather_facts: true
+  roles:
+    - monitoring_stack

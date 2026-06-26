@@ -74,7 +74,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
       });
       setFunciones(mapped);
       setPaginaActual(result.meta.page);
-      setTotalPaginas(result.meta.totalPages);
+      setTotalPaginas(Math.max(1, result.meta.totalPages));
       setTotalFunciones(result.meta.total);
     } catch (error) {
       console.error('Error loading funciones:', error);
@@ -219,15 +219,15 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
 
   return (
     <>
-      <div className="cinema-card p-6">
-        <div className="flex justify-between items-center mb-6">
+      <div className="cinema-card p-4 sm:p-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-bold text-white">Gestión de funciones</h2>
             <p className="text-sm text-gray-400 mt-1">Administra las funciones: crear, editar, eliminar y ver detalles.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-cinema-red-500 hover:bg-cinema-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-cinema-red-500 px-4 py-2 text-white transition-all hover:bg-cinema-red-600 sm:w-auto"
           >
             <FaPlus />
             Agregar función
@@ -295,9 +295,8 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
           </div>
         )}
 
-        {totalPaginas > 1 && (
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
-            <p className="text-gray-400 text-sm">Mostrando {funciones.length} de {totalFunciones} funciones</p>
+        <div className="mt-6 flex flex-col gap-3 border-t border-gray-700 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-gray-400 text-sm">Mostrando {funcionesFiltradas.length} de {totalFunciones} funciones</p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
@@ -315,8 +314,7 @@ const AdminFunciones: React.FC<AdminFuncionesProps> = ({
                 Siguiente <FaChevronRight className="text-xs" />
               </button>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Modal de detalles */}
         {showDetailsModal && selectedFuncion && (

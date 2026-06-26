@@ -76,6 +76,7 @@ services:
       DB_NAME: reservas_service
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change_this_internal_secret}
       FUNCIONES_SERVICE_URL: http://funciones-service:3003
     ports:
       - '3004:3004'
@@ -100,6 +101,21 @@ services:
       - '3005:3005'
     depends_on:
       - rabbitmq
+    networks:
+      - filmstars-network
+
+  escaneo-service:
+    image: ${DOCKERHUB_USERNAME}/filmstars-escaneo-service:latest
+    container_name: escaneo-service
+    environment:
+      PORT: 3007
+      JWT_SECRET: ${JWT_SECRET}
+      RESERVAS_SERVICE_URL: http://reservas-service:3004
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change_this_internal_secret}
+    ports:
+      - '3007:3007'
+    depends_on:
+      - reservas-service
     networks:
       - filmstars-network
 

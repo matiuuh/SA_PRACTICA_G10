@@ -62,3 +62,12 @@ junit.xml
 
 # practica2
 enunciado5.md
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+terraform.tfvars
+*.tfvars
+!*.tfvars.example

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: /metrics
+    spec:
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: node-exporter
+          image: quay.io/prometheus/node-exporter:v1.8.2
+          args:
+            - --path.rootfs=/host
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+          ports:
+            - containerPort: 9100
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9100
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9100
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 150m
+              memory: 128Mi
+          volumeMounts:
+            - name: rootfs
+              mountPath: /host
+              readOnly: true
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+      volumes:
+        - name: rootfs
+          hostPath:
+            path: /
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: node-exporter
+  type: ClusterIP
+  ports:
+    - port: 9100
+      targetPort: 9100

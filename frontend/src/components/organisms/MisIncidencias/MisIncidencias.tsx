@@ -22,7 +22,7 @@ const MisIncidencias = () => {
     try {
       const result = await incidenciasService.getMine(page, meta.limit);
       setIncidencias(result.data);
-      setMeta(result.meta);
+      setMeta({ ...result.meta, totalPages: Math.max(1, result.meta.totalPages) });
     } catch {
       setMessage('No se pudieron cargar tus incidencias.');
     } finally {
@@ -54,7 +54,7 @@ const MisIncidencias = () => {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="cinema-card space-y-4 p-6">
+      <form onSubmit={handleSubmit} className="cinema-card space-y-4 p-4 sm:p-6">
         <div>
           <h2 className="text-xl font-bold text-white">Nueva incidencia</h2>
           <p className="text-sm text-gray-400">
@@ -112,7 +112,7 @@ const MisIncidencias = () => {
         {message && <p className="text-sm text-cinema-gold-400">{message}</p>}
       </form>
 
-      <div className="cinema-card p-6">
+      <div className="cinema-card p-4 sm:p-6">
         <h2 className="mb-4 text-xl font-bold text-white">Mis incidencias</h2>
         {loading ? (
           <p className="py-8 text-center text-gray-400">Cargando incidencias...</p>
@@ -149,8 +149,9 @@ const MisIncidencias = () => {
             ))}
           </div>
         )}
-        {meta.totalPages > 1 && (
-          <div className="mt-5 flex items-center justify-center gap-4">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-gray-700 pt-4">
+          <span className="text-sm text-gray-500">Mostrando {incidencias.length} de {meta.total} incidencias</span>
+          <div className="flex items-center gap-4">
             <button
               onClick={() => void load(meta.page - 1)}
               disabled={meta.page === 1}
@@ -167,7 +168,7 @@ const MisIncidencias = () => {
               <FaChevronRight />
             </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

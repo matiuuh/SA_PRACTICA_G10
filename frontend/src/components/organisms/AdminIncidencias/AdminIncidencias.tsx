@@ -18,7 +18,7 @@ const AdminIncidencias = () => {
     try {
       const result = await incidenciasService.getAdmin(page, meta.limit, nextEstado || undefined);
       setIncidencias(result.data);
-      setMeta(result.meta);
+      setMeta({ ...result.meta, totalPages: Math.max(1, result.meta.totalPages) });
     } catch {
       setMessage('No se pudieron cargar las incidencias.');
     } finally {
@@ -57,7 +57,7 @@ const AdminIncidencias = () => {
   };
 
   return (
-    <div className="cinema-card p-6">
+    <div className="cinema-card p-4 sm:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white">Incidencias</h2>
@@ -132,8 +132,9 @@ const AdminIncidencias = () => {
           ))}
         </div>
       )}
-      {meta.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-700 pt-4">
+        <span className="text-sm text-gray-500">Mostrando {incidencias.length} de {meta.total} incidencias</span>
+        <div className="flex items-center gap-3">
           <button onClick={() => void load(meta.page - 1)} disabled={meta.page === 1} className="rounded-lg bg-gray-800 p-2 text-white disabled:opacity-40">
             <FaChevronLeft />
           </button>
@@ -142,7 +143,7 @@ const AdminIncidencias = () => {
             <FaChevronRight />
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -1,0 +1,65 @@
+---
+# ── Phase 1: wait for SSH ────────────────────────────────────────────────────
+- name: Wait for SSH connectivity on develop server
+  hosts: develop_servers
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH to be available (EC2 boot can take ~60s)
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 300
+
+# ── Phase 2: install OS deps + Docker, deploy Docker Compose ─────────────────
+- name: Configure and deploy FilmStars develop environment
+  hosts: develop_servers
+  become: true
+  gather_facts: true
+
+  roles:
+    - common
+    - docker
+
+  tasks:
+    - name: Create application root directory
+      ansible.builtin.file:
+        path: /opt/filmstars
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Copy docker-compose.yml
+      ansible.builtin.copy:
+        src: "{{ project_root }}/docker-compose.yml"
+        dest: /opt/filmstars/docker-compose.yml
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    - name: Create .env file from template
+      ansible.builtin.template:
+        src: "{{ project_root }}/ansible/templates/develop_env.j2"
+        dest: /opt/filmstars/.env
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+
+    - name: Stop and remove existing containers and orphans (fresh deploy)
+      ansible.builtin.command:
+        cmd: docker compose down --remove-orphans
+        chdir: /opt/filmstars
+      ignore_errors: true
+
+    - name: Pull latest Docker images from DockerHub
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: /opt/filmstars
+
+    - name: Start all services with Docker Compose
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: /opt/filmstars
+
+    - name: Prune dangling images
+      ansible.builtin.command:
+        cmd: docker image prune -f
