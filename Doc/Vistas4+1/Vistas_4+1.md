@@ -66,7 +66,7 @@ El frontend web canaliza las solicitudes hacia el API Gateway. Este distribuye l
 
 ## 4. Vista Física (Vista de Despliegue)
 
-![Diagrama de Componentes](./img/Practica-Vista-Despliegue-Local.drawio.svg)
+![Diagrama de Componentes](./img/Practica-Vista-Despliegue-nube.drawio.svg)
 
 
 ### Introducción
@@ -94,5 +94,7 @@ La vista de escenarios también conocida como vista de casos de uso interactúa 
 
 
 [\[archivo crudo de vistas 4+1\](https://app.diagrams.net/#G17zqvzKtzFauwvckD7d33XzBFcmADsWsG#%7B%22pageId%22%3A%228e4zzOSsQAcUt3Mhw_pj%22%7D)](https://drive.google.com/file/d/17zqvzKtzFauwvckD7d33XzBFcmADsWsG/view?usp=sharing)
+
 ---
+
 [Volver a Documentacion](../Documentación.md)
