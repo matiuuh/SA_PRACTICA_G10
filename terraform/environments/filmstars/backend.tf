@@ -1,0 +1,10 @@
+terraform {
+  backend "s3" {
+    key     = "filmstars/main/terraform.tfstate"
+    encrypt = true
+  }
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+  }
+  required_version = ">= 1.6.0"
+}

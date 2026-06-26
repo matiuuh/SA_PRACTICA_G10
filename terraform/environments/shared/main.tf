@@ -19,7 +19,7 @@ resource "aws_security_group" "db" {
   vpc_id      = module.networking.vpc_id
 
   ingress {
-    description = "SSH — Ansible and CI/CD access"
+    description = "SSH - Ansible and CI/CD access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -27,7 +27,7 @@ resource "aws_security_group" "db" {
   }
 
   ingress {
-    description = "PostgreSQL external ports — services inside the VPC"
+    description = "PostgreSQL external ports - services inside the VPC"
     from_port   = 5432
     to_port     = 5437
     protocol    = "tcp"
@@ -35,7 +35,7 @@ resource "aws_security_group" "db" {
   }
 
   ingress {
-    description = "RabbitMQ AMQP — services inside the VPC"
+    description = "RabbitMQ AMQP - services inside the VPC"
     from_port   = 5672
     to_port     = 5672
     protocol    = "tcp"
