@@ -273,8 +273,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            VITE_API_GATEWAY_URL=http://${{ secrets.K3S_INGRESS_HOST }}/api
-            VITE_RESERVAS_WS_URL=ws://${{ secrets.K3S_INGRESS_HOST }}/socket.io
+            VITE_API_GATEWAY_URL=https://${{ secrets.K3S_INGRESS_HOST }}.sslip.io
+            VITE_RESERVAS_WS_URL=wss://${{ secrets.K3S_INGRESS_HOST }}.sslip.io/socket.io
           tags: |
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:latest
             ${{ env.REGISTRY_HOST_CLEAN }}/filmstars-frontend:${{ steps.vars.outputs.sha_short }}
