@@ -8,7 +8,7 @@ Después de autenticarse, el usuario consulta las ciudades, sucursales, películ
 
 La solicitud de compra se procesa mediante los servicios de reservas y pagos, utilizando la cola de mensajes para desacoplar el procesamiento. Si la operación finaliza correctamente, se actualizan los estados de los asientos, se generan los boletos con sus códigos QR y se presentan al usuario con la opción de descargarlos.
 
-![Diagrama de actividades del usuario](<./data nueva/Actividades Usuario.drawio.svg>)
+![Diagrama de actividades del usuario](<./img/Actividades Usuario.drawio.svg>)
 
 ---
 
@@ -20,7 +20,7 @@ Desde el panel administrativo se gestionan películas, funciones, localidades y 
 
 Para el control de acceso, el administrador puede proporcionar un boleto, solicitar el análisis de su código QR y recibir el resultado de la validación. Además, puede consultar las incidencias enviadas por los usuarios, revisar su información y responderlas manualmente; la respuesta es almacenada por el servicio de reservas y queda disponible para el usuario.
 
-![Diagrama de actividades del administrador](<./data nueva/Diagrama de actividades admin.svg>)
+![Diagrama de actividades del administrador](<./img/Diagrama de actividades admin.svg>)
 
 ---
 
